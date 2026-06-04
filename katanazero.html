@@ -1,0 +1,918 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
+    <title>Katana ZERO Mobile v4</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #050714;
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: crosshair;
+            touch-action: none;
+            /* Mencegah layar HP terscroll/terzoom saat disentuh */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0.6;
+            transition: opacity 0.2s ease;
+        }
+
+        .scanlines.off {
+            opacity: 0;
+        }
+
+        /* UI Utama */
+        #ui-layer {
+            position: absolute;
+            top: max(14px, env(safe-area-inset-top));
+            left: max(14px, env(safe-area-inset-left));
+            right: max(14px, env(safe-area-inset-right));
+            z-index: 5;
+            pointer-events: none;
+            display: none;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        h1 {
+            font-family: 'Bebas Neue', cursive;
+            color: #f06292;
+            font-size: 30px;
+            margin: 0;
+            text-shadow: 0 0 10px #f06292;
+        }
+
+        .hud-panel {
+            min-width: 210px;
+            padding: 12px 14px;
+            background: rgba(5, 7, 20, 0.68);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 8px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(10px);
+        }
+
+        .energy-container {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #4dd0e1;
+            margin-top: 7px;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        #energy-bar {
+            width: 100%;
+            height: 100%;
+            background: #4dd0e1;
+            box-shadow: 0 0 10px #4dd0e1;
+        }
+
+        #scoreText {
+            color: #ffd54f;
+            font-weight: bold;
+            font-size: 16px;
+            text-shadow: 0 0 5px #ffd54f;
+            margin-top: 5px;
+        }
+
+        #comboText {
+            color: #f06292;
+            font-family: 'Bebas Neue';
+            font-size: 32px;
+            display: none;
+            transform-origin: left center;
+            text-shadow: 0 0 12px #f06292;
+        }
+
+        #comboText.pop {
+            animation: comboPop 0.28s ease;
+        }
+
+        @keyframes comboPop {
+            50% {
+                transform: scale(1.22);
+                color: #fff;
+            }
+        }
+
+        .hud-actions {
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .icon-btn {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: 8px;
+            border-color: rgba(255, 255, 255, 0.24);
+            color: #fff;
+            background: rgba(5, 7, 20, 0.68);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Layar Menu */
+        #startScreen,
+        #gameOverScreen,
+        #pauseScreen,
+        #tutorialScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(5, 7, 20, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: max(24px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+            z-index: 20;
+        }
+
+        #gameOverScreen,
+        #pauseScreen,
+        #tutorialScreen {
+            display: none;
+        }
+
+        .big-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: clamp(40px, 8vw, 80px);
+            color: #4dd0e1;
+            text-shadow: 0 0 20px #4dd0e1;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .screen-copy {
+            color: rgba(255, 255, 255, 0.72);
+            max-width: 620px;
+            text-align: center;
+            line-height: 1.5;
+            margin: 0 0 22px;
+        }
+
+        .map-container {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(160px, 220px));
+            gap: 15px;
+            justify-content: center;
+            padding: 0 20px;
+            width: 100%;
+            max-width: 780px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 20px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            border: 2px solid;
+            font-family: 'Bebas Neue';
+            border-radius: 8px;
+            touch-action: manipulation;
+        }
+
+        .map-card {
+            min-height: 150px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.44));
+            box-shadow: 0 18px 34px rgba(0, 0, 0, 0.35);
+        }
+
+        .map-card span {
+            display: block;
+            font-size: 30px;
+        }
+
+        .map-card small {
+            display: block;
+            color: rgba(255, 255, 255, 0.62);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            line-height: 1.35;
+        }
+
+        .map-preview {
+            height: 34px;
+            border-radius: 6px;
+            border: 1px solid currentColor;
+            background:
+                linear-gradient(90deg, transparent 0 18%, currentColor 18% 20%, transparent 20% 52%, currentColor 52% 54%, transparent 54%),
+                linear-gradient(0deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+            opacity: 0.8;
+        }
+
+        .btn-city {
+            border-color: #4dd0e1;
+            color: #4dd0e1;
+        }
+
+        .btn-factory {
+            border-color: #f06292;
+            color: #f06292;
+        }
+
+        .btn-rooftop {
+            border-color: #00e676;
+            color: #00e676;
+        }
+
+        /* UI Virtual Joystick & Tombol Android */
+        #mobile-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 15;
+            pointer-events: none;
+            display: none;
+        }
+
+        #joystick-area {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50%;
+            height: 100%;
+            pointer-events: auto;
+        }
+
+        #joystick-base {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 2px solid rgba(77, 208, 225, 0.4);
+            background: rgba(0, 0, 0, 0.2);
+            display: none;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 0 25px rgba(77, 208, 225, 0.25);
+        }
+
+        #joystick-base.active {
+            border-color: rgba(77, 208, 225, 0.9);
+            background: rgba(77, 208, 225, 0.12);
+        }
+
+        #joystick-stick {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(77, 208, 225, 0.8);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 0 15px #4dd0e1;
+        }
+
+        .action-btns {
+            position: absolute;
+            bottom: max(28px, env(safe-area-inset-bottom));
+            right: max(24px, env(safe-area-inset-right));
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .m-btn {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(240, 98, 146, 0.2);
+            border: 2px solid #f06292;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Bebas Neue';
+            font-size: 16px;
+            box-shadow: 0 0 10px rgba(240, 98, 146, 0.5);
+            user-select: none;
+        }
+
+        .m-btn:active {
+            background: #f06292;
+        }
+
+        .m-btn.btn-slow {
+            border-color: #ffd54f;
+            background: rgba(255, 213, 79, 0.2);
+            box-shadow: 0 0 10px rgba(255, 213, 79, 0.5);
+        }
+
+        .m-btn.btn-slow:active {
+            background: #ffd54f;
+            color: #000;
+        }
+
+        /* Instruksi Sentuh */
+        .touch-hint {
+            position: absolute;
+            top: 50%;
+            right: 10%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+            text-align: center;
+            font-family: 'Bebas Neue';
+            letter-spacing: 2px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(92px, 130px));
+            gap: 12px;
+            margin: 12px 0 20px;
+        }
+
+        .stat-box {
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 8px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.07);
+            text-align: center;
+        }
+
+        .stat-box small {
+            color: rgba(255, 255, 255, 0.58);
+            display: block;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+        .stat-box strong {
+            font-family: 'Bebas Neue';
+            font-size: 30px;
+            color: #ffd54f;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tutorial-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(100px, 150px));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .tutorial-card {
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.07);
+            text-align: center;
+        }
+
+        .tutorial-card strong {
+            display: block;
+            font-family: 'Bebas Neue';
+            font-size: 24px;
+            color: #4dd0e1;
+        }
+
+        .tutorial-card span {
+            color: rgba(255, 255, 255, 0.66);
+            font-size: 11px;
+            line-height: 1.35;
+        }
+
+        @media (max-width: 768px) {
+            #mobile-controls {
+                display: block;
+            }
+
+            .controls {
+                display: none;
+            }
+
+            #ui-layer {
+                top: max(10px, env(safe-area-inset-top));
+                left: max(10px, env(safe-area-inset-left));
+                right: max(10px, env(safe-area-inset-right));
+            }
+
+            .hud-panel {
+                min-width: 174px;
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .map-container,
+            .tutorial-grid,
+            .stats-grid {
+                grid-template-columns: 1fr;
+                max-width: 360px;
+            }
+
+            .map-card {
+                min-height: 118px;
+            }
+
+            .touch-hint {
+                right: 22%;
+                top: 58%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="scanlines" id="scanlines"></div>
+
+    <div id="ui-layer">
+        <div class="hud-panel">
+            <h1 id="mapNameUI">KATANA MOBILE</h1>
+            <div class="energy-container">
+                <div id="energy-bar"></div>
+            </div>
+            <div class="controls">A/D: Gerak | W: Lompat | S: Jatuh Cepat | SPASI: Dash<br>KLIK KIRI: Tebas | SHIFT:
+                Slow-Motion</div>
+            <div id="scoreText">Skor: 0</div>
+            <div id="comboText">COMBO x2!</div>
+        </div>
+        <div class="hud-actions">
+            <button class="icon-btn" id="scanToggle" type="button" title="Scanlines">▤</button>
+            <button class="icon-btn" id="pauseBtn" type="button" title="Pause">II</button>
+        </div>
+    </div>
+
+    <div id="mobile-controls">
+        <div id="joystick-area"></div>
+        <div id="joystick-base">
+            <div id="joystick-stick"></div>
+        </div>
+        <div class="touch-hint">TAP DISINI<br>UNTUK MENEBAS</div>
+        <div class="action-btns">
+            <div class="m-btn btn-slow" id="btnSlow">SLOW</div>
+            <div class="m-btn" id="btnDash">DASH</div>
+        </div>
+    </div>
+
+    <div id="startScreen">
+        <div class="big-title">SELECT SECTOR</div>
+        <p class="screen-copy">Pilih arena, lalu tebas cepat. Slow-motion menghabiskan energy, dash punya cooldown.</p>
+        <div class="map-container">
+            <button class="btn-city map-card" onclick="showTutorial('city')">
+                <span>CYBER CITY</span>
+                <small>Rute seimbang untuk pemanasan dan refleksi peluru.</small>
+                <i class="map-preview"></i>
+            </button>
+            <button class="btn-factory map-card" onclick="showTutorial('factory')">
+                <span>NEON FACTORY</span>
+                <small>Platform padat, pantulan tinggi, tempo lebih agresif.</small>
+                <i class="map-preview"></i>
+            </button>
+            <button class="btn-rooftop map-card" onclick="showTutorial('rooftop')">
+                <span>ROOFTOP</span>
+                <small>Jarak lompat panjang dengan ruang duel terbuka.</small>
+                <i class="map-preview"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="tutorialScreen">
+        <div class="big-title">READY?</div>
+        <p class="screen-copy" id="tutorialMapName">CYBER CITY</p>
+        <div class="tutorial-grid">
+            <div class="tutorial-card"><strong>MOVE</strong><span>WASD atau joystick kiri.</span></div>
+            <div class="tutorial-card"><strong>SLASH</strong><span>Klik atau tap area kanan.</span></div>
+            <div class="tutorial-card"><strong>DASH</strong><span>Spasi atau tombol DASH.</span></div>
+            <div class="tutorial-card"><strong>SLOW</strong><span>Shift atau tahan SLOW.</span></div>
+        </div>
+        <div class="button-row">
+            <button class="btn-city" id="tutorialStartBtn">START RUN</button>
+            <button class="btn-factory" onclick="closeTutorial()">BACK</button>
+        </div>
+    </div>
+
+    <div id="gameOverScreen">
+        <div class="big-title" style="color: #f06292;">FLATLINE.</div>
+        <div class="stats-grid">
+            <div class="stat-box"><small>SCORE</small><strong id="finalScore">0</strong></div>
+            <div class="stat-box"><small>KILLS</small><strong id="finalKills">0</strong></div>
+            <div class="stat-box"><small>BEST COMBO</small><strong id="finalCombo">0</strong></div>
+        </div>
+        <div class="button-row">
+            <button class="btn-city" onclick="retryGame()">RETRY</button>
+            <button class="btn-factory" onclick="backToMenu()">SECTOR SELECT</button>
+        </div>
+    </div>
+
+    <div id="pauseScreen">
+        <div class="big-title">PAUSED</div>
+        <p class="screen-copy">Pertahankan ritme: dash untuk masuk, slash untuk selesai, slow untuk membaca peluru.</p>
+        <div class="button-row">
+            <button class="btn-city" onclick="resumeGame()">RESUME</button>
+            <button class="btn-rooftop" onclick="retryGame()">RETRY</button>
+            <button class="btn-factory" onclick="backToMenu()">SECTOR SELECT</button>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        // --- SISTEM AUDIO ---
+        let audioCtx, bgmInterval;
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            if (type === 'slash') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
+            else if (type === 'hit') { osc.type = 'square'; osc.frequency.setValueAtTime(100, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }
+            else if (type === 'bounce') { osc.type = 'sine'; osc.frequency.setValueAtTime(200, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.3); gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); }
+        }
+        function startBGM() { bgmInterval = setInterval(() => { if (!gameActive || !audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; let freq = (Date.now() % 800 < 400) ? 55 : 65; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(0.03, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }, 200); }
+
+        // --- DATABASE MAP ---
+        const mapData = {
+            city: { name: "CYBER CITY", bgColor: "#050714", parallax: "#0a0d1c", glow: "#4dd0e1", spawnX: 200, spawnY: 200, walls: [{ x: -500, y: 500, w: 4000, h: 100 }, { x: 400, y: 350, w: 200, h: 20 }, { x: 800, y: 200, w: 150, h: 300 }, { x: -500, y: -500, w: 50, h: 1100 }, { x: 3000, y: -500, w: 50, h: 1100 }] },
+            factory: { name: "NEON FACTORY", bgColor: "#140505", parallax: "#2a0a0a", glow: "#f06292", spawnX: 100, spawnY: 400, walls: [{ x: -200, y: 600, w: 2000, h: 100 }, { x: 300, y: 450, w: 150, h: 20 }, { x: 600, y: 300, w: 150, h: 20 }, { x: 850, y: 580, w: 100, h: 20, isBouncy: true }, { x: 1100, y: 100, w: 400, h: 20 }, { x: -200, y: -500, w: 50, h: 1200 }, { x: 1800, y: -500, w: 50, h: 1200 }] },
+            rooftop: { name: "ROOFTOP", bgColor: "#05140a", parallax: "#0a1f10", glow: "#00e676", spawnX: 100, spawnY: 100, walls: [{ x: 0, y: 300, w: 400, h: 400 }, { x: 600, y: 400, w: 300, h: 300 }, { x: 1100, y: 200, w: 500, h: 500 }, { x: -50, y: -500, w: 50, h: 1200 }, { x: 1600, y: -500, w: 50, h: 1200 }] }
+        };
+
+        // --- VARIABEL GLOBAL ---
+        let currentMap = null, currentMapId = 'city', pendingMapId = 'city', gameActive = false, gamePaused = false, score = 0, combo = 0, comboTimer = 0;
+        let gameRunId = 0;
+        let kills = 0, bestComboRun = 0;
+        let hitPauseFrames = 0, shakeFrames = 0, flashFrames = 0;
+        let timeScale = 1.0, chronosEnergy = 100;
+        let camera = { x: 0, y: 0 };
+
+        // Hal Baru 4: Zoom Kamera Dinamis
+        let currentZoom = 1.0;
+
+        let walls = [], enemies = [], bullets = [], particles = [], bloodSplatter = [];
+        let floatingTexts = []; // Hal Baru 5: Teks Skoring
+
+        const player = { x: 0, y: 0, width: 20, height: 40, vx: 0, vy: 0, speed: 6, jumpPower: -12, gravity: 0.6, grounded: false, touchingWall: 0, dashCooldown: 0, isInvincible: false, slashTimer: 0, slashAngle: 0, color: '#fff', trails: [] };
+
+        // --- INPUT: KEYBOARD & MOUSE (Untuk PC) ---
+        const keys = { a: false, s: false, d: false, w: false, shift: false, space: false };
+        const mouse = { x: 0, y: 0, clicked: false };
+
+        window.addEventListener('keydown', e => { let key = e.key.toLowerCase(); if (keys.hasOwnProperty(key)) keys[key] = true; if (e.key === 'Shift') keys.shift = true; if (e.code === 'Space') keys.space = true; if (e.code === 'Escape') togglePause(); });
+        window.addEventListener('keyup', e => { let key = e.key.toLowerCase(); if (keys.hasOwnProperty(key)) keys[key] = false; if (e.key === 'Shift') keys.shift = false; if (e.code === 'Space') keys.space = false; });
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        window.addEventListener('mousedown', e => { if (e.button === 0 && e.target.tagName === 'CANVAS') mouse.clicked = true; });
+
+        // --- INPUT: VIRTUAL JOYSTICK & TOUCH (Untuk Android/Mobile) ---
+        const joyZone = document.getElementById('joystick-area');
+        const joyBase = document.getElementById('joystick-base');
+        const joyStick = document.getElementById('joystick-stick');
+        let joyActive = false; let joyCenter = { x: 0, y: 0 }; let joyDelta = { x: 0, y: 0 };
+
+        joyZone.addEventListener('touchstart', e => {
+            e.preventDefault(); joyActive = true;
+            let touch = e.changedTouches[0];
+            joyCenter.x = touch.clientX; joyCenter.y = touch.clientY;
+            joyBase.style.display = 'block'; joyBase.style.left = touch.clientX + 'px'; joyBase.style.top = touch.clientY + 'px';
+            joyBase.classList.add('active');
+            joyStick.style.transform = `translate(-50%, -50%)`;
+        });
+        joyZone.addEventListener('touchmove', e => {
+            e.preventDefault(); if (!joyActive) return;
+            let touch = e.changedTouches[0];
+            let dx = touch.clientX - joyCenter.x; let dy = touch.clientY - joyCenter.y;
+            let distance = Math.hypot(dx, dy);
+            let maxDist = 40;
+            if (distance > maxDist) { dx = (dx / distance) * maxDist; dy = (dy / distance) * maxDist; }
+            joyStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            joyDelta = { x: dx, y: dy };
+        });
+        joyZone.addEventListener('touchend', e => { e.preventDefault(); joyActive = false; joyBase.style.display = 'none'; joyBase.classList.remove('active'); joyDelta = { x: 0, y: 0 }; keys.w = false; keys.a = false; keys.d = false; keys.s = false; });
+
+        // Tombol Aksi Mobile
+        document.getElementById('btnDash').addEventListener('touchstart', e => { e.preventDefault(); keys.space = true; setTimeout(() => keys.space = false, 100); });
+        document.getElementById('btnSlow').addEventListener('touchstart', e => { e.preventDefault(); keys.shift = true; });
+        document.getElementById('btnSlow').addEventListener('touchend', e => { e.preventDefault(); keys.shift = false; });
+
+        // Tap-to-Slash Anywhere (Luar Joystick/Tombol)
+        document.addEventListener('touchstart', e => {
+            if (!gameActive || gamePaused || e.target.id === 'joystick-area' || e.target.classList.contains('m-btn')) return;
+            // Hitung dunia nyata dari klik layar hp
+            let touch = e.changedTouches[0];
+            mouse.x = touch.clientX; mouse.y = touch.clientY;
+            mouse.clicked = true;
+        }, { passive: false });
+
+        // --- FUNGSI GAME ---
+        document.getElementById('pauseBtn').addEventListener('click', togglePause);
+        document.getElementById('scanToggle').addEventListener('click', () => {
+            document.getElementById('scanlines').classList.toggle('off');
+        });
+
+        function showTutorial(mapId) {
+            pendingMapId = mapId;
+            document.getElementById('tutorialMapName').innerText = mapData[mapId].name;
+            document.getElementById('tutorialStartBtn').onclick = () => startGame(pendingMapId);
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('tutorialScreen').style.display = 'flex';
+        }
+
+        function closeTutorial() {
+            document.getElementById('tutorialScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'flex';
+        }
+
+        function startGame(mapId) {
+            initAudio(); clearInterval(bgmInterval); gameRunId++; currentMapId = mapId; currentMap = mapData[mapId]; gamePaused = false;
+            walls = currentMap.walls; player.x = currentMap.spawnX; player.y = currentMap.spawnY;
+            player.vx = 0; player.vy = 0; player.dashCooldown = 0; player.slashTimer = 0; player.isInvincible = false;
+            document.getElementById('mapNameUI').innerText = currentMap.name; document.getElementById('mapNameUI').style.color = currentMap.glow; document.getElementById('mapNameUI').style.textShadow = `0 0 10px ${currentMap.glow}`;
+            enemies = []; bullets = []; particles = []; bloodSplatter = []; floatingTexts = []; score = 0; chronosEnergy = 100; combo = 0; comboTimer = 0; kills = 0; bestComboRun = 0;
+            document.getElementById('scoreText').innerText = "Skor: 0";
+            document.getElementById('startScreen').style.display = 'none'; document.getElementById('tutorialScreen').style.display = 'none'; document.getElementById('gameOverScreen').style.display = 'none'; document.getElementById('pauseScreen').style.display = 'none'; document.getElementById('ui-layer').style.display = 'flex';
+            if (window.innerWidth <= 768) document.getElementById('mobile-controls').style.display = 'block';
+            gameActive = true; startBGM(); spawnEnemy(gameRunId); update(gameRunId);
+        }
+
+        function togglePause() {
+            if (!gameActive) return;
+            if (gamePaused) resumeGame(); else pauseGame();
+        }
+
+        function pauseGame() {
+            if (!gameActive || gamePaused) return;
+            gamePaused = true;
+            document.getElementById('pauseScreen').style.display = 'flex';
+        }
+
+        function resumeGame() {
+            if (!gameActive || !gamePaused) return;
+            gamePaused = false;
+            document.getElementById('pauseScreen').style.display = 'none';
+            update(gameRunId);
+        }
+
+        function retryGame() {
+            gameActive = false;
+            gamePaused = false;
+            clearInterval(bgmInterval);
+            startGame(currentMapId);
+        }
+
+        function backToMenu() {
+            gameActive = false;
+            gamePaused = false;
+            clearInterval(bgmInterval);
+            document.getElementById('ui-layer').style.display = 'none';
+            document.getElementById('mobile-controls').style.display = 'none';
+            document.getElementById('pauseScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('tutorialScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'flex';
+        }
+
+        function spawnEnemy(runId) {
+            if (!gameActive || runId !== gameRunId) return;
+            if (gamePaused) { setTimeout(() => spawnEnemy(runId), 800); return; }
+            let minX = walls[0].x + 100; let maxX = walls[0].x + walls[0].w - 100;
+            let spawnX = player.x + (Math.random() > 0.5 ? 500 : -500);
+            if (spawnX < minX) spawnX = minX; if (spawnX > maxX) spawnX = maxX;
+            let type = Math.random() > 0.5 ? 'shooter' : 'runner';
+            enemies.push({ x: spawnX, y: currentMap.spawnY - 50, width: 20, height: 40, vx: 0, vy: 0, type: type, shootCooldown: 100, color: type === 'shooter' ? '#f06292' : '#ffeb3b' });
+            setTimeout(() => spawnEnemy(runId), 2500);
+        }
+
+        function createParticles(x, y, color, count, isBlood = false) { for (let i = 0; i < count; i++) particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, life: 30 + Math.random() * 20, color: color, size: Math.random() * 4 + 2, isBlood: isBlood }); }
+
+        function addFloatingText(x, y, text, color) { floatingTexts.push({ x: x, y: y, text: text, color: color, life: 40, vy: -1 }); }
+
+        // --- GAME LOOP ---
+        function update(runId = gameRunId) {
+            if (!gameActive || runId !== gameRunId) return;
+            if (gamePaused) return;
+            if (hitPauseFrames > 0) { hitPauseFrames--; requestAnimationFrame(() => update(runId)); return; }
+
+            // Konversi Virtual Joystick ke Tombol WASD
+            if (joyActive) {
+                keys.a = (joyDelta.x < -10);
+                keys.d = (joyDelta.x > 10);
+                keys.w = (joyDelta.y < -20); // Tarik ke atas melompat
+                keys.s = (joyDelta.y > 20);  // Tarik ke bawah jatuh cepat (Hal Baru 3)
+            }
+
+            camera.x += (player.x - canvas.width / 2 - camera.x) * 0.1;
+            camera.y += (player.y - canvas.height / 2 - camera.y) * 0.1;
+
+            // Hal Baru 4: Logic Zoom Kamera Dinamis
+            let targetZoom = (keys.shift && chronosEnergy > 0) ? 1.4 : 1.0; // Zoom in saat Slow-mo
+            currentZoom += (targetZoom - currentZoom) * 0.1; // Lerp untuk transisi halus
+
+            // Kalkulasi posisi sentuhan/mouse yang sudah mempertimbangkan Zoom dan Kamera
+            let worldMouseX = ((mouse.x - canvas.width / 2) / currentZoom) + canvas.width / 2 + camera.x;
+            let worldMouseY = ((mouse.y - canvas.height / 2) / currentZoom) + canvas.height / 2 + camera.y;
+
+            ctx.save();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (shakeFrames > 0) { ctx.translate((Math.random() - 0.5) * 15, (Math.random() - 0.5) * 15); shakeFrames--; }
+
+            ctx.fillStyle = currentMap.bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = currentMap.parallax; for (let i = -2000; i < 4000; i += 400) { ctx.fillRect(i - (camera.x * 0.3), canvas.height / 2 + Math.sin(i) * 100, 250, 800); }
+
+            // PENGATURAN SKALA ZOOM KE TENGAH LAYAR
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.scale(currentZoom, currentZoom);
+            ctx.translate(-canvas.width / 2 - camera.x, -canvas.height / 2 - camera.y);
+
+            // Waktu & Combo
+            if (keys.shift && chronosEnergy > 0) { timeScale = 0.2; chronosEnergy -= 0.5; } else { timeScale = 1.0; if (chronosEnergy < 100) chronosEnergy += 0.2; }
+            document.getElementById('energy-bar').style.width = chronosEnergy + '%';
+            if (comboTimer > 0) { comboTimer -= timeScale; } else { combo = 0; document.getElementById('comboText').style.display = 'none'; }
+
+            // Fisika Player
+            if (keys.a) player.vx -= 1; if (keys.d) player.vx += 1;
+            player.vx *= 0.8; player.vy += player.gravity;
+
+            // Hal Baru 3: Fast-Fall (Jatuh Cepat) saat di udara ditarik ke bawah
+            if (keys.s && !player.grounded) player.vy += 2.5;
+
+            if (keys.space && player.dashCooldown <= 0) { player.vx = keys.a ? -25 : (keys.d ? 25 : (player.vx < 0 ? -25 : 25)); player.dashCooldown = 40; playSound('slash'); }
+            if (player.dashCooldown > 0) { player.dashCooldown--; player.isInvincible = (player.dashCooldown > 20); } else { player.isInvincible = false; }
+
+            player.x += player.vx; player.y += player.vy;
+
+            player.grounded = false; player.touchingWall = 0;
+            for (let w of walls) {
+                if (player.x < w.x + w.w && player.x + player.width > w.x && player.y < w.y + w.h && player.y + player.height > w.y) {
+                    if (player.vy > 0 && player.y + player.height - player.vy <= w.y + 2) {
+                        if (w.isBouncy) { player.vy = -25; playSound('bounce'); createParticles(player.x, player.y + 40, '#ffeb3b', 10); } else { player.grounded = true; player.vy = 0; player.y = w.y - player.height; }
+                    } else if (player.vy > 0 && !w.isBouncy) {
+                        player.vy *= 0.8; if (player.x < w.x) { player.touchingWall = 1; player.x = w.x - player.width; } if (player.x > w.x) { player.touchingWall = -1; player.x = w.x + w.w; }
+                    }
+                }
+            }
+
+            if (keys.w) { if (player.grounded) { player.vy = player.jumpPower; player.grounded = false; } else if (player.touchingWall !== 0) { player.vy = player.jumpPower; player.vx = player.touchingWall * -15; } }
+            if (player.y > 2000) gameOver();
+
+            // Tebasan
+            if (mouse.clicked && player.slashTimer <= 0) { player.slashTimer = 15; player.slashAngle = Math.atan2(worldMouseY - (player.y + 20), worldMouseX - (player.x + 10)); playSound('slash'); }
+            mouse.clicked = false; if (player.slashTimer > 0) player.slashTimer--;
+
+            for (let b of bloodSplatter) { ctx.fillStyle = '#f06292'; ctx.fillRect(b.x, b.y, b.size, b.size); }
+
+            // Render Dinding
+            for (let w of walls) { ctx.fillStyle = w.isBouncy ? '#ffeb3b' : '#1e293b'; ctx.strokeStyle = w.isBouncy ? '#ffeb3b' : currentMap.glow; ctx.lineWidth = 2; ctx.fillRect(w.x, w.y, w.w, w.h); ctx.shadowBlur = 10; ctx.shadowColor = ctx.strokeStyle; ctx.strokeRect(w.x, w.y, w.w, w.h); ctx.shadowBlur = 0; }
+
+            // Render Player
+            ctx.fillStyle = player.isInvincible ? 'rgba(255, 255, 255, 0.4)' : player.color; ctx.shadowBlur = player.isInvincible ? 20 : 0; ctx.shadowColor = player.color; ctx.fillRect(player.x, player.y, player.width, player.height); ctx.shadowBlur = 0;
+
+            let slashHitbox = null;
+            if (player.slashTimer > 0) {
+                let cx = player.x + 10, cy = player.y + 20, radius = 80;
+                ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, radius, player.slashAngle - 1.2, player.slashAngle + 1.2); ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; ctx.shadowBlur = 20; ctx.shadowColor = '#fff'; ctx.fill(); ctx.shadowBlur = 0;
+                slashHitbox = { x: cx, y: cy, radius: radius, angle: player.slashAngle };
+            }
+
+            // Update Musuh
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i]; e.vy += player.gravity * timeScale;
+                e.vx = e.type === 'runner' ? (player.x > e.x ? 3 : -3) : (e.vx === 0 ? -1 : e.vx);
+                e.x += e.vx * timeScale; e.y += e.vy * timeScale;
+
+                for (let w of walls) { if (e.x < w.x + w.w && e.x + e.width > w.x && e.y < w.y + w.h && e.y + e.height > w.y) { if (e.vy > 0 && e.y + e.height - e.vy <= w.y + 2) { e.vy = 0; e.y = w.y - e.height; } else { e.vx *= -1; } } }
+                if (e.y > 2000) { enemies.splice(i, 1); continue; }
+
+                if (e.type === 'shooter') { e.shootCooldown -= timeScale; if (e.shootCooldown <= 0 && Math.abs(e.x - player.x) < 500) { let angle = Math.atan2((player.y + 20) - (e.y + 20), (player.x + 10) - (e.x + 10)); bullets.push({ x: e.x + 10, y: e.y + 20, vx: Math.cos(angle) * 10, vy: Math.sin(angle) * 10, isReflected: false }); e.shootCooldown = 150; } }
+
+                ctx.fillStyle = e.color; ctx.shadowBlur = 10; ctx.shadowColor = e.color; ctx.fillRect(e.x, e.y, e.width, e.height); ctx.shadowBlur = 0;
+
+                // Hit Musuh
+                if (slashHitbox && Math.hypot((e.x + 10) - slashHitbox.x, (e.y + 20) - slashHitbox.y) < slashHitbox.radius) {
+                    enemies.splice(i, 1); kills++; createParticles(e.x, e.y, '#f06292', 20, true); playSound('hit');
+                    addScore(100); addFloatingText(e.x, e.y - 20, "+100", "#ffd54f"); // Hal Baru 5 Teks
+                    hitPauseFrames = 8; shakeFrames = 5; flashFrames = 2; continue;
+                }
+                if (!player.isInvincible && Math.hypot((player.x) - (e.x), (player.y) - (e.y)) < 20) gameOver();
+            }
+
+            // Update Peluru
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i]; b.x += b.vx * timeScale; b.y += b.vy * timeScale;
+                ctx.fillStyle = b.isReflected ? currentMap.glow : '#ff0000'; ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle; ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+
+                if (slashHitbox && !b.isReflected && Math.hypot(b.x - slashHitbox.x, b.y - slashHitbox.y) < slashHitbox.radius) {
+                    b.vx = Math.cos(slashHitbox.angle) * 20; b.vy = Math.sin(slashHitbox.angle) * 20; b.isReflected = true; createParticles(b.x, b.y, '#fff', 10);
+                    playSound('slash'); hitPauseFrames = 4; flashFrames = 1;
+                }
+                if (b.isReflected) {
+                    for (let j = enemies.length - 1; j >= 0; j--) {
+                        let e = enemies[j];
+                        if (b.x > e.x && b.x < e.x + e.width && b.y > e.y && b.y < e.y + e.height) {
+                            enemies.splice(j, 1); bullets.splice(i, 1); kills++; createParticles(e.x, e.y, '#f06292', 20, true); playSound('hit');
+                            addScore(150); addFloatingText(e.x, e.y - 20, "REFLECT +150", "#4dd0e1"); // Hal Baru 5 Teks
+                            hitPauseFrames = 5; shakeFrames = 5; flashFrames = 2; break;
+                        }
+                    }
+                } else if (!player.isInvincible && b.x > player.x && b.x < player.x + player.width && b.y > player.y && b.y < player.y + player.height) { gameOver(); }
+            }
+
+            // Update Partikel
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i]; p.vy += 0.5 * timeScale; p.x += p.vx * timeScale; p.y += p.vy * timeScale; p.life -= 1 * timeScale;
+                if (p.isBlood) { for (let w of walls) { if (p.x > w.x && p.x < w.x + w.w && p.y > w.y && p.y < w.y + w.h) { bloodSplatter.push({ x: p.x, y: p.y, size: p.size }); particles.splice(i, 1); break; } } }
+                if (p.life > 0) { ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); } else if (particles[i]) { particles.splice(i, 1); }
+            }
+
+            // Hal Baru 5: Render Teks Melayang
+            ctx.font = "bold 20px 'Bebas Neue'"; ctx.textAlign = "center";
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                let ft = floatingTexts[i];
+                ft.y += ft.vy * timeScale; ft.life -= 1 * timeScale;
+                ctx.fillStyle = ft.color; ctx.globalAlpha = Math.max(0, ft.life / 40);
+                ctx.fillText(ft.text, ft.x, ft.y); ctx.globalAlpha = 1.0;
+                if (ft.life <= 0) floatingTexts.splice(i, 1);
+            }
+
+            ctx.restore();
+
+            if (flashFrames > 0) { ctx.fillStyle = `rgba(255, 255, 255, ${flashFrames * 0.3})`; ctx.fillRect(0, 0, canvas.width, canvas.height); flashFrames--; }
+            requestAnimationFrame(() => update(runId));
+        }
+
+        function addScore(baseValue) {
+            combo++; comboTimer = 150; score += baseValue * combo;
+            bestComboRun = Math.max(bestComboRun, combo);
+            document.getElementById('scoreText').innerText = `Skor: ${score}`;
+            if (combo > 1) {
+                let ct = document.getElementById('comboText');
+                ct.style.display = 'block';
+                ct.innerText = `COMBO x${combo}!`;
+                ct.classList.remove('pop');
+                void ct.offsetWidth;
+                ct.classList.add('pop');
+            }
+        }
+
+        function gameOver() {
+            gameActive = false; gamePaused = false; clearInterval(bgmInterval);
+            createParticles(player.x, player.y, currentMap.glow, 50, true); playSound('hit');
+            document.getElementById('ui-layer').style.display = 'none'; document.getElementById('mobile-controls').style.display = 'none';
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('finalKills').innerText = kills;
+            document.getElementById('finalCombo').innerText = bestComboRun;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+    </script>
+    <script src="sounds.js"></script>
+    <script src="mobile-touch.js"></script>
+</body>
+
+</html>

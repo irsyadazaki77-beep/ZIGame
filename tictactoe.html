@@ -1,0 +1,242 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Tic Tac Toe | ZI GAME</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="game-shared.css">
+    <style>
+        .ttt-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: min(90vw, 360px);
+            aspect-ratio: 1;
+            margin: 0 auto
+        }
+
+        .ttt-cell {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(36px, 10vw, 56px);
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+            position: relative;
+            overflow: hidden
+        }
+
+        .ttt-cell:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.03)
+        }
+
+        .ttt-cell.x {
+            color: #00f2fe;
+            text-shadow: 0 0 20px rgba(0, 242, 254, 0.5)
+        }
+
+        .ttt-cell.o {
+            color: #ff3c83;
+            text-shadow: 0 0 20px rgba(255, 60, 131, 0.5)
+        }
+
+        .ttt-cell.win-cell {
+            animation: winPulse 0.6s ease infinite alternate;
+            border-color: rgba(0, 230, 118, 0.6)
+        }
+
+        @keyframes winPulse {
+            from {
+                box-shadow: 0 0 10px rgba(0, 230, 118, 0.3)
+            }
+
+            to {
+                box-shadow: 0 0 30px rgba(0, 230, 118, 0.6)
+            }
+        }
+
+        .ttt-cell.placed {
+            animation: cellPop 0.3s ease
+        }
+
+        @keyframes cellPop {
+            0% {
+                transform: scale(0.5)
+            }
+
+            50% {
+                transform: scale(1.15)
+            }
+
+            100% {
+                transform: scale(1)
+            }
+        }
+
+        .turn-indicator {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding: 10px 24px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .difficulty-select {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px
+        }
+
+        .diff-btn {
+            padding: 8px 18px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            color: #8a8a9a;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s
+        }
+
+        .diff-btn:hover,
+        .diff-btn.active {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: rgba(0, 242, 254, 0.4);
+            color: #00f2fe
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-page-bg">
+        <div class="orb o1"></div>
+        <div class="orb o2"></div>
+    </div>
+    <div class="game-topbar">
+        <a href="index.html" class="back-btn">← Kembali</a>
+        <div class="game-page-title">Tic Tac Toe</div>
+        <div class="score-display">
+            <div class="score-box">Win: <span id="winCount">0</span></div>
+            <div class="score-box">Lose: <span id="loseCount">0</span></div>
+        </div>
+    </div>
+    <div class="game-area">
+        <div class="difficulty-select">
+            <button class="diff-btn active" data-diff="easy">Mudah</button>
+            <button class="diff-btn" data-diff="medium">Sedang</button>
+            <button class="diff-btn" data-diff="hard">Sulit</button>
+        </div>
+        <div class="turn-indicator" id="turnDisplay">Giliran: ❌ Kamu</div>
+        <div class="ttt-board" id="board"></div>
+        <div class="game-overlay" id="overlay">
+            <div class="overlay-icon" id="oIcon"></div>
+            <div class="overlay-title" id="oTitle"></div>
+            <div class="overlay-sub" id="oSub"></div>
+            <button class="ctrl-btn primary-btn" onclick="resetGame()">Main Lagi</button>
+        </div>
+    </div>
+    <div class="game-controls">
+        <button class="ctrl-btn primary-btn" onclick="resetGame()">🔄 Reset</button>
+    </div>
+    <script>
+        const board = document.getElementById('board'), turnDisplay = document.getElementById('turnDisplay'), overlay = document.getElementById('overlay');
+        let cells, state, currentPlayer, gameOver, difficulty = 'easy', wins = 0, losses = 0;
+        const winCombos = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+
+        document.querySelectorAll('.diff-btn').forEach(b => { b.addEventListener('click', () => { document.querySelectorAll('.diff-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); difficulty = b.dataset.diff; resetGame() }) });
+
+        function resetGame() {
+            state = Array(9).fill(''); currentPlayer = 'X'; gameOver = false;
+            overlay.classList.remove('active');
+            board.innerHTML = ''; cells = [];
+            for (let i = 0; i < 9; i++) {
+                const c = document.createElement('div'); c.className = 'ttt-cell'; c.dataset.i = i;
+                c.addEventListener('click', () => makeMove(i));
+                board.appendChild(c); cells.push(c);
+            }
+            turnDisplay.innerHTML = 'Giliran: ❌ Kamu';
+        }
+
+        function makeMove(i) {
+            if (state[i] || gameOver || currentPlayer !== 'X') return;
+            placeMarker(i, 'X');
+            if (checkEnd()) return;
+            currentPlayer = 'O'; turnDisplay.innerHTML = 'Giliran: ⭕ AI berpikir...';
+            setTimeout(() => { aiMove(); if (!gameOver) { currentPlayer = 'X'; turnDisplay.innerHTML = 'Giliran: ❌ Kamu' } }, 400);
+        }
+
+        function placeMarker(i, m) {
+            state[i] = m; cells[i].textContent = m === 'X' ? '❌' : '⭕';
+            cells[i].classList.add(m.toLowerCase(), 'placed');
+        }
+
+        function aiMove() {
+            let move;
+            if (difficulty === 'hard') move = bestMove();
+            else if (difficulty === 'medium') move = Math.random() > 0.4 ? bestMove() : randomMove();
+            else move = randomMove();
+            if (move !== null) { placeMarker(move, 'O'); checkEnd() }
+        }
+
+        function randomMove() { const e = state.map((v, i) => v === '' ? i : null).filter(v => v !== null); return e.length ? e[Math.floor(Math.random() * e.length)] : null }
+
+        function bestMove() {
+            let best = -Infinity, move = null;
+            for (let i = 0; i < 9; i++) { if (state[i] === '') { { state[i] = 'O'; let s = minimax(state, 0, false); state[i] = ''; if (s > best) { best = s; move = i } } } }
+            return move;
+        }
+        function minimax(b, d, isMax) {
+            const w = checkWinner(b); if (w === 'O') return 10 - d; if (w === 'X') return d - 10; if (b.every(c => c !== '')) return 0;
+            if (isMax) { let best = -Infinity; for (let i = 0; i < 9; i++) { if (b[i] === '') { b[i] = 'O'; best = Math.max(best, minimax(b, d + 1, false)); b[i] = '' } } return best }
+            else { let best = Infinity; for (let i = 0; i < 9; i++) { if (b[i] === '') { b[i] = 'X'; best = Math.min(best, minimax(b, d + 1, true)); b[i] = '' } } return best }
+        }
+        function checkWinner(b) { for (const [a, c, d] of winCombos) { if (b[a] && b[a] === b[c] && b[a] === b[d]) return b[a] } return null }
+
+        function checkEnd() {
+            const w = checkWinner(state);
+            if (w) {
+                gameOver = true; const combo = winCombos.find(([a, b, c]) => state[a] === w && state[b] === w && state[c] === w);
+                combo.forEach(i => cells[i].classList.add('win-cell'));
+                if (w === 'X') { wins++; document.getElementById('winCount').textContent = wins; showOverlay('🎉', 'Kamu Menang!', 'Strategi brilian!', true) }
+                else { losses++; document.getElementById('loseCount').textContent = losses; showOverlay('😢', 'Kamu Kalah!', 'Coba lagi!', false) }
+                saveScore(w === 'X' ? 10 : 0); return true;
+            }
+            if (state.every(c => c !== '')) { gameOver = true; showOverlay('🤝', 'Seri!', 'Pertandingan seimbang!', false); saveScore(5); return true }
+            return false;
+        }
+
+        function showOverlay(icon, title, sub) {
+            document.getElementById('oIcon').textContent = icon;
+            document.getElementById('oTitle').textContent = title;
+            document.getElementById('oSub').textContent = sub;
+            overlay.classList.add('active');
+        }
+
+        function saveScore(s) { try { const d = JSON.parse(localStorage.getItem('arcadeNexusStats') || '{}'); d.totalScore = (d.totalScore || 0) + s; d.gamesPlayed = (d.gamesPlayed || 0) + 1; const t = new Date().toDateString(); if (d.lastPlayed === new Date(Date.now() - 86400000).toDateString()) d.streak = (d.streak || 0) + 1; else if (d.lastPlayed !== t) d.streak = 1; d.lastPlayed = t; if (!d.highScores) d.highScores = {}; if (!d.highScores.tictactoe || s > d.highScores.tictactoe) d.highScores.tictactoe = s; if (!d.achievements) d.achievements = []; localStorage.setItem('arcadeNexusStats', JSON.stringify(d)) } catch (e) { } }
+
+        resetGame();
+    </script>
+<script src="sounds.js"></script>
+    <script src="mobile-touch.js"></script>
+</body>
+
+</html>
+
+

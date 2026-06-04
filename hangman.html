@@ -1,0 +1,377 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman | ZI GAME</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --cyan: #00ffe7; --pink: #ff2d78; --purple: #b537f2;
+            --gold: #ffe600; --green: #00e676; --bg: #02020f;
+        }
+        body {
+            background: var(--bg); color: #fff;
+            font-family: 'Outfit', sans-serif;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 100vh; overflow-x: hidden;
+            padding: 60px 16px 20px;
+        }
+
+        .bg-layer { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(0,255,231,.022) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,231,.022) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .orb { position: absolute; border-radius: 50%; filter: blur(120px); }
+        .o1 { width:500px;height:500px;top:-20%;left:-10%;background:radial-gradient(circle,rgba(0,255,231,.08),transparent 70%); }
+        .o2 { width:450px;height:450px;bottom:-15%;right:-10%;background:radial-gradient(circle,rgba(181,55,242,.08),transparent 70%); }
+
+        .back-btn {
+            position: fixed; top:20px; left:20px; z-index:100;
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px;
+            color: rgba(255,255,255,.4);
+            border: 1px solid rgba(255,255,255,.1);
+            padding: 7px 14px; border-radius: 10px; transition: all .2s;
+        }
+        .back-btn:hover { color: var(--cyan); border-color: rgba(0,255,231,.3); }
+
+        /* Layout */
+        .game-wrap {
+            position: relative; z-index: 1;
+            width: min(500px, 100%);
+            display: flex; flex-direction: column; align-items: center; gap: 14px;
+        }
+
+        /* Title */
+        .game-title {
+            font-family: 'Bebas Neue', cursive; font-size: clamp(28px,6vw,44px);
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* Canvas */
+        #canvas {
+            background: rgba(255,255,255,.025);
+            border: 1px solid rgba(0,255,231,.15);
+            border-radius: 16px;
+            display: block;
+            box-shadow: 0 0 40px rgba(0,255,231,.05) inset;
+            max-width: 100%;
+        }
+
+        /* Word display */
+        .word-row {
+            display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+        }
+        .letter-slot {
+            width: clamp(28px,7vw,40px); height: clamp(38px,9vw,50px);
+            border-bottom: 2.5px solid rgba(0,255,231,.4);
+            display: flex; align-items: flex-end; justify-content: center;
+            padding-bottom: 4px;
+            font-family: 'Bebas Neue', cursive; font-size: clamp(22px,6vw,32px);
+            color: var(--cyan); letter-spacing: 1px;
+            transition: color .3s, border-color .3s;
+        }
+        .letter-slot.revealed {
+            border-color: var(--green);
+            color: var(--green);
+            text-shadow: 0 0 12px rgba(0,230,118,.6);
+        }
+
+        /* Status */
+        .status-bar {
+            display: flex; gap: 16px; align-items: center;
+            font-family: 'JetBrains Mono', monospace; font-size: 12px;
+        }
+        .lives-display {
+            display: flex; gap: 4px;
+        }
+        .heart { font-size: 16px; transition: all .3s; }
+        .heart.lost { opacity: .2; filter: grayscale(1); }
+        .hint-text { color: rgba(255,255,255,.35); letter-spacing: 1px; font-size: 11px; }
+
+        /* Category */
+        .category-badge {
+            font-family: 'JetBrains Mono', monospace; font-size: 10px;
+            letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,.3);
+            padding: 5px 16px; border: 1px solid rgba(255,255,255,.1);
+            border-radius: 50px;
+        }
+
+        /* Keyboard */
+        .keyboard {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            gap: 6px; max-width: 480px; width: 100%;
+        }
+        .key {
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(0,255,231,.2);
+            color: rgba(255,255,255,.85);
+            padding: 0; width: clamp(30px,8vw,40px); height: clamp(36px,9vw,44px);
+            border-radius: 10px; cursor: pointer;
+            font-family: 'Bebas Neue', cursive; font-size: 16px; letter-spacing: .5px;
+            transition: all .15s; display: flex; align-items: center; justify-content: center;
+        }
+        .key:hover:not(:disabled) {
+            background: rgba(0,255,231,.12);
+            border-color: var(--cyan);
+            color: var(--cyan);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,255,231,.2);
+        }
+        .key:disabled { opacity: .2; cursor: not-allowed; transform: none; box-shadow: none; }
+        .key.hit { background: rgba(255,45,120,.12); border-color: rgba(255,45,120,.3); color: rgba(255,45,120,.4); }
+        .key.correct { background: rgba(0,230,118,.12); border-color: rgba(0,230,118,.3); color: var(--green); }
+
+        /* Overlay */
+        .overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(2,2,15,.92); backdrop-filter: blur(20px);
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center; gap: 18px;
+            text-align: center; padding: 20px;
+        }
+        .overlay.show { display: flex; }
+        .ov-icon { font-size: 64px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1) both; }
+        .ov-title {
+            font-family: 'Bebas Neue', cursive; font-size: clamp(44px,10vw,72px);
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .ov-word {
+            font-family: 'JetBrains Mono', monospace; font-size: 16px; letter-spacing: 4px;
+            color: var(--gold);
+        }
+        .ov-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: rgba(255,255,255,.35); }
+        .ov-btn {
+            margin-top: 4px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: #000; border: none; padding: 13px 40px; border-radius: 50px;
+            font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px;
+            letter-spacing: 1px; cursor: pointer; transition: all .2s;
+        }
+        .ov-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,255,231,.4); }
+        @keyframes popIn { from{transform:scale(.4);opacity:0} to{transform:scale(1);opacity:1} }
+    </style>
+</head>
+<body>
+
+    <div class="bg-layer">
+        <div class="bg-grid"></div>
+        <div class="orb o1"></div>
+        <div class="orb o2"></div>
+    </div>
+
+    <a href="index.html" class="back-btn">← BACK</a>
+
+    <div class="overlay" id="overlay">
+        <div class="ov-icon" id="oIcon">💀</div>
+        <div class="ov-title" id="oTitle">HANGMAN</div>
+        <div class="ov-word" id="oWord"></div>
+        <div class="ov-sub" id="oSub">Tebak kata sebelum orang itu digantung!</div>
+        <button class="ov-btn" onclick="newGame()">MULAI GAME</button>
+    </div>
+
+    <div class="game-wrap">
+        <div class="game-title">💀 Hangman</div>
+
+        <div class="status-bar">
+            <div class="lives-display" id="livesEl">
+                <span class="heart" id="h0">❤️</span>
+                <span class="heart" id="h1">❤️</span>
+                <span class="heart" id="h2">❤️</span>
+                <span class="heart" id="h3">❤️</span>
+                <span class="heart" id="h4">❤️</span>
+                <span class="heart" id="h5">❤️</span>
+            </div>
+            <span class="hint-text" id="hintText">6 nyawa tersisa</span>
+        </div>
+
+        <canvas id="canvas" width="240" height="180"></canvas>
+
+        <div class="category-badge" id="catBadge">GAMING</div>
+
+        <div class="word-row" id="wordRow"></div>
+
+        <div class="keyboard" id="keyboard"></div>
+    </div>
+
+    <script>
+    const WORDS = [
+        { word: 'JAVASCRIPT',  cat: 'PROGRAMMING' },
+        { word: 'HTML',        cat: 'WEB' },
+        { word: 'PYTHON',      cat: 'PROGRAMMING' },
+        { word: 'COMPUTER',    cat: 'TEKNOLOGI' },
+        { word: 'ARCADE',      cat: 'GAMING' },
+        { word: 'GALAXY',      cat: 'LUAR ANGKASA' },
+        { word: 'NEON',        cat: 'VISUAL' },
+        { word: 'PIXEL',       cat: 'GAMING' },
+        { word: 'QUANTUM',     cat: 'SAINS' },
+        { word: 'NEBULA',      cat: 'LUAR ANGKASA' },
+        { word: 'KEYBOARD',    cat: 'TEKNOLOGI' },
+        { word: 'ANIMATION',   cat: 'VISUAL' },
+        { word: 'ALGORITHM',   cat: 'PROGRAMMING' },
+        { word: 'CRYSTAL',     cat: 'GAMING' },
+        { word: 'PRISM',       cat: 'VISUAL' },
+        { word: 'PHANTOM',     cat: 'GAMING' },
+    ];
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let target, guessed, mistakes;
+
+    function newGame() {
+        document.getElementById('overlay').classList.remove('show');
+        const pick = WORDS[Math.floor(Math.random() * WORDS.length)];
+        target = pick.word; guessed = new Set(); mistakes = 0;
+        document.getElementById('catBadge').textContent = pick.cat;
+        buildKeyboard();
+        renderWord();
+        renderHearts();
+        renderHangman();
+    }
+
+    function buildKeyboard() {
+        const kb = document.getElementById('keyboard');
+        kb.innerHTML = '';
+        for (let i = 65; i <= 90; i++) {
+            const ch = String.fromCharCode(i);
+            const btn = document.createElement('button');
+            btn.className = 'key'; btn.id = 'key_' + ch; btn.textContent = ch;
+            btn.onclick = () => guess(ch, btn);
+            kb.appendChild(btn);
+        }
+    }
+
+    function renderWord() {
+        const row = document.getElementById('wordRow');
+        row.innerHTML = '';
+        target.split('').forEach(ch => {
+            const slot = document.createElement('div');
+            slot.className = 'letter-slot' + (guessed.has(ch) ? ' revealed' : '');
+            slot.textContent = guessed.has(ch) ? ch : '';
+            row.appendChild(slot);
+        });
+    }
+
+    function renderHearts() {
+        for (let i = 0; i < 6; i++) {
+            const h = document.getElementById('h' + i);
+            h.classList.toggle('lost', i >= (6 - mistakes));
+        }
+        const left = 6 - mistakes;
+        document.getElementById('hintText').textContent =
+            left > 0 ? `${left} nyawa tersisa` : 'HABIS!';
+    }
+
+    function guess(letter, btn) {
+        if (guessed.has(letter)) return;
+        guessed.add(letter);
+        if (target.includes(letter)) {
+            btn.classList.add('correct'); btn.disabled = true;
+            if (window.SFX) SFX.click();
+        } else {
+            mistakes++;
+            btn.classList.add('hit'); btn.disabled = true;
+            if (window.SFX) SFX.hit();
+        }
+        renderWord(); renderHearts(); renderHangman();
+        checkEnd();
+    }
+
+    function checkEnd() {
+        const won = target.split('').every(ch => guessed.has(ch));
+        if (won) {
+            setTimeout(() => {
+                document.getElementById('oIcon').textContent = '🏆';
+                document.getElementById('oTitle').textContent = 'MENANG!';
+                document.getElementById('oWord').textContent = target;
+                document.getElementById('oSub').textContent = `Hanya ${mistakes} kesalahan — luar biasa!`;
+                document.getElementById('overlay').classList.add('show');
+            }, 400);
+            if (window.SFX) SFX.win();
+        } else if (mistakes >= 6) {
+            setTimeout(() => {
+                document.getElementById('oIcon').textContent = '💀';
+                document.getElementById('oTitle').textContent = 'HABIS!';
+                document.getElementById('oWord').textContent = target;
+                document.getElementById('oSub').textContent = 'Kata yang benar ↑';
+                document.getElementById('overlay').classList.add('show');
+            }, 400);
+            if (window.SFX) SFX.gameOver();
+        }
+    }
+
+    // Hangman drawing
+    function renderHangman() {
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+
+        // Scaffold glow style
+        ctx.shadowColor = 'rgba(0,255,231,.5)'; ctx.shadowBlur = 8;
+        ctx.strokeStyle = 'rgba(0,255,231,.5)'; ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        // Base
+        ctx.moveTo(20, H-14); ctx.lineTo(W-20, H-14);
+        // Post
+        ctx.moveTo(50, H-14); ctx.lineTo(50, 20);
+        // Beam
+        ctx.moveTo(50, 20); ctx.lineTo(140, 20);
+        // Rope
+        ctx.moveTo(140, 20); ctx.lineTo(140, 45);
+        ctx.stroke();
+
+        // Body parts — hot pink
+        if (mistakes === 0) return;
+        ctx.shadowColor = 'rgba(255,45,120,.7)'; ctx.shadowBlur = 12;
+        ctx.strokeStyle = '#ff2d78'; ctx.fillStyle = '#ff2d78';
+
+        if (mistakes >= 1) { // Head
+            ctx.beginPath(); ctx.arc(140, 62, 17, 0, Math.PI*2); ctx.stroke();
+        }
+        if (mistakes >= 2) { // Body
+            ctx.beginPath(); ctx.moveTo(140, 79); ctx.lineTo(140, 130); ctx.stroke();
+        }
+        if (mistakes >= 3) { // Left arm
+            ctx.beginPath(); ctx.moveTo(140, 92); ctx.lineTo(112, 112); ctx.stroke();
+        }
+        if (mistakes >= 4) { // Right arm
+            ctx.beginPath(); ctx.moveTo(140, 92); ctx.lineTo(168, 112); ctx.stroke();
+        }
+        if (mistakes >= 5) { // Left leg
+            ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(112, 160); ctx.stroke();
+        }
+        if (mistakes >= 6) { // Right leg
+            ctx.beginPath(); ctx.moveTo(140, 130); ctx.lineTo(168, 160); ctx.stroke();
+            // X eyes
+            ctx.shadowBlur = 6; ctx.lineWidth = 2;
+            const eye = (ex, ey) => { ctx.beginPath(); ctx.moveTo(ex-5,ey-5); ctx.lineTo(ex+5,ey+5); ctx.moveTo(ex+5,ey-5); ctx.lineTo(ex-5,ey+5); ctx.stroke(); };
+            eye(133, 57); eye(147, 57);
+        }
+    }
+
+    // Keyboard shortcut
+    document.addEventListener('keydown', e => {
+        const ch = e.key.toUpperCase();
+        if (ch >= 'A' && ch <= 'Z') {
+            const btn = document.getElementById('key_' + ch);
+            if (btn && !btn.disabled) btn.click();
+        }
+    });
+
+    window.newGame = newGame;
+    </script>
+    <script src="sounds.js"></script>
+    <script src="mobile-touch.js"></script>
+</body>
+</html>

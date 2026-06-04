@@ -1,0 +1,1033 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Dino Run | ZI GAME</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="game-shared.css">
+    <style>
+        canvas#gameCanvas {
+            border-radius: 18px;
+            border: 1px solid rgba(124, 106, 255, 0.15);
+            max-width: 100%;
+            height: auto;
+            width: 100%;
+            display: block;
+            cursor: pointer;
+            box-shadow: 0 0 40px rgba(124, 106, 255, 0.08), 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: box-shadow 0.3s ease;
+        }
+
+        canvas#gameCanvas:hover {
+            box-shadow: 0 0 50px rgba(124, 106, 255, 0.12), 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .game-area {
+            max-width: 820px !important;
+        }
+
+        .game-controls {
+            margin-top: 16px;
+        }
+
+        .hint-text {
+            text-align: center;
+            color: rgba(200, 210, 255, 0.4);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1px;
+            margin-top: 12px;
+            animation: fadeInUp 0.8s ease both;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Mobile Action Buttons */
+        .mobile-controls {
+            display: none;
+            width: 100%;
+            margin-top: 16px;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .mobile-btn {
+            flex: 1;
+            padding: 16px;
+            background: rgba(124, 106, 255, 0.1);
+            border: 1px solid rgba(124, 106, 255, 0.25);
+            border-radius: 12px;
+            color: rgba(200, 210, 255, 0.9);
+            font-size: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            text-transform: uppercase;
+            touch-action: manipulation;
+            user-select: none;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .mobile-btn:active {
+            background: rgba(124, 106, 255, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-controls {
+                display: flex;
+            }
+            .hint-text {
+                display: none;
+            }
+        }
+
+        .game-page-bg .o1 {
+            background: radial-gradient(circle, rgba(100, 80, 220, 0.3), transparent) !important;
+        }
+
+        .game-page-bg .o2 {
+            background: radial-gradient(circle, rgba(240, 98, 146, 0.15), transparent) !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-page-bg">
+        <div class="orb o1"></div>
+        <div class="orb o2"></div>
+    </div>
+    <div class="game-topbar">
+        <a href="index.html" class="back-btn">← Kembali</a>
+        <div class="game-page-title">🦖 Dino Run</div>
+        <div class="score-display">
+            <div class="score-box">Skor: <span id="score">0</span></div>
+            <div class="score-box">Best: <span id="best">0</span></div>
+        </div>
+    </div>
+    <div class="game-area" style="position:relative">
+        <canvas id="gameCanvas" width="800" height="300"></canvas>
+        <div class="game-overlay" id="overlay">
+            <div class="overlay-icon">🦖</div>
+            <div class="overlay-title" id="oTitle">Game Over!</div>
+            <div class="overlay-sub" id="oSub">Skor: 0</div>
+            <button class="ctrl-btn primary-btn" onclick="startGame()">Main Lagi</button>
+        </div>
+        <div class="hint-text">SPACE / TAP untuk lompat &nbsp;•&nbsp; ↓ untuk merunduk</div>
+        
+        <div class="mobile-controls">
+            <button class="mobile-btn" onmousedown="duck(true)" onmouseup="duck(false)" onmouseleave="duck(false)" ontouchstart="duck(true); event.preventDefault()" ontouchend="duck(false); event.preventDefault()">↓ Merunduk</button>
+            <button class="mobile-btn" onmousedown="jumpOrStart()" ontouchstart="jumpOrStart(); event.preventDefault()">↑ Lompat</button>
+        </div>
+    </div>
+
+    <script>
+        const cvs = document.getElementById('gameCanvas'), ctx = cvs.getContext('2d');
+        const overlay = document.getElementById('overlay');
+        const W = cvs.width, H = cvs.height, GROUND = H - 50;
+
+        let dino, obstacles, score, bestScore = 0, frame, running, speed, gameStarted = false;
+        let particles = [], dustParticles = [], speedLines = [];
+        let shakeX = 0, shakeY = 0, shakeIntensity = 0;
+        let deathParticles = [];
+        let milestone = 0;
+        let milestoneFlash = 0;
+
+        // Parallax layers
+        let bgStars = [];
+        let bgMountains = [];
+        let bgCityBuildings = [];
+        let groundTiles = [];
+        let clouds = [];
+
+        // Colors
+        const COL = {
+            sky1: '#0b0e2a',
+            sky2: '#141850',
+            ground: '#0d1030',
+            groundLine: '#7c6aff',
+            dino: '#4dd0e1',
+            dinoGlow: 'rgba(77, 208, 225, 0.5)',
+            cactus: '#f06292',
+            cactusGlow: 'rgba(240, 98, 146, 0.4)',
+            bird: '#7c6aff',
+            birdGlow: 'rgba(124, 106, 255, 0.4)',
+            star: '#ffd54f',
+            mountain: '#0e1240',
+            mountain2: '#111555',
+            city: '#151a55',
+            text: '#e8eaff',
+            accent: '#ffd54f'
+        };
+
+        function initBackground() {
+            // Stars
+            bgStars = [];
+            for (let i = 0; i < 120; i++) {
+                bgStars.push({
+                    x: Math.random() * W,
+                    y: Math.random() * (GROUND - 20),
+                    r: Math.random() * 1.5 + 0.3,
+                    alpha: Math.random() * 0.7 + 0.2,
+                    twinkleSpeed: Math.random() * 0.03 + 0.01,
+                    offset: Math.random() * Math.PI * 2,
+                    color: Math.random() > 0.85 ? '#ffd54f' : Math.random() > 0.7 ? '#90caf9' : '#ffffff'
+                });
+            }
+
+            // Mountains (far)
+            bgMountains = [];
+            let mx = 0;
+            while (mx < W + 200) {
+                const mw = 80 + Math.random() * 120;
+                const mh = 40 + Math.random() * 60;
+                bgMountains.push({ x: mx, w: mw, h: mh, layer: Math.random() > 0.5 ? 0 : 1 });
+                mx += mw * 0.6;
+            }
+
+            // City buildings (mid)
+            bgCityBuildings = [];
+            let cx = 0;
+            while (cx < W + 100) {
+                const bw = 15 + Math.random() * 30;
+                const bh = 20 + Math.random() * 50;
+                const windows = [];
+                for (let wy = 8; wy < bh - 5; wy += 10) {
+                    for (let wx = 3; wx < bw - 5; wx += 8) {
+                        if (Math.random() > 0.4) windows.push({ x: wx, y: wy, on: Math.random() > 0.3 });
+                    }
+                }
+                bgCityBuildings.push({ x: cx, w: bw, h: bh, windows });
+                cx += bw + Math.random() * 15;
+            }
+
+            // Clouds
+            clouds = [];
+            for (let i = 0; i < 5; i++) {
+                clouds.push({
+                    x: Math.random() * W,
+                    y: 30 + Math.random() * 60,
+                    w: 60 + Math.random() * 80,
+                    h: 15 + Math.random() * 12,
+                    speed: 0.1 + Math.random() * 0.15,
+                    alpha: 0.03 + Math.random() * 0.04
+                });
+            }
+
+            // Ground tiles
+            groundTiles = [];
+            for (let i = 0; i < W + 40; i += 3) {
+                if (Math.random() > 0.6) {
+                    groundTiles.push({
+                        x: i,
+                        y: GROUND + 5 + Math.random() * 35,
+                        w: 1 + Math.random() * 2,
+                        h: 1 + Math.random() * 1,
+                        alpha: Math.random() * 0.15 + 0.05
+                    });
+                }
+            }
+        }
+
+        function loadBest() {
+            try {
+                const d = JSON.parse(localStorage.getItem('arcadeNexusStats') || '{}');
+                bestScore = d.highScores?.dinorun || 0;
+                document.getElementById('best').textContent = bestScore;
+            } catch (e) { }
+        }
+        loadBest();
+        initBackground();
+
+        function startGame() {
+            if (running) return;
+            dino = {
+                x: 80, y: GROUND, w: 40, h: 48, vy: 0,
+                jumping: false, ducking: false,
+                runFrame: 0, runTimer: 0,
+                eyeBlink: 0, blinkTimer: 0
+            };
+            obstacles = []; score = 0; frame = 0; running = true; speed = 5;
+            particles = []; dustParticles = []; speedLines = []; deathParticles = [];
+            shakeX = 0; shakeY = 0; shakeIntensity = 0;
+            milestone = 0; milestoneFlash = 0;
+            document.getElementById('score').textContent = 0;
+            overlay.classList.remove('active');
+            gameStarted = true;
+            loop();
+        }
+
+        function jumpOrStart() {
+            if (running) jump();
+            else startGame();
+        }
+
+        function jump() {
+            if (!dino.jumping && running) {
+                dino.vy = -12.5;
+                dino.jumping = true;
+                // Jump dust
+                for (let i = 0; i < 8; i++) {
+                    dustParticles.push({
+                        x: dino.x + 15, y: GROUND,
+                        vx: (Math.random() - 0.5) * 3,
+                        vy: -Math.random() * 2 - 1,
+                        life: 1, decay: 0.03 + Math.random() * 0.02,
+                        r: 1 + Math.random() * 2,
+                        color: 'rgba(77, 208, 225, '
+                    });
+                }
+            }
+        }
+
+        function duck(on) {
+            if (running) dino.ducking = on;
+        }
+
+        function loop() {
+            if (!running) return;
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        function update() {
+            frame++;
+            score = Math.floor(frame / 5);
+            document.getElementById('score').textContent = score;
+            speed = 5 + frame * 0.0025;
+
+            // Milestone check (every 100 points)
+            const newMilestone = Math.floor(score / 100);
+            if (newMilestone > milestone) {
+                milestone = newMilestone;
+                milestoneFlash = 60;
+                // Milestone sparkles
+                for (let i = 0; i < 20; i++) {
+                    particles.push({
+                        x: W / 2 + (Math.random() - 0.5) * 200,
+                        y: H / 2 + (Math.random() - 0.5) * 100,
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: (Math.random() - 0.5) * 4,
+                        life: 1, decay: 0.015 + Math.random() * 0.01,
+                        r: 2 + Math.random() * 3,
+                        color: Math.random() > 0.5 ? '#ffd54f' : '#4dd0e1'
+                    });
+                }
+            }
+            if (milestoneFlash > 0) milestoneFlash--;
+
+            // Dino duck dimensions
+            if (dino.ducking && !dino.jumping) {
+                dino.h = 28; dino.w = 50;
+            } else {
+                dino.h = 48; dino.w = 40;
+            }
+
+            // Dino physics
+            if (dino.jumping) {
+                dino.vy += 0.58;
+                dino.y += dino.vy;
+                if (dino.y >= GROUND) {
+                    dino.y = GROUND;
+                    dino.jumping = false;
+                    dino.vy = 0;
+                    // Land dust
+                    for (let i = 0; i < 6; i++) {
+                        dustParticles.push({
+                            x: dino.x + 15 + Math.random() * 10,
+                            y: GROUND,
+                            vx: (Math.random() - 0.5) * 4,
+                            vy: -Math.random() * 1.5 - 0.5,
+                            life: 1, decay: 0.04 + Math.random() * 0.02,
+                            r: 1 + Math.random() * 1.5,
+                            color: 'rgba(124, 106, 255, '
+                        });
+                    }
+                }
+            }
+
+            // Running dust
+            if (!dino.jumping && frame % 4 === 0) {
+                dustParticles.push({
+                    x: dino.x + 5, y: GROUND - 1,
+                    vx: -Math.random() * 1.5 - 0.5,
+                    vy: -Math.random() * 0.8,
+                    life: 0.6, decay: 0.03,
+                    r: 1 + Math.random(),
+                    color: 'rgba(200, 210, 255, '
+                });
+            }
+
+            // Speed lines at high speed
+            if (speed > 8 && frame % 3 === 0) {
+                speedLines.push({
+                    x: W + 10,
+                    y: 30 + Math.random() * (GROUND - 60),
+                    len: 30 + Math.random() * 50,
+                    speed: speed * 1.5 + Math.random() * 3,
+                    alpha: 0.1 + Math.random() * 0.15
+                });
+            }
+
+            // Dino animation
+            dino.runTimer++;
+            if (dino.runTimer > 5) { dino.runTimer = 0; dino.runFrame = (dino.runFrame + 1) % 4; }
+            dino.blinkTimer++;
+            if (dino.blinkTimer > 120 + Math.random() * 60) { dino.eyeBlink = 4; dino.blinkTimer = 0; }
+            if (dino.eyeBlink > 0) dino.eyeBlink--;
+
+            // Spawn obstacles
+            const spawnRate = Math.max(35, 80 - Math.floor(frame / 80));
+            if (frame % spawnRate === 0 || (frame > 300 && frame % Math.max(25, spawnRate - 15) === 0 && Math.random() > 0.6)) {
+                const type = Math.random() > 0.7 ? 'bird' : 'cactus';
+                if (type === 'cactus') {
+                    const variant = Math.floor(Math.random() * 3); // 0=small, 1=medium, 2=double
+                    const h = variant === 0 ? 25 : variant === 1 ? 38 : 30;
+                    const w = variant === 2 ? 35 : 18;
+                    obstacles.push({
+                        x: W + 20, y: GROUND, w, h, type: 'cactus', variant,
+                        passed: false
+                    });
+                } else {
+                    const flyH = Math.random() > 0.5 ? 50 : 30;
+                    obstacles.push({
+                        x: W + 20, y: GROUND - flyH - 15,
+                        w: 30, h: 22, type: 'bird', wingFrame: 0, wingTimer: 0,
+                        passed: false
+                    });
+                }
+            }
+
+            // Update obstacles
+            obstacles.forEach(o => {
+                o.x -= speed;
+                if (o.type === 'bird') {
+                    o.wingTimer++;
+                    if (o.wingTimer > 8) { o.wingTimer = 0; o.wingFrame = (o.wingFrame + 1) % 2; }
+                }
+                // Collision
+                const dx = dino.x, dy = dino.y - dino.h;
+                const dw = dino.w - 8, dh = dino.h - 4;
+                const ox = o.x + 3, oy = o.y - o.h + 3;
+                const ow = o.w - 6, oh = o.h - 6;
+                if (dx + dw > ox && dx < ox + ow && dy + dh > oy && dy < oy + oh) {
+                    endGame();
+                }
+            });
+            obstacles = obstacles.filter(o => o.x > -60);
+
+            // Update particles
+            dustParticles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life -= p.decay; p.vy += 0.05; });
+            dustParticles = dustParticles.filter(p => p.life > 0);
+
+            particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.life -= p.decay; });
+            particles = particles.filter(p => p.life > 0);
+
+            speedLines.forEach(l => { l.x -= l.speed; });
+            speedLines = speedLines.filter(l => l.x + l.len > 0);
+
+            deathParticles.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life -= p.decay; });
+            deathParticles = deathParticles.filter(p => p.life > 0);
+
+            // Shake decay
+            if (shakeIntensity > 0) {
+                shakeX = (Math.random() - 0.5) * shakeIntensity;
+                shakeY = (Math.random() - 0.5) * shakeIntensity;
+                shakeIntensity *= 0.9;
+                if (shakeIntensity < 0.3) { shakeIntensity = 0; shakeX = 0; shakeY = 0; }
+            }
+
+            // Cloud movement
+            clouds.forEach(c => {
+                c.x -= c.speed;
+                if (c.x + c.w < 0) c.x = W + 20;
+            });
+        }
+
+        function draw() {
+            ctx.save();
+            ctx.translate(shakeX, shakeY);
+
+            // Sky gradient
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND);
+            skyGrad.addColorStop(0, COL.sky1);
+            skyGrad.addColorStop(0.6, COL.sky2);
+            skyGrad.addColorStop(1, '#1a1060');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // Stars
+            const t = frame * 0.016;
+            bgStars.forEach(s => {
+                const twinkle = Math.sin(t * s.twinkleSpeed * 60 + s.offset);
+                const a = s.alpha * (0.5 + 0.5 * twinkle);
+                ctx.globalAlpha = Math.max(0.05, a);
+                ctx.fillStyle = s.color;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fill();
+                if (s.r > 1 && a > 0.5) {
+                    ctx.globalAlpha = a * 0.15;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            ctx.globalAlpha = 1;
+
+            // Clouds
+            clouds.forEach(c => {
+                ctx.globalAlpha = c.alpha;
+                ctx.fillStyle = '#4a50a0';
+                const cx = c.x + c.w / 2, cy = c.y + c.h / 2;
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, c.w / 2, c.h / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(cx - c.w * 0.25, cy + 2, c.w * 0.35, c.h * 0.4, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(cx + c.w * 0.2, cy + 1, c.w * 0.3, c.h * 0.35, 0, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Mountains (far parallax)
+            const mOffset = (frame * speed * 0.15) % (W + 200);
+            bgMountains.forEach(m => {
+                const mx = ((m.x - mOffset) % (W + 200) + W + 200) % (W + 200) - 100;
+                ctx.fillStyle = m.layer === 0 ? COL.mountain : COL.mountain2;
+                ctx.globalAlpha = m.layer === 0 ? 0.6 : 0.4;
+                ctx.beginPath();
+                ctx.moveTo(mx, GROUND);
+                ctx.lineTo(mx + m.w / 2, GROUND - m.h);
+                ctx.lineTo(mx + m.w, GROUND);
+                ctx.closePath();
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // City buildings (mid parallax)
+            const cOffset = (frame * speed * 0.3) % (W + 100);
+            bgCityBuildings.forEach(b => {
+                const bx = ((b.x - cOffset) % (W + 100) + W + 100) % (W + 100) - 50;
+                ctx.fillStyle = COL.city;
+                ctx.globalAlpha = 0.5;
+                ctx.fillRect(bx, GROUND - b.h, b.w, b.h);
+                // Windows
+                b.windows.forEach(w => {
+                    ctx.fillStyle = w.on ? 'rgba(255, 213, 79, 0.4)' : 'rgba(70, 80, 140, 0.3)';
+                    ctx.fillRect(bx + w.x, GROUND - b.h + w.y, 4, 4);
+                });
+            });
+            ctx.globalAlpha = 1;
+
+            // Ground
+            ctx.fillStyle = COL.ground;
+            ctx.fillRect(0, GROUND, W, H - GROUND);
+
+            // Ground top line (neon glow)
+            ctx.save();
+            ctx.shadowColor = COL.groundLine;
+            ctx.shadowBlur = 12;
+            ctx.strokeStyle = COL.groundLine;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.6;
+            ctx.beginPath();
+            ctx.moveTo(0, GROUND + 1);
+            ctx.lineTo(W, GROUND + 1);
+            ctx.stroke();
+            ctx.restore();
+
+            // Ground texture
+            const gOffset = (frame * speed) % 40;
+            ctx.globalAlpha = 0.2;
+            ctx.strokeStyle = 'rgba(124, 106, 255, 0.3)';
+            ctx.lineWidth = 0.5;
+            for (let gx = -gOffset; gx < W; gx += 40) {
+                ctx.beginPath();
+                ctx.moveTo(gx, GROUND + 6);
+                ctx.lineTo(gx + 20, GROUND + 6);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+
+            // Ground particles
+            groundTiles.forEach(gt => {
+                const px = ((gt.x - (frame * speed * 0.8) % W) % W + W) % W;
+                ctx.globalAlpha = gt.alpha;
+                ctx.fillStyle = 'rgba(124, 106, 255, 0.5)';
+                ctx.fillRect(px, gt.y, gt.w, gt.h);
+            });
+            ctx.globalAlpha = 1;
+
+            // Speed lines
+            speedLines.forEach(l => {
+                ctx.globalAlpha = l.alpha;
+                ctx.strokeStyle = 'rgba(200, 210, 255, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(l.x, l.y);
+                ctx.lineTo(l.x + l.len, l.y);
+                ctx.stroke();
+            });
+            ctx.globalAlpha = 1;
+
+            // Dust particles
+            dustParticles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color + p.life + ')';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Obstacles
+            obstacles.forEach(o => {
+                if (o.type === 'cactus') {
+                    drawCactus(o);
+                } else {
+                    drawBird(o);
+                }
+            });
+
+            // Dino
+            drawDino();
+
+            // Milestone particles
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+                ctx.fill();
+                // Glow
+                ctx.globalAlpha = p.life * 0.3;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r * 2 * p.life, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Death particles
+            deathParticles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // HUD - Score
+            ctx.save();
+            ctx.font = 'bold 18px "JetBrains Mono"';
+            ctx.textAlign = 'right';
+            ctx.fillStyle = 'rgba(200, 210, 255, 0.5)';
+            ctx.fillText(String(score).padStart(5, '0'), W - 24, 32);
+
+            // HUD - Speed indicator
+            const speedLvl = Math.min(10, Math.floor((speed - 5) / 1.5) + 1);
+            ctx.font = '10px "JetBrains Mono"';
+            ctx.fillStyle = 'rgba(200, 210, 255, 0.3)';
+            ctx.fillText('SPD ' + speedLvl + 'x', W - 24, 48);
+
+            // Milestone flash
+            if (milestoneFlash > 0) {
+                ctx.globalAlpha = milestoneFlash / 60;
+                ctx.font = 'bold 36px "Bebas Neue"';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = COL.accent;
+                ctx.shadowColor = COL.accent;
+                ctx.shadowBlur = 20;
+                ctx.fillText(score + ' POINTS!', W / 2, H / 2 - 20);
+                ctx.shadowBlur = 0;
+            }
+            ctx.restore();
+
+            ctx.restore(); // end shake transform
+        }
+
+        function drawDino() {
+            const x = dino.x, y = dino.y - dino.h;
+            ctx.save();
+            ctx.shadowColor = COL.dinoGlow;
+            ctx.shadowBlur = 15;
+
+            if (dino.ducking && !dino.jumping) {
+                // Ducking dino — flat body
+                ctx.fillStyle = COL.dino;
+                // Body (flat)
+                roundRect(x, y + 10, 44, 18, 4);
+                // Head
+                roundRect(x + 30, y + 4, 18, 14, 3);
+                // Eye
+                if (dino.eyeBlink <= 0) {
+                    ctx.fillStyle = '#050510';
+                    ctx.fillRect(x + 42, y + 7, 4, 4);
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(x + 43, y + 7, 2, 2);
+                }
+                // Legs
+                ctx.fillStyle = COL.dino;
+                const lOff = dino.runFrame;
+                ctx.fillRect(x + 8 + (lOff % 2) * 2, y + 28, 5, 8);
+                ctx.fillRect(x + 20 + ((lOff + 1) % 2) * 2, y + 28, 5, 8);
+                // Tail
+                roundRect(x - 6, y + 12, 10, 8, 2);
+            } else {
+                // Normal/jumping dino
+                ctx.fillStyle = COL.dino;
+                // Body
+                roundRect(x + 4, y + 12, 26, 28, 5);
+                // Head
+                roundRect(x + 14, y - 2, 24, 18, 4);
+                // Mouth line
+                ctx.fillStyle = '#039ba3';
+                ctx.fillRect(x + 30, y + 8, 8, 2);
+                // Eye
+                ctx.fillStyle = COL.dino;
+                if (dino.eyeBlink <= 0) {
+                    ctx.fillStyle = '#050510';
+                    ctx.fillRect(x + 30, y + 2, 5, 5);
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(x + 31, y + 2, 2, 2);
+                    // Pupil glow
+                    ctx.fillStyle = COL.dino;
+                    ctx.globalAlpha = 0.5;
+                    ctx.fillRect(x + 31, y + 3, 1, 1);
+                    ctx.globalAlpha = 1;
+                }
+                // Arms
+                ctx.fillStyle = COL.dino;
+                const armSwing = Math.sin(frame * 0.15) * 2;
+                ctx.fillRect(x + 26, y + 18 + armSwing, 4, 10);
+                // Legs
+                if (!dino.jumping) {
+                    const legPhase = dino.runFrame;
+                    if (legPhase === 0 || legPhase === 2) {
+                        ctx.fillRect(x + 8, y + 38, 6, 12);
+                        ctx.fillRect(x + 20, y + 40, 6, 10);
+                    } else {
+                        ctx.fillRect(x + 8, y + 40, 6, 10);
+                        ctx.fillRect(x + 20, y + 38, 6, 12);
+                    }
+                } else {
+                    // Tucked legs while jumping
+                    ctx.fillRect(x + 8, y + 36, 6, 8);
+                    ctx.fillRect(x + 20, y + 36, 6, 8);
+                }
+                // Tail
+                const tailWag = Math.sin(frame * 0.1) * 2;
+                ctx.fillRect(x - 4, y + 18 + tailWag, 10, 7);
+                ctx.fillRect(x - 8, y + 20 + tailWag, 6, 5);
+
+                // Spikes on back
+                ctx.fillStyle = '#26c6da';
+                for (let i = 0; i < 3; i++) {
+                    const sx = x + 8 + i * 8;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, y + 12);
+                    ctx.lineTo(sx + 3, y + 5 - i);
+                    ctx.lineTo(sx + 6, y + 12);
+                    ctx.fill();
+                }
+            }
+
+            ctx.shadowBlur = 0;
+            ctx.restore();
+        }
+
+        function roundRect(x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.fill();
+        }
+
+        function drawCactus(o) {
+            ctx.save();
+            ctx.shadowColor = COL.cactusGlow;
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = COL.cactus;
+
+            if (o.variant === 2) {
+                // Double cactus
+                roundRect(o.x, o.y - o.h, 12, o.h, 3);
+                roundRect(o.x + 18, o.y - o.h - 8, 12, o.h + 8, 3);
+                // Arms
+                ctx.fillRect(o.x - 5, o.y - o.h * 0.6, 7, 4);
+                ctx.fillRect(o.x - 5, o.y - o.h * 0.6 - 8, 4, 10);
+                ctx.fillRect(o.x + 28, o.y - o.h * 0.5, 7, 4);
+                ctx.fillRect(o.x + 31, o.y - o.h * 0.5 - 10, 4, 12);
+                // Thorns glow
+                ctx.fillStyle = 'rgba(240, 98, 146, 0.3)';
+                for (let i = 0; i < 4; i++) {
+                    ctx.beginPath();
+                    ctx.arc(o.x + 6 + Math.sin(i) * 4, o.y - o.h + i * 8 + 4, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else {
+                // Single cactus
+                roundRect(o.x, o.y - o.h, o.w, o.h, 4);
+                // Arms
+                if (o.variant === 1) {
+                    ctx.fillRect(o.x - 6, o.y - o.h * 0.65, 8, 4);
+                    ctx.fillRect(o.x - 6, o.y - o.h * 0.65 - 10, 4, 12);
+                    ctx.fillRect(o.x + o.w - 2, o.y - o.h * 0.4, 8, 4);
+                    ctx.fillRect(o.x + o.w + 2, o.y - o.h * 0.4 - 8, 4, 10);
+                }
+                // Thorns
+                ctx.fillStyle = 'rgba(240, 98, 146, 0.3)';
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath();
+                    ctx.arc(o.x + o.w / 2, o.y - o.h + i * 10 + 5, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // Top glow dot
+            ctx.fillStyle = COL.cactus;
+            ctx.globalAlpha = 0.6 + Math.sin(frame * 0.1) * 0.3;
+            ctx.beginPath();
+            ctx.arc(o.x + (o.variant === 2 ? 24 : o.w / 2), o.y - o.h - 3, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+
+            ctx.restore();
+        }
+
+        function drawBird(o) {
+            ctx.save();
+            ctx.shadowColor = COL.birdGlow;
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = COL.bird;
+
+            // Body
+            ctx.beginPath();
+            ctx.ellipse(o.x + o.w / 2, o.y - o.h / 2, o.w / 2 - 2, o.h / 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Wings
+            const wingY = o.wingFrame === 0 ? -12 : 6;
+            ctx.beginPath();
+            ctx.moveTo(o.x + 5, o.y - o.h / 2);
+            ctx.quadraticCurveTo(o.x + o.w / 2, o.y - o.h / 2 + wingY, o.x + o.w - 5, o.y - o.h / 2);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = COL.bird;
+            ctx.stroke();
+
+            // Beak
+            ctx.fillStyle = '#ffd54f';
+            ctx.beginPath();
+            ctx.moveTo(o.x + o.w - 2, o.y - o.h / 2 - 2);
+            ctx.lineTo(o.x + o.w + 6, o.y - o.h / 2);
+            ctx.lineTo(o.x + o.w - 2, o.y - o.h / 2 + 2);
+            ctx.fill();
+
+            // Eye
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(o.x + o.w - 6, o.y - o.h / 2 - 2, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#050510';
+            ctx.beginPath();
+            ctx.arc(o.x + o.w - 5, o.y - o.h / 2 - 2, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Trail glow
+            ctx.globalAlpha = 0.15;
+            ctx.fillStyle = COL.bird;
+            for (let i = 1; i <= 3; i++) {
+                ctx.beginPath();
+                ctx.ellipse(o.x + o.w / 2 - i * 12, o.y - o.h / 2, (o.w / 2 - 2) * (1 - i * 0.2), o.h / 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            ctx.restore();
+        }
+
+        function drawStartScreen() {
+            if (gameStarted) return; // Prevent overlapping rendering
+            
+            ctx.save();
+            // Sky
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND);
+            skyGrad.addColorStop(0, COL.sky1);
+            skyGrad.addColorStop(0.6, COL.sky2);
+            skyGrad.addColorStop(1, '#1a1060');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // Stars
+            const t2 = Date.now() * 0.001;
+            bgStars.forEach(s => {
+                const twinkle = Math.sin(t2 * s.twinkleSpeed * 60 + s.offset);
+                const a = s.alpha * (0.5 + 0.5 * twinkle);
+                ctx.globalAlpha = Math.max(0.05, a);
+                ctx.fillStyle = s.color;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Ground
+            ctx.fillStyle = COL.ground;
+            ctx.fillRect(0, GROUND, W, H - GROUND);
+            ctx.strokeStyle = COL.groundLine;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.4;
+            ctx.beginPath();
+            ctx.moveTo(0, GROUND + 1);
+            ctx.lineTo(W, GROUND + 1);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // Title
+            ctx.font = '48px "Bebas Neue"';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = COL.dino;
+            ctx.shadowColor = COL.dinoGlow;
+            ctx.shadowBlur = 20;
+            ctx.fillText('DINO RUN', W / 2, H / 2 - 30);
+            ctx.shadowBlur = 0;
+
+            // Subtitle
+            ctx.font = '14px "JetBrains Mono"';
+            ctx.fillStyle = 'rgba(200, 210, 255, 0.5)';
+            ctx.fillText('Tekan SPACE atau TAP untuk mulai', W / 2, H / 2 + 10);
+
+            // Animated dino idle
+            const idleY = Math.sin(Date.now() * 0.003) * 4;
+            ctx.fillStyle = COL.dino;
+            ctx.shadowColor = COL.dinoGlow;
+            ctx.shadowBlur = 15;
+            // Simple idle dino
+            roundRect(W / 2 - 15, GROUND - 48 + idleY + 12, 26, 28, 5);
+            roundRect(W / 2 - 5, GROUND - 48 + idleY - 2, 24, 18, 4);
+            ctx.fillRect(W / 2 - 19, GROUND - 48 + idleY + 18, 10, 7);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#050510';
+            ctx.fillRect(W / 2 + 11, GROUND - 48 + idleY + 2, 5, 5);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(W / 2 + 12, GROUND - 48 + idleY + 2, 2, 2);
+            ctx.fillStyle = COL.dino;
+            ctx.fillRect(W / 2 - 11, GROUND - 10, 6, 10);
+            ctx.fillRect(W / 2 + 1, GROUND - 10, 6, 10);
+
+            ctx.restore();
+            requestAnimationFrame(drawStartScreen);
+        }
+
+        function endGame() {
+            running = false;
+            shakeIntensity = 12;
+
+            // Death explosion particles
+            for (let i = 0; i < 30; i++) {
+                const angle = (Math.PI * 2 / 30) * i;
+                const spd = 2 + Math.random() * 5;
+                deathParticles.push({
+                    x: dino.x + dino.w / 2,
+                    y: dino.y - dino.h / 2,
+                    vx: Math.cos(angle) * spd,
+                    vy: Math.sin(angle) * spd - 2,
+                    life: 1, decay: 0.015 + Math.random() * 0.01,
+                    r: 2 + Math.random() * 4,
+                    color: Math.random() > 0.5 ? COL.dino : COL.cactus
+                });
+            }
+
+            // Animate death particles before showing overlay
+            function deathAnim() {
+                if (running) return; // Means game restarted during death animation
+
+                if (deathParticles.length > 0) {
+                    deathParticles.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life -= p.decay; });
+                    deathParticles = deathParticles.filter(p => p.life > 0);
+                    draw();
+                    requestAnimationFrame(deathAnim);
+                } else {
+                    showOverlay();
+                }
+            }
+            deathAnim();
+        }
+
+        function showOverlay() {
+            if (score > bestScore) {
+                bestScore = score;
+                document.getElementById('best').textContent = bestScore;
+                document.getElementById('oTitle').textContent = 'Rekor Baru! 🎉';
+            } else {
+                document.getElementById('oTitle').textContent = 'Game Over!';
+            }
+            document.getElementById('oSub').textContent = 'Skor: ' + score;
+            overlay.classList.add('active');
+            saveScore(score);
+        }
+
+        // Controls
+        document.addEventListener('keydown', e => {
+            if (e.code === 'Space' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                jumpOrStart();
+            }
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                duck(true);
+            }
+        });
+        document.addEventListener('keyup', e => {
+            if (e.key === 'ArrowDown') duck(false);
+        });
+        
+        cvs.addEventListener('click', jumpOrStart);
+        cvs.addEventListener('touchstart', e => { e.preventDefault(); jumpOrStart(); }, { passive: false });
+
+        function saveScore(s) {
+            try {
+                const d = JSON.parse(localStorage.getItem('arcadeNexusStats') || '{"totalScore":0,"gamesPlayed":0,"streak":0,"highScores":{},"achievements":[]}');
+                d.totalScore += s; d.gamesPlayed++;
+                const t = new Date().toDateString();
+                if (d.lastPlayed === new Date(Date.now() - 86400000).toDateString()) d.streak = (d.streak || 0) + 1;
+                else if (d.lastPlayed !== t) d.streak = 1;
+                d.lastPlayed = t;
+                if (!d.highScores.dinorun || s > d.highScores.dinorun) d.highScores.dinorun = s;
+                localStorage.setItem('arcadeNexusStats', JSON.stringify(d));
+            } catch (e) { }
+        }
+
+        // Start screen setup
+        requestAnimationFrame(drawStartScreen);
+    </script>
+    <script src="sounds.js"></script>
+    <script src="mobile-touch.js"></script>
+</body>
+
+</html>

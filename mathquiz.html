@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Quiz - ZI GAME</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ffe7;
+            --secondary: #b537f2;
+            --danger: #ff0055;
+            --success: #00ff55;
+            --bg-dark: #02020f;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: #fff;
+            font-family: 'DM Sans', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            box-sizing: border-box;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 255, 231, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(181, 55, 242, 0.08) 0%, transparent 50%);
+            animation: bgFloat 10s infinite alternate linear;
+        }
+
+        @keyframes bgFloat {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: var(--primary);
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid rgba(0, 255, 231, 0.3);
+            border-radius: 8px;
+            background: rgba(0, 255, 231, 0.05);
+            z-index: 10;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(0, 255, 231, 0.15);
+            box-shadow: 0 0 15px rgba(0, 255, 231, 0.4);
+        }
+
+        .game-container {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+            border: 1px solid rgba(0, 255, 231, 0.2);
+            padding: 30px 20px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            z-index: 5;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 255, 231, 0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #aaa;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .stat-value.danger { color: var(--danger); text-shadow: 0 0 10px var(--danger); }
+        .stat-value.primary { color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            margin: 0 0 10px;
+            color: var(--primary);
+            font-size: 32px;
+            text-shadow: 0 0 10px rgba(0, 255, 231, 0.3);
+        }
+
+        .difficulty-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: rgba(181, 55, 242, 0.2);
+            color: var(--secondary);
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border: 1px solid var(--secondary);
+        }
+
+        #question-container {
+            position: relative;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #question {
+            font-size: 56px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 10px rgba(0, 255, 231, 0.5), 0 10px 20px rgba(0, 0, 0, 0.8);
+            color: #fff;
+            position: absolute;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .q-animate-in { animation: slideIn 0.4s forwards; }
+        .q-animate-out { animation: slideOut 0.4s forwards; }
+
+        @keyframes slideIn {
+            0% { transform: translateX(50px) scale(0.8); opacity: 0; }
+            100% { transform: translateX(0) scale(1); opacity: 1; }
+        }
+        @keyframes slideOut {
+            0% { transform: translateX(0) scale(1); opacity: 1; }
+            100% { transform: translateX(-50px) scale(0.8); opacity: 0; }
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px 50px 15px 15px;
+            font-size: 28px;
+            text-align: center;
+            border-radius: 12px;
+            border: 2px solid rgba(0, 255, 231, 0.3);
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            outline: none;
+            box-sizing: border-box;
+            box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.8);
+            transition: all 0.3s ease;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: bold;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 255, 231, 0.4);
+            transform: scale(1.02);
+        }
+
+        .skip-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(181, 55, 242, 0.2);
+            color: var(--secondary);
+            border: 1px solid var(--secondary);
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .skip-btn:hover:not(:disabled) {
+            background: var(--secondary);
+            color: #fff;
+            box-shadow: 0 0 10px var(--secondary);
+        }
+
+        .skip-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        button.action {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #000;
+            font-family: 'Syne', sans-serif;
+            font-weight: bold;
+            padding: 18px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 6px 0 #7e22a8, 0 15px 20px rgba(0, 0, 0, 0.4);
+            transition: all 0.1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button.action::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: rgba(255,255,255,0.2);
+            transform: rotate(45deg);
+            transition: 0.5s;
+            opacity: 0;
+        }
+
+        button.action:hover::after {
+            opacity: 1;
+            transform: rotate(45deg) translate(50%, 50%);
+        }
+
+        button.action:active {
+            box-shadow: 0 0px 0 #7e22a8, 0 5px 10px rgba(0, 0, 0, 0.4);
+            transform: translateY(6px);
+        }
+
+        .combo-text {
+            color: var(--success);
+            font-size: 18px;
+            font-weight: bold;
+            height: 25px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(10px);
+            text-shadow: 0 0 10px var(--success);
+        }
+
+        .combo-text.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        .flash-green { animation: flashGreen 0.4s ease; }
+        .flash-red { animation: flashRed 0.4s ease; }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        @keyframes flashGreen {
+            0% { box-shadow: 0 0 0px var(--success); }
+            50% { box-shadow: 0 0 30px var(--success), inset 0 0 20px var(--success); }
+            100% { box-shadow: 0 0 0px var(--success); }
+        }
+
+        @keyframes flashRed {
+            0% { box-shadow: 0 0 0px var(--danger); }
+            50% { box-shadow: 0 0 30px var(--danger), inset 0 0 20px var(--danger); }
+            100% { box-shadow: 0 0 0px var(--danger); }
+        }
+
+        /* Screens */
+        #game-screen, #end-screen { display: none; }
+        #start-screen { display: block; }
+        
+        .screen { width: 100%; }
+
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            border-radius: 50%;
+            z-index: 100;
+            animation: fall forwards linear;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+
+<body>
+    <a href="index.html" class="back-btn">← Kembali</a>
+    
+    <div class="game-container" id="main-container">
+
+        <!-- START SCREEN -->
+        <div id="start-screen" class="screen">
+            <h1>Math Quiz<br>X-Treme</h1>
+            <p style="color:#aaa; margin-bottom: 30px;">Jawab secepat mungkin. 60 detik.</p>
+            <div style="text-align: left; margin-bottom: 25px; font-size: 14px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px;">
+                <div style="color: var(--primary);">✨ 10 Fitur Baru:</div>
+                <ul style="padding-left: 20px; color: #ddd; margin-top: 5px;">
+                    <li>Sistem Waktu 60 Detik (+2s/benar)</li>
+                    <li>Sistem Nyawa (3 Kesalahan Game Over)</li>
+                    <li>Multiplier Combo Berturut-turut</li>
+                    <li>Difficulty Progressing (Dinamic Level)</li>
+                    <li>Power-Up: 3x Skip Soal</li>
+                    <li>Penyimpanan High Score Lokal</li>
+                    <li>Animasi UI Dinamis (Shake/Flash)</li>
+                    <li>Particle Effect Jawaban Benar</li>
+                    <li>Dynamic Background Area</li>
+                    <li>Tampilan Game Over Interaktif</li>
+                </ul>
+            </div>
+            <button class="action" onclick="startGame()">Mulai Main</button>
+        </div>
+
+        <!-- GAME SCREEN -->
+        <div id="game-screen" class="screen">
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span>WAKTU</span>
+                    <span id="time-display" class="stat-value danger">60s</span>
+                </div>
+                <div class="stat-item">
+                    <span>SKOR</span>
+                    <span id="score-display" class="stat-value primary">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>NYAWA</span>
+                    <span id="lives-display" class="stat-value danger">♥♥♥</span>
+                </div>
+            </div>
+
+            <div class="difficulty-badge" id="diff-badge">Level: Dasar</div>
+
+            <div id="question-container">
+                <div id="question">1 + 1</div>
+            </div>
+            
+            <div class="combo-text" id="combo-display">Combo x2!</div>
+
+            <div class="input-group">
+                <input type="number" id="answer" placeholder="Jawaban" autocomplete="off" onkeydown="if(event.key==='Enter') check()">
+                <button id="skip-btn" class="skip-btn" onclick="useSkip()" tabindex="-1">Skip (3)</button>
+            </div>
+            
+            <button class="action" onclick="check()">Jawab</button>
+        </div>
+
+        <!-- END SCREEN -->
+        <div id="end-screen" class="screen">
+            <h1>Game Over!</h1>
+            <h2 style="color: var(--primary); font-size: 40px; margin: 10px 0 5px;" id="final-score">0</h2>
+            <div style="color: #aaa; margin-bottom: 20px;">Skor Akhir</div>
+            
+            <div style="background: rgba(181, 55, 242, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 30px; border: 1px solid rgba(181, 55, 242, 0.3);">
+                <div style="font-size: 14px; color: #ccc;">High Score: <span id="high-score" style="color: var(--secondary); font-weight: bold; font-size: 18px;">0</span></div>
+            </div>
+
+            <button class="action" onclick="resetToStart()">Main Lagi</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Game Variables
+        let score = 0;
+        let expected = 0;
+        let timeLeft = 60;
+        let timerId;
+        let lastTime = 0;
+        let lives = 3;
+        let combo = 0;
+        let skips = 3;
+        let highScore = localStorage.getItem('mathQuizHighScore') || 0;
+        let currentDifficulty = 1;
+
+        // Elements
+        const screens = {
+            start: document.getElementById('start-screen'),
+            game: document.getElementById('game-screen'),
+            end: document.getElementById('end-screen')
+        };
+        const elQuestion = document.getElementById('question');
+        const elAnswer = document.getElementById('answer');
+        const elTime = document.getElementById('time-display');
+        const elScore = document.getElementById('score-display');
+        const elLives = document.getElementById('lives-display');
+        const elCombo = document.getElementById('combo-display');
+        const elContainer = document.getElementById('main-container');
+        const elDiffBadge = document.getElementById('diff-badge');
+        const elSkipBtn = document.getElementById('skip-btn');
+
+        function switchScreen(screenName) {
+            Object.values(screens).forEach(s => s.style.display = 'none');
+            screens[screenName].style.display = 'block';
+        }
+
+        function startGame() {
+            score = 0;
+            timeLeft = 60;
+            lives = 3;
+            combo = 0;
+            skips = 3;
+            currentDifficulty = 1;
+
+            updateUI();
+            switchScreen('game');
+            nextQuestion();
+            
+            if (timerId) cancelAnimationFrame(timerId);
+            lastTime = performance.now();
+            
+            function tick(timestamp) {
+                const dt = (timestamp - lastTime) / 1000;
+                if (dt >= 1) {
+                    timeLeft--;
+                    lastTime += 1000;
+                    elTime.innerText = timeLeft + 's';
+                    if (timeLeft <= 10) elTime.style.color = 'red';
+                    else elTime.style.color = '';
+
+                    if (timeLeft <= 0) {
+                        endGame();
+                        return;
+                    }
+                }
+                timerId = requestAnimationFrame(tick);
+            }
+            timerId = requestAnimationFrame(tick);
+        }
+
+        function getDifficultyParams() {
+            if (score > 300) { currentDifficulty = 4; return { max: 50, ops: ['+', '-', '*', '/'], name: "Pakar" };}
+            if (score > 150) { currentDifficulty = 3; return { max: 20, ops: ['+', '-', '*'], name: "Sulit" }; }
+            if (score > 50)  { currentDifficulty = 2; return { max: 15, ops: ['+', '-'], name: "Menengah" }; }
+            currentDifficulty = 1; return { max: 10, ops: ['+'], name: "Dasar" };
+        }
+
+        function createParticles() {
+            const colors = ['#00ffe7', '#b537f2', '#00ff55'];
+            for(let i=0; i<15; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                p.style.width = Math.random() * 10 + 5 + 'px';
+                p.style.height = p.style.width;
+                p.style.left = 50 + (Math.random() * 10 - 5) + 'vw';
+                p.style.top = '30vh';
+                
+                const tx = (Math.random() - 0.5) * 200;
+                const ty = (Math.random() - 0.5) * 200 - 100;
+                
+                p.style.transform = `translate(${tx}px, ${ty}px)`;
+                p.style.animationDuration = Math.random() * 1 + 0.5 + 's';
+                
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 1500);
+            }
+        }
+
+        function nextQuestion() {
+            const diff = getDifficultyParams();
+            elDiffBadge.innerText = `Level: ${diff.name}`;
+
+            const op = diff.ops[Math.floor(Math.random() * diff.ops.length)];
+            let a = Math.floor(Math.random() * diff.max) + 1;
+            let b = Math.floor(Math.random() * diff.max) + 1;
+
+            if (op === '*') {
+                a = Math.floor(Math.random() * (diff.max / 2)) + 1;
+                b = Math.floor(Math.random() * 10) + 1;
+            }
+            if (op === '/') {
+                b = Math.floor(Math.random() * 10) + 1;
+                a = b * (Math.floor(Math.random() * 10) + 1);
+            }
+            if (op === '-' && a < b) [a, b] = [b, a];
+
+            elQuestion.classList.remove('q-animate-in', 'q-animate-out');
+            void elQuestion.offsetWidth; // trigger reflow
+            elQuestion.classList.add('q-animate-in');
+            
+            elQuestion.innerText = `${a} ${op} ${b}`;
+            expected = eval(`${a} ${op} ${b}`);
+            
+            elAnswer.value = '';
+            elAnswer.focus();
+        }
+
+        function useSkip() {
+            if (skips > 0) {
+                skips--;
+                combo = 0; // Reset combo
+                updateUI();
+                nextQuestion();
+            }
+        }
+
+        function flashContainer(type) {
+            elContainer.classList.remove('shake', 'flash-red', 'flash-green');
+            void elContainer.offsetWidth; // trigger reflow
+            
+            if (type === 'wrong') {
+                elContainer.classList.add('shake', 'flash-red');
+            } else {
+                elContainer.classList.add('flash-green');
+                createParticles();
+            }
+        }
+
+        function check() {
+            if (elAnswer.value === '') return;
+            const ans = parseInt(elAnswer.value);
+            
+            if (ans === expected) {
+                // Correct
+                combo++;
+                let points = 10 * currentDifficulty;
+                let comboBonus = 0;
+                
+                if (combo > 1) {
+                    comboBonus = Math.min(combo * 2, 20); // Max 20 combo bonus
+                    elCombo.innerText = `Combo x${combo}! (+${comboBonus})`;
+                    elCombo.classList.add('active');
+                } else {
+                    elCombo.classList.remove('active');
+                }
+
+                score += points + comboBonus;
+                flashContainer('correct');
+                if (window.SFX) SFX.score();
+                timeLeft += 2; // +2s per correct
+                
+            } else {
+                // Wrong
+                combo = 0;
+                lives--;
+                elCombo.classList.remove('active');
+                flashContainer('wrong');
+                if (window.SFX) SFX.hit();
+            }
+
+            updateUI();
+            
+            if (lives <= 0) {
+                endGame();
+            } else {
+                elQuestion.classList.replace('q-animate-in', 'q-animate-out');
+                setTimeout(nextQuestion, 200);
+            }
+        }
+
+        function updateUI() {
+            elScore.innerText = score;
+            elLives.innerText = '♥'.repeat(lives) + '♡'.repeat(3 - lives);
+            if (lives === 1) elLives.classList.add('shake');
+            else elLives.classList.remove('shake');
+            
+            elTime.innerText = timeLeft + 's';
+            
+            elSkipBtn.innerText = `Skip (${skips})`;
+            if (skips <= 0) elSkipBtn.disabled = true;
+            else elSkipBtn.disabled = false;
+        }
+
+        function endGame() {
+            if (timerId) cancelAnimationFrame(timerId);
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('mathQuizHighScore', highScore);
+            }
+            
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('high-score').innerText = highScore;
+            
+            switchScreen('end');
+        }
+
+        function resetToStart() {
+            switchScreen('start');
+        }
+    </script>
+    <script src="sounds.js"></script>
+    <script src="mobile-touch.js"></script>
+</body>
+</html>

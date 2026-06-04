@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Pengaturan | ZI GAME</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="portal-page.css">
+</head>
+
+<body data-page="settings">
+    <main class="page-shell">
+        <nav class="page-nav" aria-label="Navigasi halaman">
+            <a class="brand" href="index.html">ZI <span>GAME</span></a>
+            <div class="nav-actions">
+                <a class="nav-link" href="index.html">Home</a>
+                <a class="nav-link" href="profile.html">Profile</a>
+                <a class="nav-link active" href="settings.html">Pengaturan</a>
+            </div>
+        </nav>
+
+        <section class="page-hero">
+            <div class="hero-panel">
+                <p class="eyebrow">Settings</p>
+                <h1>Atur portal sesuai gaya mainmu.</h1>
+                <p class="lead">Preferensi disimpan di browser dan langsung dipakai oleh halaman utama ZI GAME.</p>
+            </div>
+            <aside class="profile-card hero-panel">
+                <h2 class="profile-name">Quick Save</h2>
+                <p class="muted">Ubah nama, tema, tampilan, motion, sidebar, dan data portal dari satu tempat.</p>
+                <button id="saveSettings" class="page-btn primary" type="button">Simpan Pengaturan</button>
+            </aside>
+        </section>
+
+        <section class="settings-grid">
+            <div class="setting-card">
+                <h2 class="section-title">Profil</h2>
+                <div class="field">
+                    <label for="playerName">Nama pemain</label>
+                    <input id="playerName" class="input" type="text" maxlength="28" placeholder="Neon Pilot">
+                </div>
+                <div class="field">
+                    <label for="settingNotes">Catatan sidebar</label>
+                    <textarea id="settingNotes" class="textarea" placeholder="Catatan cepat..."></textarea>
+                </div>
+            </div>
+
+            <div class="setting-card">
+                <h2 class="section-title">Tampilan</h2>
+                <div class="field">
+                    <label for="settingTheme">Tema</label>
+                    <select id="settingTheme" class="select">
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="settingView">Layout game</label>
+                    <select id="settingView" class="select">
+                        <option value="grid">Grid</option>
+                        <option value="list">List</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="settingDensity">Density</label>
+                    <select id="settingDensity" class="select">
+                        <option value="cozy">Cozy</option>
+                        <option value="compact">Compact</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-card">
+                <h2 class="section-title">Sidebar</h2>
+                <div class="field">
+                    <label for="settingAccent">Accent</label>
+                    <select id="settingAccent" class="select">
+                        <option value="violet">Violet</option>
+                        <option value="teal">Teal</option>
+                        <option value="sunset">Sunset</option>
+                    </select>
+                </div>
+                <div class="toggle-row">
+                    <span>Focus mode</span>
+                    <label class="switch"><input id="settingFocus" type="checkbox"><i></i></label>
+                </div>
+                <div class="toggle-row">
+                    <span>Auto-hide scroll</span>
+                    <label class="switch"><input id="settingAutoHide" type="checkbox"><i></i></label>
+                </div>
+                <div class="toggle-row">
+                    <span>Compact sidebar</span>
+                    <label class="switch"><input id="settingCompactSidebar" type="checkbox"><i></i></label>
+                </div>
+            </div>
+
+            <div class="setting-card">
+                <h2 class="section-title">Motion & Audio</h2>
+                <div class="toggle-row">
+                    <span>Reduce motion</span>
+                    <label class="switch"><input id="settingMotion" type="checkbox"><i></i></label>
+                </div>
+                <div class="field">
+                    <label for="settingVolume">Default volume musik</label>
+                    <input id="settingVolume" class="input" type="range" min="0" max="1" step="0.05">
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-head">
+                <h2 class="section-title">Data Portal</h2>
+                <a class="page-btn" href="profile.html">Buka Profile</a>
+            </div>
+            <div class="grid">
+                <button id="resetFilters" class="page-btn" type="button">Reset Filter</button>
+                <button id="clearRecent" class="page-btn" type="button">Hapus Recent</button>
+                <button id="clearFavorites" class="page-btn" type="button">Hapus Favorite</button>
+                <button id="resetProfile" class="page-btn danger" type="button">Reset Progress</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="portal-page.js"></script>
+</body>
+
+</html>

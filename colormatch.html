@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Match | ZI GAME</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+        :root {
+            --cyan: #00ffe7; --pink: #ff2d78; --purple: #b537f2;
+            --gold: #ffe600; --bg: #02020f;
+        }
+
+        body {
+            background: var(--bg); color: #fff;
+            font-family: 'Outfit', sans-serif;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 100vh; overflow: hidden;
+        }
+
+        .bg-layer { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(0,255,231,.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,231,.025) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .orb { position: absolute; border-radius: 50%; filter: blur(120px); }
+        .o1 { width:500px;height:500px;top:-20%;left:-10%;background:radial-gradient(circle,rgba(0,255,231,.09),transparent 70%); }
+        .o2 { width:450px;height:450px;bottom:-15%;right:-10%;background:radial-gradient(circle,rgba(181,55,242,.09),transparent 70%); }
+
+        .back-btn {
+            position: fixed; top:20px; left:20px; z-index:100;
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px;
+            color: rgba(255,255,255,.4);
+            border: 1px solid rgba(255,255,255,.1);
+            padding: 7px 14px; border-radius: 10px; transition: all .2s;
+        }
+        .back-btn:hover { color: var(--cyan); border-color: rgba(0,255,231,.3); }
+
+        /* Game wrapper */
+        .game-wrap {
+            position: relative; z-index: 1;
+            width: min(440px, 96vw);
+            display: flex; flex-direction: column; align-items: center; gap: 0;
+        }
+
+        .game-header { text-align: center; margin-bottom: 20px; }
+        .game-header h1 {
+            font-family: 'Bebas Neue', cursive; font-size: clamp(32px,7vw,52px);
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .game-header p {
+            font-family: 'JetBrains Mono', monospace; font-size: 11px;
+            color: rgba(255,255,255,.3); letter-spacing: 2px; margin-top: 4px;
+        }
+
+        /* Stats */
+        .stats-row {
+            display: flex; gap: 16px; margin-bottom: 16px; width: 100%;
+            justify-content: center;
+        }
+        .stat-box {
+            flex: 1; text-align: center;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 14px; padding: 10px 8px;
+        }
+        .stat-lbl {
+            font-family: 'JetBrains Mono', monospace; font-size: 9px;
+            letter-spacing: 2px; color: rgba(255,255,255,.3); text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .stat-val {
+            font-family: 'Bebas Neue', cursive; font-size: 28px; line-height: 1;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .stat-val.gold {
+            background: linear-gradient(135deg, var(--gold), #ff9a00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* Timer bar */
+        .timer-wrap {
+            width: 100%; height: 6px; background: rgba(255,255,255,.07);
+            border-radius: 3px; overflow: hidden; margin-bottom: 20px;
+        }
+        .timer-fill {
+            height: 100%; border-radius: 3px;
+            background: linear-gradient(90deg, var(--cyan), var(--purple));
+            transition: width .2s linear, background .3s;
+        }
+
+        /* Word display */
+        .word-box {
+            width: 100%;
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 20px;
+            padding: 28px 20px;
+            text-align: center;
+            margin-bottom: 16px;
+            position: relative; overflow: hidden;
+        }
+        .word-box::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(0,255,231,.06), transparent 70%);
+        }
+        #colorWord {
+            font-family: 'Bebas Neue', cursive; font-size: clamp(52px,14vw,80px);
+            line-height: 1;
+            transition: transform .1s, filter .2s;
+            filter: drop-shadow(0 0 20px currentColor);
+        }
+        #colorWord.pop { animation: wordPop .15s ease; }
+        @keyframes wordPop { 0%{transform:scale(1)} 50%{transform:scale(1.12)} 100%{transform:scale(1)} }
+        @keyframes wrongShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+        #colorWord.wrong { animation: wrongShake .25s ease; }
+
+        /* Buttons */
+        .btn-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 10px; width: 100%;
+        }
+        .color-btn {
+            padding: 16px 10px;
+            border-radius: 16px; border: 2px solid;
+            font-family: 'Bebas Neue', cursive; font-size: 20px;
+            letter-spacing: 2px; cursor: pointer;
+            transition: all .15s cubic-bezier(.34,1.56,.64,1);
+            background: rgba(0,0,0,.25);
+            backdrop-filter: blur(4px);
+            position: relative; overflow: hidden;
+        }
+        .color-btn::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: currentColor; opacity: 0;
+            transition: opacity .15s;
+        }
+        .color-btn:hover { transform: translateY(-3px); }
+        .color-btn:hover::after { opacity: .08; }
+        .color-btn:active { transform: scale(.95); }
+
+        /* Multiplier badge */
+        .mult-badge {
+            position: fixed; top: 20px; right: 20px; z-index: 100;
+            font-family: 'Bebas Neue', cursive; font-size: 18px; letter-spacing: 1px;
+            padding: 6px 16px; border-radius: 50px;
+            background: rgba(255,230,0,.12);
+            border: 1px solid rgba(255,230,0,.3);
+            color: var(--gold);
+            opacity: 0; transition: opacity .3s;
+        }
+        .mult-badge.show { opacity: 1; }
+
+        /* Overlay */
+        .overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(2,2,15,.92); backdrop-filter: blur(20px);
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center; gap: 16px;
+            text-align: center; padding: 20px;
+        }
+        .overlay.show { display: flex; }
+        .ov-icon { font-size: 60px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1) both; }
+        .ov-title {
+            font-family: 'Bebas Neue', cursive; font-size: clamp(44px,10vw,72px);
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .ov-sub {
+            font-family: 'JetBrains Mono', monospace; font-size: 12px;
+            letter-spacing: 2px; color: rgba(255,255,255,.4);
+        }
+        .ov-btn {
+            margin-top: 8px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: #000; border: none; padding: 13px 40px; border-radius: 50px;
+            font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px;
+            letter-spacing: 1px; cursor: pointer; transition: all .2s;
+        }
+        .ov-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,255,231,.4); }
+
+        @keyframes popIn { from{transform:scale(.4);opacity:0} to{transform:scale(1);opacity:1} }
+    </style>
+</head>
+<body>
+
+    <div class="bg-layer">
+        <div class="bg-grid"></div>
+        <div class="orb o1"></div>
+        <div class="orb o2"></div>
+    </div>
+
+    <a href="index.html" class="back-btn">← BACK</a>
+    <div class="mult-badge" id="multBadge">x1</div>
+
+    <!-- Result overlay -->
+    <div class="overlay" id="overlay">
+        <div class="ov-icon" id="oIcon">🎨</div>
+        <div class="ov-title" id="oTitle">COLOR MATCH</div>
+        <div class="ov-sub" id="oSub">Pilih <b>WARNA TEKS</b>, bukan kata!</div>
+        <button class="ov-btn" onclick="startGame()">MULAI MAIN</button>
+    </div>
+
+    <div class="game-wrap">
+        <div class="game-header">
+            <h1>Color Match</h1>
+            <p>Pilih warna teksnya, bukan kata!</p>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-lbl">Score</div>
+                <div class="stat-val" id="scoreEl">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-lbl">Streak</div>
+                <div class="stat-val gold" id="streakEl">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-lbl">Best</div>
+                <div class="stat-val" id="bestEl">0</div>
+            </div>
+        </div>
+
+        <div class="timer-wrap">
+            <div class="timer-fill" id="timerFill" style="width:100%"></div>
+        </div>
+
+        <div class="word-box">
+            <div id="colorWord">MERAH</div>
+        </div>
+
+        <div class="btn-grid" id="btnGrid"></div>
+    </div>
+
+    <script>
+    const COLORS = [
+        { name: 'MERAH',  val: '#ff2d78', hex: '#ff2d78', label: 'Merah'  },
+        { name: 'BIRU',   val: '#00b4d8', hex: '#00b4d8', label: 'Biru'   },
+        { name: 'HIJAU',  val: '#00e676', hex: '#00e676', label: 'Hijau'  },
+        { name: 'UNGU',   val: '#b537f2', hex: '#b537f2', label: 'Ungu'   },
+        { name: 'KUNING', val: '#ffe600', hex: '#ffe600', label: 'Kuning' },
+        { name: 'CYAN',   val: '#00ffe7', hex: '#00ffe7', label: 'Cyan'   },
+    ];
+
+    const TIME_PER_Q = 5; // seconds
+    let score, streak, best, currentColor, timeLeft, timer, gameRunning;
+    let lastTime = 0;
+    best = parseInt(localStorage.getItem('cm_best') || '0');
+    document.getElementById('bestEl').textContent = best;
+
+    // Build buttons
+    const btnGrid = document.getElementById('btnGrid');
+    COLORS.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'color-btn';
+        btn.textContent = c.name;
+        btn.style.color = c.val;
+        btn.style.borderColor = c.val + '66';
+        btn.style.textShadow = `0 0 15px ${c.val}`;
+        btn.addEventListener('click', () => check(c.val));
+        btn.id = 'btn_' + c.val.replace('#','');
+        btnGrid.appendChild(btn);
+    });
+
+    function startGame() {
+        document.getElementById('overlay').classList.remove('show');
+        score = 0; streak = 0; timeLeft = TIME_PER_Q; gameRunning = true;
+        updateUI();
+        if (timer) cancelAnimationFrame(timer);
+        lastTime = performance.now();
+        timer = requestAnimationFrame(tick);
+        nextQ();
+    }
+
+    function nextQ() {
+        const wordC = COLORS[Math.floor(Math.random() * COLORS.length)];
+        let inkC;
+        do { inkC = COLORS[Math.floor(Math.random() * COLORS.length)]; } while (inkC === wordC);
+        currentColor = inkC.val;
+        const el = document.getElementById('colorWord');
+        el.textContent = wordC.name;
+        el.style.color = inkC.val;
+        timeLeft = TIME_PER_Q;
+        updateTimerBar();
+    }
+
+    function tick(timestamp) {
+        if (!gameRunning) return;
+        const dt = (timestamp - lastTime) / 1000;
+        lastTime = timestamp;
+        timeLeft -= dt;
+        if (timeLeft <= 0) {
+            streak = 0;
+            updateUI();
+            // Flash red
+            document.getElementById('timerFill').style.background = 'linear-gradient(90deg,#ff2d78,#ff4444)';
+            setTimeout(() => {
+                document.getElementById('timerFill').style.background = '';
+                nextQ();
+            }, 300);
+            return;
+        }
+        updateTimerBar();
+        timer = requestAnimationFrame(tick);
+    }
+
+    function updateTimerBar() {
+        const pct = (timeLeft / TIME_PER_Q) * 100;
+        document.getElementById('timerFill').style.width = pct + '%';
+        if (pct < 30) document.getElementById('timerFill').style.background = 'linear-gradient(90deg,#ff2d78,#ff6b6b)';
+        else document.getElementById('timerFill').style.background = '';
+    }
+
+    function check(val) {
+        if (!gameRunning) return;
+        const el = document.getElementById('colorWord');
+        if (val === currentColor) {
+            streak++;
+            const mult = Math.floor(streak / 3) + 1;
+            const pts = 10 * mult;
+            score += pts;
+            if (score > best) { best = score; localStorage.setItem('cm_best', best); }
+            el.classList.remove('wrong'); el.classList.add('pop');
+            setTimeout(() => el.classList.remove('pop'), 200);
+            if (window.SFX) SFX.score();
+            showMult(mult, streak);
+        } else {
+            streak = 0;
+            el.classList.remove('pop'); el.classList.add('wrong');
+            setTimeout(() => el.classList.remove('wrong'), 300);
+            if (window.SFX) SFX.hit();
+        }
+        updateUI();
+        nextQ();
+    }
+
+    function showMult(mult, streak) {
+        const badge = document.getElementById('multBadge');
+        badge.textContent = streak >= 3 ? `🔥 x${mult} COMBO!` : `+10`;
+        badge.classList.add('show');
+        clearTimeout(badge._t);
+        badge._t = setTimeout(() => badge.classList.remove('show'), 1200);
+    }
+
+    function updateUI() {
+        document.getElementById('scoreEl').textContent = score.toLocaleString();
+        document.getElementById('streakEl').textContent = streak;
+        document.getElementById('bestEl').textContent = best.toLocaleString();
+    }
+    </script>
+    <script src="sounds.js"></script>
+    <script src="mobile-touch.js"></script>
+</body>
+</html>

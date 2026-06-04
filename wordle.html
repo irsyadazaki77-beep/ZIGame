@@ -1,0 +1,252 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Guess - ZI GAME</title>
+    <style>
+        body {
+            background: #02020f;
+            color: #fff;
+            font-family: 'DM Sans', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00ffe7;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid rgba(0, 255, 231, 0.3);
+            border-radius: 8px;
+            background: rgba(0, 255, 231, 0.05);
+        }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            color: #00ffe7;
+            margin-bottom: 20px;
+            margin-top: 50px;
+        }
+
+        .board {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 20px;
+            transform: perspective(800px) rotateX(15deg);
+            transform-style: preserve-3d;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            width: 90vw;
+            max-width: 320px;
+            transform-style: preserve-3d;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            width: 100%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            text-transform: uppercase;
+            background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
+            box-sizing: border-box;
+            box-shadow: inset 0 5px 15px rgba(0, 0, 0, 0.8), 0 10px 20px rgba(0, 0, 0, 0.6);
+            transform: translateZ(10px);
+            transition: all 0.3s;
+        }
+
+        .correct {
+            background: linear-gradient(145deg, #6aaa63, #538d4e);
+            border-color: #538d4e;
+            box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.3), 0 10px 20px rgba(0, 0, 0, 0.4);
+            transform: translateZ(20px);
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .present {
+            background: linear-gradient(145deg, #d3ba45, #b59f3b);
+            border-color: #b59f3b;
+            box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.3), 0 10px 20px rgba(0, 0, 0, 0.4);
+            transform: translateZ(20px);
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .absent {
+            background: linear-gradient(145deg, #4d4d4f, #3a3a3c);
+            border-color: #3a3a3c;
+            box-shadow: inset 0 2px 10px rgba(255, 255, 255, 0.1), 0 10px 20px rgba(0, 0, 0, 0.4);
+            transform: translateZ(15px);
+        }
+
+        #message {
+            font-size: 14px;
+            margin-top: 20px;
+            color: #ff2d78;
+            max-width: 300px;
+        }
+
+        .mb-keyboard {
+            display: none;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+            max-width: 350px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .mb-key {
+            background: linear-gradient(145deg, #2a2a35, #101018);
+            color: #fff;
+            padding: 12px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            touch-action: manipulation;
+            box-shadow: 0 5px 0 #000, 0 8px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.1s ease;
+            transform: translateY(0);
+        }
+
+        .mb-key:active {
+            background: #555;
+            transform: translateY(5px);
+            box-shadow: 0 0px 0 #000, 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (max-width: 600px) {
+            .mb-keyboard {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <a href="index.html" class="back-btn">← Kembali</a>
+    <h1>Word Guess</h1>
+    <div id="board" class="board"></div>
+    <div id="message">Gunakan keyboard untuk menebak (5 huruf)!</div>
+
+    <div class="mb-keyboard" id="mb-keyboard">
+        <!-- populated via js -->
+    </div>
+
+    <script>
+        const words = ['MAKAN', 'TIDUR', 'MAINN', 'BINTA', 'CINTA', 'RINDU', 'ANGIN', 'BADAI', 'BUMI'];
+        const target = words[Math.floor(Math.random() * words.length)];
+        const board = document.getElementById('board');
+        let currentRow = 0; let currentCell = 0;
+        let guesses = Array.from({ length: 6 }, () => []);
+
+        for (let i = 0; i < 6; i++) {
+            let row = document.createElement('div');
+            row.className = 'row';
+            for (let j = 0; j < 5; j++) {
+                let cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `c-${i}-${j}`;
+                row.appendChild(cell);
+            }
+            board.appendChild(row);
+        }
+
+        // Mobile Keyboard logic
+        const kbLayout = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+        const mbKb = document.getElementById('mb-keyboard');
+        kbLayout.forEach(row => {
+            let rowDiv = document.createElement('div');
+            rowDiv.style.display = 'flex';
+            rowDiv.style.gap = '4px';
+            rowDiv.style.justifyContent = 'center';
+            rowDiv.style.width = '100%';
+            for (let char of row) {
+                let btn = document.createElement('button');
+                btn.className = 'mb-key';
+                btn.innerText = char;
+                btn.onclick = () => handleKey(char);
+                rowDiv.appendChild(btn);
+            }
+            mbKb.appendChild(rowDiv);
+        });
+        let actionRow = document.createElement('div');
+        actionRow.style.display = 'flex'; actionRow.style.gap = '4px'; actionRow.style.width = '100%'; actionRow.style.justifyContent = 'center';
+        let enterBtn = document.createElement('button'); enterBtn.className = 'mb-key'; enterBtn.innerText = 'ENTER'; enterBtn.onclick = () => handleKey('Enter');
+        let delBtn = document.createElement('button'); delBtn.className = 'mb-key'; delBtn.innerText = 'DEL'; delBtn.onclick = () => handleKey('Backspace');
+        actionRow.appendChild(enterBtn); actionRow.appendChild(delBtn);
+        mbKb.appendChild(actionRow);
+
+        function handleKey(key) {
+            if (currentRow >= 6) return;
+            if (key === 'Enter') {
+                if (currentCell === 5) checkRow();
+            } else if (key === 'Backspace') {
+                if (currentCell > 0) {
+                    currentCell--;
+                    guesses[currentRow].pop();
+                    document.getElementById(`c-${currentRow}-${currentCell}`).innerText = '';
+                }
+            } else if (key.length === 1 && key.match(/[a-zA-Z]/i)) {
+                if (currentCell < 5) {
+                    guesses[currentRow].push(key.toUpperCase());
+                    document.getElementById(`c-${currentRow}-${currentCell}`).innerText = key.toUpperCase();
+                    currentCell++;
+                }
+            }
+        }
+
+        document.addEventListener('keydown', e => {
+            handleKey(e.key);
+        });
+
+        function checkRow() {
+            let guess = guesses[currentRow].join('');
+            for (let i = 0; i < 5; i++) {
+                let cell = document.getElementById(`c-${currentRow}-${i}`);
+                if (guess[i] === target[i]) cell.classList.add('correct');
+                else if (target.includes(guess[i])) cell.classList.add('present');
+                else cell.classList.add('absent');
+            }
+            if (guess === target) {
+                document.getElementById('message').innerText = 'SELAMAT! KAMU MENANG!';
+                document.getElementById('message').style.color = '#00ffe7';
+                currentRow = 6;
+                if (window.SFX) SFX.win();
+            } else {
+                currentRow++;
+                currentCell = 0;
+                if (currentRow >= 6) {
+                    document.getElementById('message').innerText = `GAME OVER! Kata: ${target}`;
+                    if (window.SFX) SFX.gameOver();
+                } else if (window.SFX) SFX.click();
+            }
+        }
+    </script>
+    <script src="sounds.js"></script>
+    <script src="mobile-touch.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,1878 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gris | ZI GAME</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #09111f;
+            --ink-soft: rgba(9, 17, 31, 0.74);
+            --line: rgba(245, 248, 255, 0.14);
+            --text: #eef3ff;
+            --muted: rgba(238, 243, 255, 0.68);
+            --mist: rgba(255, 255, 255, 0.08);
+            --jade: #8fe0d2;
+            --rose: #f2abc5;
+            --gold: #ffd98c;
+            --sky: #b7c8f1;
+            --danger: #271f2d;
+            --danger-glow: #66516e;
+            --shadow: 0 22px 55px rgba(0, 0, 0, 0.28);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Outfit', sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 15% 20%, rgba(143, 224, 210, 0.14), transparent 28%),
+                radial-gradient(circle at 82% 18%, rgba(242, 171, 197, 0.16), transparent 24%),
+                radial-gradient(circle at 50% 90%, rgba(255, 217, 140, 0.14), transparent 30%),
+                linear-gradient(180deg, #06101b, #0d1728 45%, #13203a 100%);
+            overflow-x: hidden;
+        }
+
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::before {
+            opacity: 0.22;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 72px 72px;
+            mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.9), transparent 85%);
+        }
+
+        body::after {
+            background:
+                radial-gradient(circle at center, transparent 38%, rgba(7, 10, 18, 0.46) 100%),
+                linear-gradient(180deg, transparent, rgba(4, 7, 14, 0.36));
+        }
+
+        .app {
+            position: relative;
+            z-index: 1;
+            width: min(1240px, calc(100% - 28px));
+            margin: 18px auto 26px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .topbar,
+        .panel,
+        .action-row {
+            border: 1px solid var(--line);
+            background: var(--ink-soft);
+            backdrop-filter: blur(18px);
+            box-shadow: var(--shadow);
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 20px;
+        }
+
+        .brand,
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .back-btn,
+        .pill,
+        .action-btn,
+        .overlay-btn {
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            text-decoration: none;
+            transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .back-btn,
+        .action-btn,
+        .overlay-btn {
+            padding: 11px 16px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            cursor: pointer;
+        }
+
+        .back-btn:hover,
+        .action-btn:hover,
+        .overlay-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .back-btn {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .title-wrap {
+            display: grid;
+            gap: 2px;
+        }
+
+        .title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: clamp(34px, 4vw, 48px);
+            line-height: 0.92;
+            letter-spacing: 2px;
+            background: linear-gradient(120deg, #f9fbff, var(--jade) 34%, var(--rose) 66%, var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .pill b {
+            color: #ffffff;
+            font-size: 13px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            gap: 14px;
+        }
+
+        .canvas-shell {
+            position: relative;
+            min-height: 540px;
+            border-radius: 26px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow);
+            background: linear-gradient(180deg, rgba(247, 250, 255, 0.05), rgba(8, 13, 24, 0.16));
+        }
+
+        #grisCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 26px;
+            background:
+                radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.16), transparent 30%),
+                linear-gradient(180deg, rgba(13, 20, 35, 0.38), rgba(8, 12, 24, 0.88));
+            backdrop-filter: blur(10px);
+            transition: opacity 0.28s ease;
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .overlay-card {
+            width: min(560px, 100%);
+            padding: 28px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(10, 16, 27, 0.58);
+            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+            text-align: center;
+            display: grid;
+            gap: 14px;
+        }
+
+        .overlay-kicker {
+            justify-self: center;
+            padding: 7px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1.8px;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .overlay-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: clamp(54px, 10vw, 86px);
+            letter-spacing: 2px;
+            line-height: 0.92;
+            background: linear-gradient(120deg, #ffffff, var(--jade), var(--rose), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .overlay-copy {
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--muted);
+        }
+
+        .overlay-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .overlay-btn.primary,
+        .action-btn.primary {
+            border: none;
+            color: #101824;
+            background: linear-gradient(120deg, var(--jade), var(--rose), var(--gold));
+            box-shadow: 0 14px 34px rgba(255, 217, 140, 0.22);
+        }
+
+        .overlay-note {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1.4px;
+            color: rgba(238, 243, 255, 0.56);
+            text-transform: uppercase;
+        }
+
+        .banner {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translate(-50%, -12px);
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(11, 18, 31, 0.7);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1.6px;
+            color: var(--text);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .banner.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .panel {
+            border-radius: 24px;
+            padding: 18px;
+            display: grid;
+            gap: 16px;
+            align-content: start;
+        }
+
+        .panel-block {
+            display: grid;
+            gap: 10px;
+        }
+
+        .panel-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 28px;
+            letter-spacing: 1px;
+            color: #ffffff;
+        }
+
+        .panel-copy,
+        .detail-list li,
+        .phase-meta,
+        .progress-text {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .detail-list {
+            padding-left: 18px;
+            display: grid;
+            gap: 6px;
+        }
+
+        .phase-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .phase-item {
+            display: grid;
+            grid-template-columns: 16px minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+            padding: 10px 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.03);
+            transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+        }
+
+        .phase-item.active {
+            transform: translateX(2px);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .phase-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-top: 4px;
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06);
+        }
+
+        .phase-name {
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+
+        .meter {
+            height: 12px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .meter-fill {
+            width: 0%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(120deg, var(--jade), var(--rose), var(--gold));
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.18);
+            transition: width 0.22s ease;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+
+        .legend {
+            display: grid;
+            gap: 9px;
+        }
+
+        .legend-item {
+            display: grid;
+            grid-template-columns: 18px minmax(0, 1fr);
+            gap: 10px;
+            align-items: center;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .legend-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .legend-icon.wisp {
+            background: radial-gradient(circle at 30% 30%, #fff, rgba(255, 255, 255, 0.5) 28%, rgba(143, 224, 210, 0.4) 48%, transparent 70%);
+        }
+
+        .legend-icon.flower {
+            background: linear-gradient(180deg, rgba(255, 217, 140, 0.8), rgba(242, 171, 197, 0.4));
+        }
+
+        .legend-icon.shadow {
+            background: linear-gradient(180deg, rgba(102, 81, 110, 0.96), rgba(39, 31, 45, 0.96));
+        }
+
+        .action-row {
+            border-radius: 20px;
+            padding: 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .action-btn {
+            min-width: 148px;
+        }
+
+        .hud-note {
+            align-self: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1.2px;
+            color: rgba(238, 243, 255, 0.56);
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 980px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                order: 2;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .app {
+                width: min(100% - 16px, 1240px);
+                margin-top: 10px;
+            }
+
+            .topbar {
+                padding: 12px;
+            }
+
+            .overlay-card {
+                padding: 22px 18px;
+            }
+
+            .banner {
+                max-width: calc(100% - 32px);
+                white-space: normal;
+                text-align: center;
+            }
+
+            .action-btn {
+                flex: 1 1 160px;
+            }
+
+            .hud-note {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="topbar">
+            <div class="brand">
+                <a href="index.html" class="back-btn">&larr; Kembali</a>
+                <div class="title-wrap">
+                    <h1 class="title">Gris: Color Bloom</h1>
+                    <p class="subtitle">Platformer atmosferik tentang memulihkan langit</p>
+                </div>
+            </div>
+            <div class="stats">
+                <div class="pill">Score <b id="scoreValue">0</b></div>
+                <div class="pill">Wisps <b id="wispValue">0 / 36</b></div>
+                <div class="pill">Lives <b id="lifeValue">3</b></div>
+                <div class="pill">Best <b id="bestValue">0</b></div>
+            </div>
+        </header>
+
+        <main class="layout">
+            <section class="canvas-shell">
+                <canvas id="grisCanvas" width="960" height="540" aria-label="Gris Color Bloom canvas game"></canvas>
+                <div class="banner" id="banner">Langit mulai bernapas lagi</div>
+
+                <div class="overlay" id="overlay">
+                    <div class="overlay-card">
+                        <div class="overlay-kicker" id="overlayKicker">Atmospheric Platformer</div>
+                        <h2 class="overlay-title" id="overlayTitle">Restore the Sky</h2>
+                        <p class="overlay-copy" id="overlayCopy">Kumpulkan 36 wisp warna, gunakan lompat ganda dan tahan tombol lompat untuk melayang. Hindari duri bayangan dan tetes gelap sambil menghidupkan empat fase langit.</p>
+                        <div class="overlay-actions">
+                            <button class="overlay-btn primary" id="overlayPrimary">Mulai Main</button>
+                            <button class="overlay-btn" id="overlaySecondary">Lihat Kontrol</button>
+                        </div>
+                        <div class="overlay-note">Arrow atau A D untuk bergerak &middot; Space / W / Panah Atas untuk lompat dan melayang &middot; Enter mulai &middot; Escape jeda</div>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="panel">
+                <section class="panel-block">
+                    <h2 class="panel-title">Misi</h2>
+                    <p class="panel-copy">Gris bergerak di dunia yang kehilangan warna. Setiap wisp membuka fase baru, mengubah palet visual, menambah ritme, dan membuat bayangan semakin agresif.</p>
+                    <ul class="detail-list">
+                        <li>Kumpulkan wisp secepat mungkin untuk menaikkan skor dan membuka fase berikutnya.</li>
+                        <li>Sentuh bunga emas untuk meluncur ke udara dan mengambil lintasan tinggi.</li>
+                        <li>Checkpoint bergeser saat kamu terus maju, jadi permainan tetap cepat dan tidak terlalu menghukum.</li>
+                    </ul>
+                </section>
+
+                <section class="panel-block">
+                    <h2 class="panel-title">Fase Warna</h2>
+                    <div class="phase-list" id="phaseList">
+                        <div class="phase-item active" data-stage="0">
+                            <span class="phase-dot" style="background:#d8dfef"></span>
+                            <div>
+                                <div class="phase-name">Ashen Silence</div>
+                                <div class="phase-meta">Dunia pucat dan tenang. Langit masih tertutup kabut.</div>
+                            </div>
+                        </div>
+                        <div class="phase-item" data-stage="1">
+                            <span class="phase-dot" style="background:#8fe0d2"></span>
+                            <div>
+                                <div class="phase-name">Jade Echo</div>
+                                <div class="phase-meta">Warna hijau air kembali dan angin mulai mengangkatmu.</div>
+                            </div>
+                        </div>
+                        <div class="phase-item" data-stage="2">
+                            <span class="phase-dot" style="background:#f2abc5"></span>
+                            <div>
+                                <div class="phase-name">Rose Memory</div>
+                                <div class="phase-meta">Cahaya lembut kembali, tetapi tetes bayangan jatuh lebih cepat.</div>
+                            </div>
+                        </div>
+                        <div class="phase-item" data-stage="3">
+                            <span class="phase-dot" style="background:#ffd98c"></span>
+                            <div>
+                                <div class="phase-name">Golden Dawn</div>
+                                <div class="phase-meta">Langit mendekati pulih sepenuhnya. Lintasan jadi paling ramai.</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel-block">
+                    <h2 class="panel-title">Progress</h2>
+                    <div class="meter"><div class="meter-fill" id="progressFill"></div></div>
+                    <div class="progress-text">
+                        <span id="progressLabel">8 wisp menuju Jade Echo</span>
+                        <span id="stageLabel">Stage 1 / 4</span>
+                    </div>
+                </section>
+
+                <section class="panel-block">
+                    <h2 class="panel-title">Objek</h2>
+                    <div class="legend">
+                        <div class="legend-item"><span class="legend-icon wisp"></span><span>Wisp warna menambah progres, skor, dan combo singkat.</span></div>
+                        <div class="legend-item"><span class="legend-icon flower"></span><span>Bunga emas memberi dorongan vertikal untuk membuka jalur tinggi.</span></div>
+                        <div class="legend-item"><span class="legend-icon shadow"></span><span>Duri tanah dan tetes gelap mengurangi satu nyawa saat menyentuhmu.</span></div>
+                    </div>
+                </section>
+            </aside>
+        </main>
+
+        <div class="action-row">
+            <button class="action-btn primary" id="startBtn">Mulai Ulang</button>
+            <button class="action-btn" id="pauseBtn">Jeda</button>
+            <button class="action-btn" id="muteBtn">Mute: Off</button>
+            <div class="hud-note">Tap canvas untuk lompat cepat di mobile. Tombol virtual otomatis muncul di touch device.</div>
+        </div>
+    </div>
+
+    <script src="sounds.js"></script>
+    <script>
+        const canvas = document.getElementById('grisCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const scoreValue = document.getElementById('scoreValue');
+        const wispValue = document.getElementById('wispValue');
+        const lifeValue = document.getElementById('lifeValue');
+        const bestValue = document.getElementById('bestValue');
+        const progressFill = document.getElementById('progressFill');
+        const progressLabel = document.getElementById('progressLabel');
+        const stageLabel = document.getElementById('stageLabel');
+        const phaseList = Array.from(document.querySelectorAll('.phase-item'));
+
+        const overlay = document.getElementById('overlay');
+        const overlayKicker = document.getElementById('overlayKicker');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const overlayCopy = document.getElementById('overlayCopy');
+        const overlayPrimary = document.getElementById('overlayPrimary');
+        const overlaySecondary = document.getElementById('overlaySecondary');
+        const banner = document.getElementById('banner');
+
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const muteBtn = document.getElementById('muteBtn');
+
+        const STORAGE_KEY = 'zi_gris_best';
+        const WIN_TARGET = 36;
+        const STAGE_BREAKS = [0, 8, 18, 28];
+        const BASE_WIDTH = 960;
+        const BASE_HEIGHT = 540;
+
+        const themes = [
+            {
+                name: 'Ashen Silence',
+                skyTop: '#8393b4',
+                skyBottom: '#f2efe9',
+                mist: 'rgba(255,255,255,0.55)',
+                sun: 'rgba(255,255,255,0.46)',
+                mountainA: '#7181a4',
+                mountainB: '#55637f',
+                ground: '#e9eef7',
+                ridge: '#bec9da',
+                glow: '#ffffff',
+                accentA: '#dce6f8',
+                accentB: '#f7f0ec',
+                flower: '#ffd8a2'
+            },
+            {
+                name: 'Jade Echo',
+                skyTop: '#78b8bb',
+                skyBottom: '#f2f4ef',
+                mist: 'rgba(223,255,247,0.42)',
+                sun: 'rgba(218,255,242,0.54)',
+                mountainA: '#4f8f8f',
+                mountainB: '#336a68',
+                ground: '#d3f1ea',
+                ridge: '#a0d5ce',
+                glow: '#d7fff5',
+                accentA: '#8fe0d2',
+                accentB: '#b8fff0',
+                flower: '#ffe49c'
+            },
+            {
+                name: 'Rose Memory',
+                skyTop: '#d58cac',
+                skyBottom: '#fff2ed',
+                mist: 'rgba(255,239,245,0.46)',
+                sun: 'rgba(255,233,240,0.48)',
+                mountainA: '#9b5876',
+                mountainB: '#6e3954',
+                ground: '#ffe4ee',
+                ridge: '#f1bfcf',
+                glow: '#fff2f7',
+                accentA: '#f2abc5',
+                accentB: '#ffd8e8',
+                flower: '#ffe7ac'
+            },
+            {
+                name: 'Golden Dawn',
+                skyTop: '#f2be7e',
+                skyBottom: '#fff8dd',
+                mist: 'rgba(255,247,214,0.44)',
+                sun: 'rgba(255,248,190,0.58)',
+                mountainA: '#bd8757',
+                mountainB: '#8a5d34',
+                ground: '#fff0be',
+                ridge: '#f7d689',
+                glow: '#fff7d6',
+                accentA: '#ffd98c',
+                accentB: '#fff2bd',
+                flower: '#fff2b0'
+            }
+        ];
+
+        const state = {
+            running: false,
+            paused: false,
+            over: false,
+            win: false,
+            score: 0,
+            wisps: 0,
+            lives: 3,
+            stage: 0,
+            cameraX: 0,
+            farthestX: 140,
+            checkpointX: 140,
+            nextCheckpointX: 760,
+            worldCursor: 240,
+            lastTime: 0,
+            best: Number(localStorage.getItem(STORAGE_KEY) || 0),
+            combo: 0,
+            comboTimer: 0,
+            bannerTimer: 0,
+            stageFx: 0,
+            shake: 0,
+            time: 0
+        };
+
+        const player = {
+            x: 140,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            w: 26,
+            h: 48,
+            onGround: false,
+            coyote: 0,
+            extraJump: true,
+            jumpBuffer: 0,
+            facing: 1,
+            invuln: 0
+        };
+
+        const world = {
+            wisps: [],
+            thorns: [],
+            droplets: [],
+            flowers: [],
+            bursts: [],
+            floats: [],
+            trail: [],
+            stars: Array.from({ length: 52 }, () => ({
+                x: Math.random() * BASE_WIDTH * 4,
+                y: 14 + Math.random() * BASE_HEIGHT * 0.5,
+                size: 0.5 + Math.random() * 1.8,
+                seed: Math.random() * Math.PI * 2,
+                depth: 0.05 + Math.random() * 0.16
+            })),
+            motes: Array.from({ length: 56 }, (_, index) => ({
+                seed: Math.random() * 1000 + index * 13,
+                depth: 0.18 + Math.random() * 0.82,
+                size: 1 + Math.random() * 3,
+                speed: 10 + Math.random() * 22,
+                x: Math.random() * BASE_WIDTH,
+                y: Math.random() * BASE_HEIGHT
+            }))
+        };
+
+        const keys = Object.create(null);
+
+        bestValue.textContent = String(state.best);
+
+        function rand(min, max) {
+            return min + Math.random() * (max - min);
+        }
+
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(max, value));
+        }
+
+        function groundY(x) {
+            return 404 + Math.sin(x * 0.0105) * 28 + Math.sin(x * 0.022 + 0.85) * 16 + Math.sin(x * 0.0042 + 1.6) * 36;
+        }
+
+        function getStageFromWisps(count) {
+            if (count >= STAGE_BREAKS[3]) return 3;
+            if (count >= STAGE_BREAKS[2]) return 2;
+            if (count >= STAGE_BREAKS[1]) return 1;
+            return 0;
+        }
+
+        function playSfx(name) {
+            if (window.SFX && typeof window.SFX[name] === 'function') {
+                window.SFX[name]();
+            }
+        }
+
+        function syncMuteLabel() {
+            const muted = window.SoundEngine && typeof window.SoundEngine.isMuted === 'function' && window.SoundEngine.isMuted();
+            muteBtn.textContent = muted ? 'Mute: On' : 'Mute: Off';
+        }
+
+        function showBanner(message, duration = 2.2) {
+            banner.textContent = message;
+            banner.classList.add('show');
+            state.bannerTimer = duration;
+        }
+
+        function updateHud() {
+            scoreValue.textContent = String(Math.floor(state.score));
+            wispValue.textContent = state.wisps + ' / ' + WIN_TARGET;
+            lifeValue.textContent = String(state.lives);
+            bestValue.textContent = String(state.best);
+
+            const stageIndex = state.stage;
+            const nextBreak = stageIndex === themes.length - 1 ? WIN_TARGET : STAGE_BREAKS[stageIndex + 1];
+            const currentBreak = STAGE_BREAKS[stageIndex];
+            const span = Math.max(1, nextBreak - currentBreak);
+            const current = clamp((state.wisps - currentBreak) / span, 0, 1);
+            progressFill.style.width = (current * 100).toFixed(1) + '%';
+            stageLabel.textContent = 'Stage ' + (stageIndex + 1) + ' / ' + themes.length;
+
+            if (state.wisps >= WIN_TARGET) {
+                progressLabel.textContent = 'Semua warna kembali';
+            } else {
+                const left = nextBreak - state.wisps;
+                const nextName = stageIndex === themes.length - 1 ? 'final bloom' : themes[stageIndex + 1].name;
+                progressLabel.textContent = left + ' wisp menuju ' + nextName;
+            }
+
+            phaseList.forEach((item, index) => {
+                item.classList.toggle('active', index === state.stage);
+            });
+        }
+
+        function resetPlayer() {
+            player.x = 140;
+            player.y = groundY(player.x) - player.h / 2;
+            player.vx = 0;
+            player.vy = 0;
+            player.onGround = true;
+            player.coyote = 0;
+            player.extraJump = true;
+            player.jumpBuffer = 0;
+            player.facing = 1;
+            player.invuln = 0;
+        }
+
+        function resetWorld() {
+            world.wisps.length = 0;
+            world.thorns.length = 0;
+            world.droplets.length = 0;
+            world.flowers.length = 0;
+            world.bursts.length = 0;
+            world.floats.length = 0;
+            world.trail.length = 0;
+            state.worldCursor = 240;
+            generateWorld(BASE_WIDTH + 800);
+        }
+
+        function resetGame() {
+            state.running = false;
+            state.paused = false;
+            state.over = false;
+            state.win = false;
+            state.score = 0;
+            state.wisps = 0;
+            state.lives = 3;
+            state.stage = 0;
+            state.cameraX = 0;
+            state.farthestX = 140;
+            state.checkpointX = 140;
+            state.nextCheckpointX = 760;
+            state.combo = 0;
+            state.comboTimer = 0;
+            state.bannerTimer = 0;
+            state.stageFx = 0;
+            state.shake = 0;
+            state.lastTime = 0;
+            resetPlayer();
+            resetWorld();
+            updateHud();
+        }
+
+        function ensureAudio() {
+            if (window.SoundEngine && typeof window.SoundEngine.init === 'function') {
+                window.SoundEngine.init();
+                window.SoundEngine.startMusic('gris');
+            }
+            syncMuteLabel();
+        }
+
+        function showOverlay(mode) {
+            overlay.classList.remove('hidden');
+            if (mode === 'start') {
+                overlayKicker.textContent = 'Atmospheric Platformer';
+                overlayTitle.textContent = 'Restore the Sky';
+                overlayCopy.textContent = 'Kumpulkan 36 wisp warna, gunakan lompat ganda dan tahan tombol lompat untuk melayang. Hindari duri bayangan dan tetes gelap sambil menghidupkan empat fase langit.';
+                overlayPrimary.textContent = 'Mulai Main';
+                overlaySecondary.textContent = 'Lihat Kontrol';
+            } else if (mode === 'pause') {
+                overlayKicker.textContent = 'Paused';
+                overlayTitle.textContent = 'Dunia Menunggu';
+                overlayCopy.textContent = 'Tekan Enter atau tombol lanjut untuk kembali bergerak. Checkpoint terakhir tetap tersimpan.';
+                overlayPrimary.textContent = 'Lanjutkan';
+                overlaySecondary.textContent = 'Mulai Ulang';
+            } else if (mode === 'gameover') {
+                overlayKicker.textContent = 'Faded';
+                overlayTitle.textContent = 'Warna Padam';
+                overlayCopy.textContent = 'Skor akhir ' + Math.floor(state.score) + '. Coba rute yang lebih tinggi, ambil bunga emas, dan jaga ritme gliding.';
+                overlayPrimary.textContent = 'Coba Lagi';
+                overlaySecondary.textContent = 'Tips';
+            } else if (mode === 'win') {
+                overlayKicker.textContent = 'Complete';
+                overlayTitle.textContent = 'Sky Restored';
+                overlayCopy.textContent = 'Semua fase selesai dengan skor ' + Math.floor(state.score) + '. Langit hidup kembali.';
+                overlayPrimary.textContent = 'Main Lagi';
+                overlaySecondary.textContent = 'Lanjut Lihat';
+            }
+        }
+
+        function hideOverlay() {
+            overlay.classList.add('hidden');
+        }
+
+        function startGame() {
+            resetGame();
+            state.running = true;
+            ensureAudio();
+            showBanner('Ashen Silence', 2.6);
+            pauseBtn.textContent = 'Jeda';
+            hideOverlay();
+        }
+
+        function resumeGame() {
+            state.paused = false;
+            ensureAudio();
+            pauseBtn.textContent = 'Jeda';
+            hideOverlay();
+        }
+
+        function togglePause() {
+            if (!state.running || state.over || state.win) return;
+            state.paused = !state.paused;
+            if (state.paused) {
+                pauseBtn.textContent = 'Lanjutkan';
+                showOverlay('pause');
+            } else {
+                resumeGame();
+            }
+        }
+
+        function queueJump() {
+            player.jumpBuffer = 0.14;
+        }
+
+        function jump(power) {
+            player.vy = power;
+            player.onGround = false;
+            player.coyote = 0;
+            playSfx('jump');
+        }
+
+        function spawnBurst(x, y, color, amount) {
+            for (let i = 0; i < amount; i += 1) {
+                world.bursts.push({
+                    x,
+                    y,
+                    vx: rand(-110, 110),
+                    vy: rand(-160, 20),
+                    life: rand(0.45, 0.9),
+                    maxLife: 0.9,
+                    size: rand(2, 5),
+                    color
+                });
+            }
+        }
+
+        function damagePlayer() {
+            if (player.invuln > 0 || state.over || state.win) return;
+
+            state.lives -= 1;
+            player.invuln = 1.5;
+            player.vx = -80;
+            player.vy = -260;
+            state.shake = 0.44;
+            spawnBurst(player.x, player.y - 12, 'rgba(102,81,110,0.9)', 14);
+            playSfx('hit');
+            updateHud();
+
+            if (state.lives <= 0) {
+                state.over = true;
+                state.running = false;
+                state.best = Math.max(state.best, Math.floor(state.score));
+                localStorage.setItem(STORAGE_KEY, String(state.best));
+                updateHud();
+                playSfx('gameOver');
+                showOverlay('gameover');
+                return;
+            }
+
+            player.x = Math.max(140, state.checkpointX);
+            player.y = groundY(player.x) - player.h / 2 - 20;
+            player.vx = 0;
+            player.vy = 0;
+            state.cameraX = Math.max(0, player.x - 220);
+            showBanner('Bayangan melukai, kembali ke checkpoint', 2);
+        }
+
+        function winGame() {
+            if (state.win) return;
+            state.win = true;
+            state.running = false;
+            state.best = Math.max(state.best, Math.floor(state.score));
+            localStorage.setItem(STORAGE_KEY, String(state.best));
+            updateHud();
+            spawnBurst(player.x, player.y - 32, themes[state.stage].accentA, 36);
+            playSfx('win');
+            showOverlay('win');
+        }
+
+        function maybeAdvanceStage() {
+            const nextStage = getStageFromWisps(state.wisps);
+            if (nextStage === state.stage) return;
+
+            state.stage = nextStage;
+            state.stageFx = 1.0;
+            state.lives = Math.min(3, state.lives + 1);
+            spawnBurst(player.x + 18, player.y - 24, themes[state.stage].accentA, 24);
+            playSfx('win');
+            showBanner(themes[state.stage].name + ' restored', 2.6);
+            updateHud();
+        }
+
+        function collectWisp(index) {
+            const wisp = world.wisps[index];
+            world.wisps.splice(index, 1);
+            state.wisps += 1;
+            state.combo = state.comboTimer > 0 ? state.combo + 1 : 1;
+            state.comboTimer = 2.2;
+            const pts = 120 + (state.combo - 1) * 18;
+            state.score += pts;
+            state.best = Math.max(state.best, Math.floor(state.score));
+            localStorage.setItem(STORAGE_KEY, String(state.best));
+            world.floats.push({ x: wisp.x, y: wisp.y - 16, vy: -58, text: '+' + pts + (state.combo >= 2 ? '  x' + state.combo : ''), life: 1.1, maxLife: 1.1 });
+            spawnBurst(wisp.x, wisp.y, themes[state.stage].accentA, 12);
+            playSfx('eat');
+            maybeAdvanceStage();
+            updateHud();
+            if (state.wisps >= WIN_TARGET) {
+                winGame();
+            }
+        }
+
+        function generateWorld(untilX) {
+            while (state.worldCursor < untilX) {
+                state.worldCursor += rand(68, 105);
+                const gx = state.worldCursor;
+                const gy = groundY(gx);
+                const clusterCount = 1 + (Math.random() < 0.62 ? 1 : 0) + (Math.random() < 0.28 ? 1 : 0);
+                const baseHeight = rand(52, 110);
+
+                for (let i = 0; i < clusterCount; i += 1) {
+                    const spread = (i - (clusterCount - 1) / 2) * rand(38, 58);
+                    const lift = Math.sin((i / Math.max(1, clusterCount - 1)) * Math.PI) * rand(8, 28);
+                    world.wisps.push({
+                        x: gx + spread,
+                        y: gy - baseHeight - lift,
+                        wobble: rand(0, Math.PI * 2),
+                        color: themes[Math.min(themes.length - 1, getStageFromWisps(state.wisps + i))].accentA
+                    });
+                }
+
+                if (Math.random() < 0.2) {
+                    world.flowers.push({
+                        x: gx + rand(-24, 24),
+                        y: gy - 2,
+                        power: rand(500, 590),
+                        glow: rand(0, Math.PI * 2)
+                    });
+                }
+
+                if (Math.random() < 0.28 + state.stage * 0.05) {
+                    world.thorns.push({
+                        x: gx + rand(-12, 40),
+                        y: groundY(gx + rand(-12, 40)) - 2,
+                        size: rand(18, 30)
+                    });
+                }
+
+                if (Math.random() < 0.18 + state.stage * 0.07) {
+                    const amount = state.stage >= 2 && Math.random() < 0.34 ? 2 : 1;
+                    for (let i = 0; i < amount; i += 1) {
+                        world.droplets.push({
+                            x: gx + rand(-30, 90),
+                            y: rand(-280, -80),
+                            vy: rand(180, 290) + state.stage * 28,
+                            sway: rand(0, Math.PI * 2),
+                            drift: rand(18, 36),
+                            radius: rand(10, 14)
+                        });
+                    }
+                }
+            }
+        }
+
+        function cleanupWorld() {
+            const behind = state.cameraX - 240;
+            const ahead = state.cameraX + BASE_WIDTH + 560;
+            world.wisps = world.wisps.filter((item) => item.x > behind && item.x < ahead);
+            world.thorns = world.thorns.filter((item) => item.x > behind && item.x < ahead);
+            world.flowers = world.flowers.filter((item) => item.x > behind && item.x < ahead);
+            world.droplets = world.droplets.filter((item) => item.x > behind && item.x < ahead + 140);
+            world.bursts = world.bursts.filter((item) => item.life > 0);
+        }
+
+        function updatePlayer(dt) {
+            const left = keys.ArrowLeft || keys.KeyA;
+            const right = keys.ArrowRight || keys.KeyD;
+            const jumpHeld = keys.Space || keys.ArrowUp || keys.KeyW || keys.KeyZ;
+            const move = (right ? 1 : 0) - (left ? 1 : 0);
+            const accel = player.onGround ? 920 : 640;
+            const drag = player.onGround ? 9.6 : 3.6;
+
+            player.jumpBuffer = Math.max(0, player.jumpBuffer - dt);
+            player.coyote = Math.max(0, player.coyote - dt);
+            player.invuln = Math.max(0, player.invuln - dt);
+
+            if (move !== 0) {
+                player.vx += move * accel * dt;
+                player.facing = move > 0 ? 1 : -1;
+            } else {
+                player.vx -= player.vx * Math.min(1, drag * dt);
+            }
+
+            player.vx = clamp(player.vx, -225, 245 + state.stage * 18);
+
+            if (player.x < 60) {
+                player.x = 60;
+                player.vx = Math.max(0, player.vx);
+            }
+
+            if (player.jumpBuffer > 0) {
+                if (player.onGround || player.coyote > 0) {
+                    jump(-430);
+                    player.extraJump = true;
+                    player.jumpBuffer = 0;
+                } else if (player.extraJump) {
+                    jump(-400);
+                    player.extraJump = false;
+                    player.jumpBuffer = 0;
+                }
+            }
+
+            const gravity = jumpHeld && player.vy > 10 ? 420 : 980;
+            const maxFall = jumpHeld ? 240 : 560;
+            player.vy = Math.min(maxFall, player.vy + gravity * dt);
+
+            player.x += player.vx * dt;
+            player.y += player.vy * dt;
+
+            const floor = groundY(player.x);
+            if (player.y + player.h / 2 >= floor && player.vy >= 0) {
+                player.y = floor - player.h / 2;
+                player.vy = 0;
+                if (!player.onGround) {
+                    player.extraJump = true;
+                }
+                player.onGround = true;
+                player.coyote = 0.12;
+            } else {
+                if (player.onGround) {
+                    player.coyote = 0.12;
+                }
+                player.onGround = false;
+            }
+
+            if (player.x > state.farthestX) {
+                state.score += (player.x - state.farthestX) * 0.18;
+                state.farthestX = player.x;
+            }
+
+            if (state.farthestX >= state.nextCheckpointX) {
+                state.checkpointX = state.nextCheckpointX - 70;
+                state.nextCheckpointX += 620;
+                showBanner('Checkpoint tersimpan', 1.4);
+            }
+
+            if (player.y - player.h > BASE_HEIGHT + 130) {
+                damagePlayer();
+            }
+
+            world.trail.unshift({ x: player.x, y: player.y });
+            if (world.trail.length > 10) world.trail.length = 10;
+        }
+
+        function updateWorld(dt) {
+            state.time += dt;
+            state.comboTimer = Math.max(0, state.comboTimer - dt);
+            if (state.comboTimer === 0) state.combo = 0;
+
+            world.wisps.forEach((wisp) => {
+                wisp.wobble += dt * 3.2;
+            });
+
+            if (state.combo >= 3 && state.comboTimer > 0) {
+                world.wisps.forEach((wisp) => {
+                    const mdx = player.x - wisp.x;
+                    const mdy = (player.y - 24) - wisp.y;
+                    const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+                    if (mdist < 210 && mdist > 0.1) {
+                        const pull = 88 * dt / mdist;
+                        wisp.x += mdx * pull;
+                        wisp.y += mdy * pull;
+                    }
+                });
+            }
+
+            for (let i = world.flowers.length - 1; i >= 0; i -= 1) {
+                const flower = world.flowers[i];
+                flower.glow += dt * 2.3;
+                const dx = Math.abs(player.x - flower.x);
+                const playerBottom = player.y + player.h / 2;
+                if (dx < 24 && playerBottom >= flower.y - 12 && playerBottom <= flower.y + 16 && player.vy >= 0) {
+                    player.vy = -flower.power;
+                    player.onGround = false;
+                    player.coyote = 0;
+                    player.extraJump = true;
+                    state.score += 28;
+                    spawnBurst(flower.x, flower.y - 8, themes[state.stage].flower, 10);
+                    playSfx('jump');
+                }
+            }
+
+            for (let i = world.wisps.length - 1; i >= 0; i -= 1) {
+                const wisp = world.wisps[i];
+                const wx = wisp.x;
+                const wy = wisp.y + Math.sin(wisp.wobble) * 7;
+                const dx = player.x - wx;
+                const dy = player.y - wy;
+                if (dx * dx + dy * dy < 32 * 32) {
+                    collectWisp(i);
+                }
+            }
+
+            for (let i = world.thorns.length - 1; i >= 0; i -= 1) {
+                const thorn = world.thorns[i];
+                const dx = Math.abs(player.x - thorn.x);
+                const feet = player.y + player.h / 2;
+                if (dx < thorn.size * 0.72 && feet > thorn.y - thorn.size * 1.35 && player.y - player.h / 2 < thorn.y + 6) {
+                    damagePlayer();
+                }
+            }
+
+            for (let i = world.droplets.length - 1; i >= 0; i -= 1) {
+                const droplet = world.droplets[i];
+                droplet.sway += dt * 2.4;
+                droplet.y += droplet.vy * dt;
+                droplet.x += Math.sin(droplet.sway) * droplet.drift * dt;
+                if (droplet.y > BASE_HEIGHT + 40) {
+                    droplet.y = rand(-260, -70);
+                    droplet.sway = rand(0, Math.PI * 2);
+                }
+                const dx = player.x - droplet.x;
+                const dy = player.y - droplet.y;
+                const radius = droplet.radius + 10;
+                if (dx * dx + dy * dy < radius * radius) {
+                    damagePlayer();
+                }
+            }
+
+            for (let i = world.bursts.length - 1; i >= 0; i -= 1) {
+                const burst = world.bursts[i];
+                burst.life -= dt;
+                burst.x += burst.vx * dt;
+                burst.y += burst.vy * dt;
+                burst.vy += 260 * dt;
+            }
+
+            for (let i = world.floats.length - 1; i >= 0; i -= 1) {
+                const f = world.floats[i];
+                f.life -= dt;
+                f.y += f.vy * dt;
+                if (f.life <= 0) world.floats.splice(i, 1);
+            }
+
+            generateWorld(state.cameraX + BASE_WIDTH + 540);
+            cleanupWorld();
+        }
+
+        function drawSky(theme) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, BASE_HEIGHT);
+            gradient.addColorStop(0, theme.skyTop);
+            gradient.addColorStop(0.58, theme.skyBottom);
+            gradient.addColorStop(1, '#f7f1dc');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+
+            ctx.save();
+            ctx.globalAlpha = 0.88;
+            const sunGradient = ctx.createRadialGradient(BASE_WIDTH * 0.72, 122, 10, BASE_WIDTH * 0.72, 122, 138 + state.stage * 12);
+            sunGradient.addColorStop(0, theme.sun);
+            sunGradient.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = sunGradient;
+            ctx.beginPath();
+            ctx.arc(BASE_WIDTH * 0.72, 122, 138 + state.stage * 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            world.stars.forEach((star) => {
+                const rawSx = star.x - state.cameraX * star.depth;
+                const wss = BASE_WIDTH + 80;
+                const sx = ((rawSx % wss) + wss) % wss;
+                const twinkle = 0.12 + Math.abs(Math.sin(state.time * 1.8 + star.seed)) * 0.22;
+                ctx.globalAlpha = twinkle;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(sx, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            world.motes.forEach((mote, index) => {
+                const rawX = mote.x + state.time * mote.speed * (0.2 + mote.depth * 0.3) - state.cameraX * mote.depth * 0.12;
+                const ww = BASE_WIDTH + 60;
+                const x = ((rawX % ww) + ww) % ww;
+                const y = (mote.y + Math.sin(state.time + mote.seed) * 8 + index * 11) % BASE_HEIGHT;
+                ctx.fillStyle = index % 3 === 0 ? theme.accentA : theme.glow;
+                ctx.globalAlpha = 0.1 + mote.depth * 0.16;
+                ctx.beginPath();
+                ctx.arc(x, y, mote.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function drawMountains(theme) {
+            const layers = [
+                { color: theme.mountainA, base: 312, amp: 50, freq: 0.0044, speed: 0.18, alpha: 0.26 },
+                { color: theme.mountainB, base: 354, amp: 38, freq: 0.0065, speed: 0.34, alpha: 0.38 }
+            ];
+
+            layers.forEach((layer) => {
+                ctx.save();
+                ctx.fillStyle = layer.color;
+                ctx.globalAlpha = layer.alpha;
+                ctx.beginPath();
+                ctx.moveTo(0, BASE_HEIGHT);
+                for (let sx = 0; sx <= BASE_WIDTH + 30; sx += 18) {
+                    const wx = sx + state.cameraX * layer.speed;
+                    const y = layer.base + Math.sin(wx * layer.freq) * layer.amp + Math.sin(wx * layer.freq * 2.3 + 1.2) * layer.amp * 0.32;
+                    ctx.lineTo(sx, y);
+                }
+                ctx.lineTo(BASE_WIDTH, BASE_HEIGHT);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            });
+
+            ctx.save();
+            ctx.fillStyle = theme.mist;
+            ctx.globalAlpha = 0.18;
+            ctx.fillRect(0, 286, BASE_WIDTH, 118);
+            ctx.restore();
+        }
+
+        function drawGround(theme) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(0, BASE_HEIGHT);
+            for (let sx = -24; sx <= BASE_WIDTH + 24; sx += 12) {
+                const wx = state.cameraX + sx;
+                ctx.lineTo(sx, groundY(wx));
+            }
+            ctx.lineTo(BASE_WIDTH, BASE_HEIGHT);
+            ctx.closePath();
+
+            const groundGradient = ctx.createLinearGradient(0, 308, 0, BASE_HEIGHT);
+            groundGradient.addColorStop(0, theme.ground);
+            groundGradient.addColorStop(1, theme.ridge);
+            ctx.fillStyle = groundGradient;
+            ctx.fill();
+
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'rgba(255,255,255,0.32)';
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+            ctx.lineWidth = 1;
+            for (let sx = -24; sx <= BASE_WIDTH + 24; sx += 44) {
+                const wx = state.cameraX + sx;
+                const gy = groundY(wx);
+                ctx.beginPath();
+                ctx.moveTo(sx, gy + 4);
+                ctx.lineTo(sx + 18, gy + 28);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawWisps(theme) {
+            world.wisps.forEach((wisp) => {
+                const x = wisp.x - state.cameraX;
+                const y = wisp.y + Math.sin(wisp.wobble) * 7;
+                if (x < -30 || x > BASE_WIDTH + 30) return;
+
+                const glow = ctx.createRadialGradient(x, y, 0, x, y, 24);
+                glow.addColorStop(0, theme.glow);
+                glow.addColorStop(0.38, wisp.color);
+                glow.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(x, y, 24, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.globalAlpha = 0.85;
+                ctx.beginPath();
+                ctx.arc(x, y, 5.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+
+                ctx.strokeStyle = 'rgba(255,255,255,0.42)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(x, y, 10 + Math.sin(wisp.wobble * 1.8) * 2, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+        }
+
+        function drawFlowers(theme) {
+            world.flowers.forEach((flower) => {
+                const x = flower.x - state.cameraX;
+                const y = flower.y;
+                if (x < -40 || x > BASE_WIDTH + 40) return;
+
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.fillStyle = 'rgba(255,255,255,0.22)';
+                ctx.beginPath();
+                ctx.ellipse(0, 12, 16, 8, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                for (let i = 0; i < 5; i += 1) {
+                    ctx.save();
+                    ctx.rotate((Math.PI * 2 * i) / 5 + Math.sin(flower.glow) * 0.08);
+                    ctx.fillStyle = theme.flower;
+                    ctx.beginPath();
+                    ctx.ellipse(0, -12, 7, 12, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                ctx.fillStyle = '#fff7d6';
+                ctx.beginPath();
+                ctx.arc(0, 0, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        function drawThorns() {
+            world.thorns.forEach((thorn) => {
+                const x = thorn.x - state.cameraX;
+                const y = thorn.y;
+                if (x < -50 || x > BASE_WIDTH + 50) return;
+
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.fillStyle = 'rgba(39,31,45,0.96)';
+                for (let i = -1; i <= 1; i += 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * 9, 0);
+                    ctx.lineTo(i * 9 + 6, -thorn.size);
+                    ctx.lineTo(i * 9 + 13, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                ctx.strokeStyle = 'rgba(102,81,110,0.9)';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(-12, -8);
+                ctx.lineTo(0, -thorn.size - 3);
+                ctx.lineTo(12, -8);
+                ctx.stroke();
+                ctx.restore();
+            });
+        }
+
+        function drawDroplets() {
+            world.droplets.forEach((droplet) => {
+                const x = droplet.x - state.cameraX;
+                const y = droplet.y;
+                if (x < -30 || x > BASE_WIDTH + 30 || y < -40 || y > BASE_HEIGHT + 60) return;
+
+                const glow = ctx.createRadialGradient(x, y, 0, x, y, droplet.radius * 2.1);
+                glow.addColorStop(0, 'rgba(116,95,126,0.46)');
+                glow.addColorStop(1, 'rgba(39,31,45,0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(x, y, droplet.radius * 2.1, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(39,31,45,0.95)';
+                ctx.beginPath();
+                ctx.moveTo(x, y - droplet.radius * 1.4);
+                ctx.quadraticCurveTo(x + droplet.radius * 0.9, y - droplet.radius * 0.2, x + droplet.radius * 0.55, y + droplet.radius * 0.95);
+                ctx.quadraticCurveTo(x, y + droplet.radius * 1.55, x - droplet.radius * 0.55, y + droplet.radius * 0.95);
+                ctx.quadraticCurveTo(x - droplet.radius * 0.9, y - droplet.radius * 0.2, x, y - droplet.radius * 1.4);
+                ctx.fill();
+            });
+        }
+
+        function drawPlayer(theme) {
+            if (player.invuln > 0 && Math.floor(player.invuln * 16) % 2 === 0) return;
+
+            const x = player.x - state.cameraX;
+            const y = player.y;
+            const flutter = Math.sin(state.time * 8 + player.x * 0.03) * 2;
+
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(player.facing, 1);
+
+            ctx.fillStyle = 'rgba(0,0,0,0.14)';
+            ctx.beginPath();
+            ctx.ellipse(0, player.h / 2 + 7, 24, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = theme.accentA;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(-4, 2);
+            ctx.bezierCurveTo(-24, 10, -34 - player.vx * 0.03, -4 + flutter, -46 - player.vx * 0.04, -18 + flutter);
+            ctx.stroke();
+
+            ctx.fillStyle = theme.accentB;
+            ctx.beginPath();
+            ctx.moveTo(0, -4);
+            ctx.lineTo(15, 24);
+            ctx.lineTo(-15, 24);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = theme.accentA;
+            ctx.beginPath();
+            ctx.moveTo(0, 4);
+            ctx.lineTo(20, 38);
+            ctx.lineTo(-20, 38);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#fff7f1';
+            ctx.beginPath();
+            ctx.arc(0, -18, 7.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            if ((keys.Space || keys.ArrowUp || keys.KeyW || keys.KeyZ) && player.vy > 10) {
+                ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(-8, 16);
+                ctx.quadraticCurveTo(-28, 10, -34, -8);
+                ctx.moveTo(8, 16);
+                ctx.quadraticCurveTo(28, 10, 34, -8);
+                ctx.stroke();
+            }
+
+            if (!player.onGround && player.extraJump) {
+                const pulse = 0.4 + Math.sin(state.time * 10) * 0.25;
+                ctx.globalAlpha = pulse;
+                ctx.strokeStyle = theme.accentA;
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([3, 4]);
+                ctx.beginPath();
+                ctx.ellipse(0, player.h / 2 + 8, 16, 5, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.globalAlpha = 1;
+            }
+
+            ctx.restore();
+        }
+
+        function drawBursts() {
+            world.bursts.forEach((burst) => {
+                const x = burst.x - state.cameraX;
+                const alpha = clamp(burst.life / burst.maxLife, 0, 1);
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = burst.color;
+                ctx.beginPath();
+                ctx.arc(x, burst.y, burst.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function drawForeground(theme) {
+            const haze = ctx.createLinearGradient(0, 290, 0, BASE_HEIGHT);
+            haze.addColorStop(0, 'rgba(255,255,255,0)');
+            haze.addColorStop(1, 'rgba(255,255,255,0.16)');
+            ctx.fillStyle = haze;
+            ctx.fillRect(0, 290, BASE_WIDTH, BASE_HEIGHT - 290);
+
+            ctx.save();
+            ctx.globalAlpha = 0.32;
+            ctx.strokeStyle = theme.accentA;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const ribbonY = 118 + Math.sin(state.time * 0.8) * 16;
+            ctx.moveTo(0, ribbonY);
+            for (let sx = 0; sx <= BASE_WIDTH; sx += 30) {
+                ctx.lineTo(sx, ribbonY + Math.sin((sx + state.cameraX * 0.3) * 0.012 + state.time) * 10);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawHud(theme) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(9,17,31,0.2)';
+            ctx.fillRect(0, 0, BASE_WIDTH, 68);
+
+            ctx.font = '700 14px JetBrains Mono';
+            ctx.fillStyle = 'rgba(255,255,255,0.82)';
+            ctx.fillText(themes[state.stage].name.toUpperCase(), 22, 30);
+            ctx.fillStyle = state.combo >= 2 && state.comboTimer > 0 ? theme.accentA : 'rgba(255,255,255,0.55)';
+            ctx.fillText('COMBO x' + Math.max(1, state.combo), 22, 52);
+            ctx.fillText('HOLD JUMP TO GLIDE', BASE_WIDTH - 230, 30);
+            ctx.fillText('CHECKPOINT ' + Math.floor(state.checkpointX / 10), BASE_WIDTH - 230, 52);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.14)';
+            ctx.fillRect(BASE_WIDTH / 2 - 110, 20, 220, 10);
+            ctx.fillStyle = theme.accentA;
+            ctx.fillRect(BASE_WIDTH / 2 - 110, 20, 220 * (state.wisps / WIN_TARGET), 10);
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.strokeRect(BASE_WIDTH / 2 - 110, 20, 220, 10);
+            ctx.fillStyle = 'rgba(255,255,255,0.82)';
+            ctx.fillText(state.wisps + ' / ' + WIN_TARGET + ' WISPS', BASE_WIDTH / 2 - 64, 52);
+            ctx.restore();
+        }
+
+        function drawTrail(theme) {
+            if (world.trail.length < 2) return;
+            world.trail.forEach((pt, i) => {
+                const alpha = (1 - i / world.trail.length) * 0.18;
+                if (alpha <= 0) return;
+                const tx = pt.x - state.cameraX;
+                const scale = 1 - i * 0.08;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = theme.accentA;
+                ctx.beginPath();
+                ctx.ellipse(tx, pt.y, 11 * scale, 19 * scale, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        function drawFloats() {
+            const theme = themes[state.stage];
+            world.floats.forEach((f) => {
+                const fx = f.x - state.cameraX;
+                const alpha = clamp(f.life / f.maxLife, 0, 1);
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.font = '700 14px JetBrains Mono';
+                ctx.fillStyle = theme.accentA;
+                ctx.textAlign = 'center';
+                ctx.shadowColor = theme.accentA;
+                ctx.shadowBlur = 8;
+                ctx.fillText(f.text, fx, f.y);
+                ctx.restore();
+            });
+        }
+
+        function drawCheckpointBeacon() {
+            const theme = themes[state.stage];
+            const bx = state.checkpointX - state.cameraX;
+            if (bx < -20 || bx > BASE_WIDTH + 20) return;
+            const by = groundY(state.checkpointX);
+            const pulse = 0.28 + Math.abs(Math.sin(state.time * 3.4)) * 0.22;
+            ctx.save();
+            ctx.globalAlpha = pulse;
+            const beamGrad = ctx.createLinearGradient(bx, by - 90, bx, by);
+            beamGrad.addColorStop(0, 'rgba(255,255,255,0)');
+            beamGrad.addColorStop(1, theme.accentA);
+            ctx.strokeStyle = beamGrad;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 6]);
+            ctx.beginPath();
+            ctx.moveTo(bx, by - 90);
+            ctx.lineTo(bx, by);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = theme.accentA;
+            ctx.shadowColor = theme.accentA;
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(bx, by - 93, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawScene() {
+            const theme = themes[state.stage];
+            const sx = state.shake > 0 ? (Math.random() - 0.5) * state.shake * 16 : 0;
+            const sy = state.shake > 0 ? (Math.random() - 0.5) * state.shake * 9 : 0;
+            ctx.save();
+            if (state.shake > 0) ctx.translate(sx, sy);
+            drawSky(theme);
+            drawMountains(theme);
+            drawGround(theme);
+            drawCheckpointBeacon();
+            drawFlowers(theme);
+            drawWisps(theme);
+            drawDroplets();
+            drawThorns();
+            drawTrail(theme);
+            drawPlayer(theme);
+            drawBursts();
+            drawFloats();
+            drawForeground(theme);
+            if (state.stageFx > 0) {
+                ctx.save();
+                ctx.globalAlpha = state.stageFx * 0.28;
+                ctx.fillStyle = theme.accentA;
+                ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+                ctx.restore();
+            }
+            ctx.restore();
+            drawHud(theme);
+        }
+
+        function update(dt) {
+            if (state.bannerTimer > 0) {
+                state.bannerTimer = Math.max(0, state.bannerTimer - dt);
+                if (state.bannerTimer === 0) banner.classList.remove('show');
+            }
+
+            state.stageFx = Math.max(0, state.stageFx - dt * 0.8);
+            state.shake = Math.max(0, state.shake - dt * 5.5);
+
+            if (!state.running || state.paused || state.over || state.win) return;
+
+            updatePlayer(dt);
+            updateWorld(dt);
+            state.cameraX += (Math.max(0, player.x - 230) - state.cameraX) * Math.min(1, dt * 5.5);
+            updateHud();
+        }
+
+        function loop(timestamp) {
+            const dt = clamp((timestamp - (state.lastTime || timestamp)) / 1000, 0.001, 0.033);
+            state.lastTime = timestamp;
+            update(dt);
+            drawScene();
+            requestAnimationFrame(loop);
+        }
+
+        function handleOverlayPrimary() {
+            if (!state.running && !state.over && !state.win) {
+                startGame();
+                return;
+            }
+
+            if (state.paused) {
+                resumeGame();
+                return;
+            }
+
+            if (state.over || state.win) {
+                startGame();
+            }
+        }
+
+        function handleOverlaySecondary() {
+            if (!state.running && !state.over && !state.win) {
+                showBanner('Gerak, lompat, lompat lagi, lalu tahan untuk glide', 3);
+                return;
+            }
+
+            if (state.paused) {
+                startGame();
+                return;
+            }
+
+            if (state.over) {
+                showBanner('Ambil bunga emas untuk jalur tinggi dan wisp aman', 3);
+                return;
+            }
+
+            if (state.win) {
+                hideOverlay();
+            }
+        }
+
+        document.addEventListener('keydown', (event) => {
+            const code = event.code;
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'Space'].includes(code)) {
+                event.preventDefault();
+            }
+
+            if (!keys[code] && ['Space', 'ArrowUp', 'KeyW', 'KeyZ'].includes(code)) {
+                queueJump();
+            }
+
+            if (code === 'Enter') {
+                event.preventDefault();
+                if (!state.running && !state.over && !state.win) {
+                    startGame();
+                } else if (state.paused) {
+                    resumeGame();
+                } else if (state.over || state.win) {
+                    startGame();
+                }
+            }
+
+            if (code === 'Escape') {
+                event.preventDefault();
+                togglePause();
+            }
+
+            if (code === 'KeyM' && window.SoundEngine && typeof window.SoundEngine.toggleMute === 'function') {
+                window.SoundEngine.toggleMute();
+                syncMuteLabel();
+            }
+
+            keys[code] = true;
+        });
+
+        document.addEventListener('keyup', (event) => {
+            keys[event.code] = false;
+        });
+
+        canvas.addEventListener('pointerdown', () => {
+            if (!state.running && !state.over && !state.win) {
+                startGame();
+                return;
+            }
+
+            if (state.paused) {
+                resumeGame();
+                return;
+            }
+
+            if (state.running) {
+                queueJump();
+            }
+        });
+
+        overlayPrimary.addEventListener('click', handleOverlayPrimary);
+        overlaySecondary.addEventListener('click', handleOverlaySecondary);
+        startBtn.addEventListener('click', startGame);
+        pauseBtn.addEventListener('click', togglePause);
+        muteBtn.addEventListener('click', () => {
+            if (window.SoundEngine && typeof window.SoundEngine.toggleMute === 'function') {
+                window.SoundEngine.toggleMute();
+                syncMuteLabel();
+            }
+        });
+
+        syncMuteLabel();
+        resetGame();
+        showOverlay('start');
+        requestAnimationFrame(loop);
+    </script>
+    <script src="mobile-touch.js"></script>
+</body>
+</html>
+

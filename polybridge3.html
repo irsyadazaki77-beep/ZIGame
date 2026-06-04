@@ -1,0 +1,2846 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poly Bridge 3 | ZI GAME</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="polybridge3.css">
+    <style>
+        /* Tooltip style */
+        .pb-tooltip {
+            position: fixed;
+            pointer-events: none;
+            background: rgba(8, 12, 28, 0.92);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            color: #edf4ff;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            max-width: 220px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            transition: opacity 0.15s ease;
+            font-family: 'Outfit', sans-serif;
+            opacity: 0;
+        }
+        .pb-tooltip.show {
+            opacity: 1;
+        }
+        .pb-tooltip strong {
+            display: block;
+            color: var(--cyan);
+            margin-bottom: 2px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="pb-bg">
+        <div class="orb orb-a"></div>
+        <div class="orb orb-b"></div>
+        <div class="orb orb-c"></div>
+        <div class="grid"></div>
+    </div>
+
+    <!-- Floating Tooltip -->
+    <div id="pb-tooltip" class="pb-tooltip"></div>
+
+    <div class="pb-wrap">
+        <header class="topbar glass">
+            <div class="topbar-left">
+                <a href="index.html" class="back-btn">← Kembali</a>
+                <div>
+                    <div class="eyebrow">Simulation • Bridge Engineering</div>
+                    <h1 class="title">Poly Bridge 3</h1>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <label class="level-pick-wrap compact" for="levelPicker">
+                    <span>Level</span>
+                    <select id="levelPicker" class="level-picker"></select>
+                </label>
+                <button class="action-btn primary" id="startTestBtn">Tes</button>
+                <button class="action-btn" id="resetBuildBtn">Reset</button>
+                <button class="action-btn" id="nextLevelBtn" disabled>Next</button>
+                <div class="stat-chip">Level <b id="levelLabel">1</b></div>
+                <div class="stat-chip">Budget <b id="budgetLabel">0</b></div>
+                <div class="stat-chip">Stress <b id="stressLabel">0%</b></div>
+                <div class="stat-chip">Best <b id="bestLabel">-</b></div>
+            </div>
+        </header>
+
+        <main class="game-layout">
+            <section class="canvas-card glass">
+                <div class="canvas-toolbar">
+                    <div class="tool-group">
+                        <button class="tool-btn active" data-tool="road" data-desc="Jalur mobil utama. Wajib tersambung dari bendera hijau ke bendera kuning.">Road</button>
+                        <button class="tool-btn" data-tool="wood" data-desc="Rangka kayu murah & ringan. Pilihan ideal untuk truss segitiga penyangga.">Wood</button>
+                        <button class="tool-btn" data-tool="steel" data-desc="Baja berat & kuat. Mampu menahan bentang panjang & beban truk kontainer.">Steel</button>
+                        <button class="tool-btn" data-tool="cable" data-desc="Kabel suspensi. Hanya menahan gaya tarik (tension), melengkung jika ditekan.">Cable</button>
+                        <button class="tool-btn" data-tool="move" data-desc="Geser sambungan node. Klik dan seret untuk memposisikan ulang sambungan.">Move</button>
+                        <button class="tool-btn" data-tool="erase" data-desc="Hapus komponen. Klik pada segmen atau node untuk menghapusnya.">Erase</button>
+                    </div>
+                    <div class="tool-group util-group" style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 8px;">
+                        <button class="tool-btn" id="gridSnapBtn" title="Toggle Grid Snap (G)" data-desc="Nyalakan/matikan snap kursor pada grid koordinat.">🌐 Snap: On</button>
+                        <select id="gridSizeSelect" class="level-picker" style="min-width: 76px; padding: 6px; font-size: 11px;" title="Grid Size" data-desc="Ukuran kisi grid (12px, 24px, atau 36px).">
+                            <option value="12">12px</option>
+                            <option value="24">24px</option>
+                            <option value="36" selected>36px</option>
+                        </select>
+                        <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 0 4px;"></div>
+                        <button class="tool-btn" id="scaffoldBtn" title="Auto Scaffold (Basic Truss)" data-desc="Bangun jembatan segitiga sederhana otomatis di bawah jalan.">🏗 Auto</button>
+                        <button class="tool-btn" id="saveBtn" title="Save Build" data-desc="Simpan blueprint jembatan Anda di browser lokal.">💾 Save</button>
+                        <button class="tool-btn" id="loadBtn" title="Load Build" data-desc="Muat blueprint jembatan yang disimpan sebelumnya.">📂 Load</button>
+                        <button class="tool-btn" id="undoBtn" title="Undo (Ctrl+Z)" data-desc="Batalkan aksi terakhir.">↺</button>
+                        <button class="tool-btn" id="redoBtn" title="Redo (Ctrl+Y)" data-desc="Kembalikan aksi yang dibatalkan.">↻</button>
+                        <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 0 4px;"></div>
+                        <button class="tool-btn" id="speedBtn" title="Simulation Speed" data-desc="Ubah kecepatan simulasi (x1, x2, x4).">⚡ x1</button>
+                        <button class="tool-btn" id="pauseBtn" title="Pause Simulation" data-desc="Jeda/lanjutkan penyeberangan mobil saat tes berlangsung.">⏸ Pause</button>
+                        <button class="tool-btn" id="windBtn" title="Wind Physics" data-desc="Simulasikan dorongan angin topan samping jembatan.">💨 Off</button>
+                        <button class="tool-btn" id="fragileBtn" title="Fragile Materials" data-desc="Nyalakan mode rapuh. Material jembatan lebih cepat patah.">🧊 Normal</button>
+                    </div>
+                </div>
+                <div class="toolbar-hint" id="buildHint">Klik dua titik untuk menggambar segmen. Gunakan road untuk jalur kendaraan.</div>
+
+                <div class="canvas-shell">
+                    <canvas id="bridgeCanvas" width="1200" height="720"></canvas>
+                    <div class="overlay" id="startOverlay">
+                        <div class="overlay-badge">Flagship Simulation</div>
+                        <h3>Rakit jembatan pertama</h3>
+                        <p>Sambungkan anchor kiri ke kanan dengan road, tambah rangka penopang di bawahnya, lalu tekan Mulai Tes.</p>
+                        <button class="action-btn primary" id="overlayStartBtn">Mulai Membangun</button>
+                    </div>
+                    <div class="overlay hidden" id="resultOverlay">
+                        <div class="overlay-badge" id="resultBadge">Bridge Report</div>
+                        <div class="stars-wrap" id="resultStarsWrap">
+                            <span class="rating-star">★</span>
+                            <span class="rating-star">★</span>
+                            <span class="rating-star">★</span>
+                        </div>
+                        <h3 id="resultTitle">Jembatan Selesai</h3>
+                        <p id="resultText">Struktur stabil dan kendaraan berhasil menyeberang.</p>
+                        <div class="result-stats">
+                            <div class="result-box"><span>Budget</span><b id="resultBudget">0</b></div>
+                            <div class="result-box"><span>Stress</span><b id="resultStress">0%</b></div>
+                            <div class="result-box"><span>Rating</span><b id="resultRank">A</b></div>
+                        </div>
+                        <div class="result-actions">
+                            <button class="action-btn" id="retryBtn">Bangun Ulang</button>
+                            <button class="action-btn primary" id="resultNextBtn">Lanjut</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Floating Side Trigger Buttons -->
+            <div class="side-triggers">
+                <button class="trigger-btn" id="triggerMisi" title="Misi (M)" data-desc="Tampilkan tujuan level, budget, dan kendaraan.">💡</button>
+                <button class="trigger-btn" id="triggerDebug" title="Diagnostik (D)" data-desc="Tampilkan status stress, kesehatan struktur, dan detail debug.">📊</button>
+                <button class="trigger-btn" id="triggerHelp" title="Bantuan (H)" data-desc="Tampilkan shortcut dan cara kontrol game.">❓</button>
+            </div>
+
+            <!-- Floating Modals -->
+            <div class="floating-modal hidden" id="modalMisi">
+                <div class="panel-head">
+                    <h3>Misi</h3>
+                    <span id="phaseLabel" class="phase-badge">Build</span>
+                    <span class="close-btn" data-target="modalMisi">✕</span>
+                </div>
+                <p class="panel-title" id="missionTitle">Nama Level</p>
+                <p class="panel-copy" id="missionCopy">Deskripsi level...</p>
+                <div class="mini-stats">
+                    <div><span>Kendaraan</span><b id="vehicleLabel">1x City Car</b></div>
+                    <div><span>Target Budget</span><b id="targetBudgetLabel">$0</b></div>
+                    <div><span>Reward</span><b id="rewardLabel">Rookie</b></div>
+                </div>
+            </div>
+
+            <div class="floating-modal hidden" id="modalDebug">
+                <div class="panel-head">
+                    <h3>Diagnostik</h3>
+                    <span class="close-btn" data-target="modalDebug">✕</span>
+                </div>
+                <div class="diagnostics">
+                    <div class="diag-row"><span>Road Length</span><b id="roadLengthLabel">0 m</b></div>
+                    <div class="diag-row"><span>Materials</span><b id="pieceCountLabel">0</b></div>
+                    <div class="diag-row"><span>Broken Parts</span><b id="brokenCountLabel">0</b></div>
+                    <div class="diag-row"><span>Convoy Progress</span><b id="progressLabel">0%</b></div>
+                </div>
+                <div class="stress-meter">
+                    <div class="stress-bar"><span id="stressFill"></span></div>
+                </div>
+                <div class="diag-row">
+                    <span>Projected Rank</span><b id="projectedRankLabel">-</b>
+                </div>
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 8px 0;">
+                <div class="panel-head">
+                    <h3 style="font-size: 16px;">Health Check</h3>
+                </div>
+                <div class="check-grid">
+                    <div class="check-item" id="checkRoad">Road Linked</div>
+                    <div class="check-item" id="checkSupport">Support Ratio</div>
+                    <div class="check-item" id="checkBudget">Budget Safe</div>
+                </div>
+                <p class="panel-copy" id="healthHint" style="margin-top: 4px;">Bangun deck road terlebih dahulu, lalu tambah support di bawahnya.</p>
+            </div>
+
+            <div class="floating-modal hidden" id="modalHelp">
+                <div class="panel-head">
+                    <h3>Kontrol & Bantuan</h3>
+                    <span class="close-btn" data-target="modalHelp">✕</span>
+                </div>
+                <ul class="control-list">
+                    <li><b>Klik Dua Titik:</b> Membuat segmen jalan atau penyangga.</li>
+                    <li><b>Drag Kanan / Shift+Klik:</b> Geser Kamera (*Pan*).</li>
+                    <li><b>Scroll Mouse:</b> Zoom Kamera.</li>
+                    <li><b>Tombol G:</b> Toggle Snap Grid.</li>
+                    <li><b>Tombol M / D / H:</b> Toggle modal Misi / Diagnostik / Bantuan.</li>
+                    <li><b>Ctrl+Z / Ctrl+Y:</b> Undo / Redo blueprint.</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        window.ZI_BGM_MAP = { polybridge3: 'polybridge' };
+    </script>
+    <script src="sounds.js"></script>
+    <script>
+        const canvas = document.getElementById('bridgeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        /* ── HiDPI / Retina support ── */
+        /* ── HiDPI / Retina support ── */
+        let BASE_W = window.innerWidth, BASE_H = window.innerHeight;
+        function setupHiDPI() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            BASE_W = window.innerWidth;
+            BASE_H = window.innerHeight;
+            canvas.width = BASE_W * dpr;
+            canvas.height = BASE_H * dpr;
+            canvas.style.width = '100vw';
+            canvas.style.height = '100vh';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+        }
+        setupHiDPI();
+        window.addEventListener('resize', setupHiDPI);
+
+        /* ── Pre-generate stars for background ── */
+        const stars = Array.from({ length: 220 }, () => ({
+            x: Math.random() * 2560,
+            y: Math.random() * 1600 * 0.65,
+            r: 0.5 + Math.random() * 1.5,
+            a: 0.25 + Math.random() * 0.75,
+            speed: 0.2 + Math.random() * 0.9
+        }));
+
+        /* ── Ambient floating dust motes ── */
+        const dustMotes = Array.from({ length: 65 }, () => ({
+            x: Math.random() * 2560,
+            y: Math.random() * 1600,
+            r: 0.5 + Math.random() * 1.5,
+            a: 0.05 + Math.random() * 0.15,
+            sx: (Math.random() - 0.5) * 0.12,
+            sy: -0.03 - Math.random() * 0.07,
+            phase: Math.random() * Math.PI * 2
+        }));
+
+        /* ── Particle system for break / sparks / dust effects ── */
+        const particles = [];
+        function spawnParticles(x, y, color, count = 12, force = 6) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * force,
+                    vy: (Math.random() - 0.5) * force - 1.5,
+                    life: 1,
+                    decay: 0.012 + Math.random() * 0.02,
+                    r: 1.2 + Math.random() * 2.8,
+                    color
+                });
+            }
+        }
+        function updateParticles(dt) {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.vy += 0.10 * dt;
+                p.life -= p.decay * dt;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+        function drawParticles() {
+            for (const p of particles) {
+                ctx.save();
+                ctx.globalAlpha = p.life * 0.85;
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        const ui = {
+            levelLabel: document.getElementById('levelLabel'),
+            budgetLabel: document.getElementById('budgetLabel'),
+            stressLabel: document.getElementById('stressLabel'),
+            bestLabel: document.getElementById('bestLabel'),
+            buildHint: document.getElementById('buildHint'),
+            missionTitle: document.getElementById('missionTitle'),
+            missionCopy: document.getElementById('missionCopy'),
+            vehicleLabel: document.getElementById('vehicleLabel'),
+            targetBudgetLabel: document.getElementById('targetBudgetLabel'),
+            rewardLabel: document.getElementById('rewardLabel'),
+            phaseLabel: document.getElementById('phaseLabel'),
+            roadLengthLabel: document.getElementById('roadLengthLabel'),
+            pieceCountLabel: document.getElementById('pieceCountLabel'),
+            brokenCountLabel: document.getElementById('brokenCountLabel'),
+            progressLabel: document.getElementById('progressLabel'),
+            stressFill: document.getElementById('stressFill'),
+            resultOverlay: document.getElementById('resultOverlay'),
+            resultBadge: document.getElementById('resultBadge'),
+            resultTitle: document.getElementById('resultTitle'),
+            resultText: document.getElementById('resultText'),
+            resultBudget: document.getElementById('resultBudget'),
+            resultStress: document.getElementById('resultStress'),
+            resultRank: document.getElementById('resultRank'),
+            resultStarsWrap: document.getElementById('resultStarsWrap'),
+            startOverlay: document.getElementById('startOverlay'),
+            startTestBtn: document.getElementById('startTestBtn'),
+            resetBuildBtn: document.getElementById('resetBuildBtn'),
+            nextLevelBtn: document.getElementById('nextLevelBtn'),
+            levelPicker: document.getElementById('levelPicker'),
+            undoBtn: document.getElementById('undoBtn'),
+            redoBtn: document.getElementById('redoBtn'),
+            speedBtn: document.getElementById('speedBtn'),
+            pauseBtn: document.getElementById('pauseBtn'),
+            windBtn: document.getElementById('windBtn'),
+            scaffoldBtn: document.getElementById('scaffoldBtn'),
+            saveBtn: document.getElementById('saveBtn'),
+            loadBtn: document.getElementById('loadBtn'),
+            fragileBtn: document.getElementById('fragileBtn'),
+            overlayStartBtn: document.getElementById('overlayStartBtn'),
+            retryBtn: document.getElementById('retryBtn'),
+            resultNextBtn: document.getElementById('resultNextBtn'),
+            projectedRankLabel: document.getElementById('projectedRankLabel'),
+            checkRoad: document.getElementById('checkRoad'),
+            checkSupport: document.getElementById('checkSupport'),
+            checkBudget: document.getElementById('checkBudget'),
+            healthHint: document.getElementById('healthHint'),
+            gridSnapBtn: document.getElementById('gridSnapBtn'),
+            gridSizeSelect: document.getElementById('gridSizeSelect'),
+            triggerMisi: document.getElementById('triggerMisi'),
+            triggerDebug: document.getElementById('triggerDebug'),
+            triggerHelp: document.getElementById('triggerHelp'),
+            modalMisi: document.getElementById('modalMisi'),
+            modalDebug: document.getElementById('modalDebug'),
+            modalHelp: document.getElementById('modalHelp')
+        };
+
+        const BEST_KEY = 'zi_polybridge3_best';
+        const SAVE_KEY = 'zi_polybridge3_save';
+        const materials = {
+            road: { id: 'road', name: 'Road', color: '#475569', accent: '#64748b', cost: 6.4, stiffness: 1.05, breakRatio: 0.11, road: true, desc: 'Jalur kendaraan utama. Wajib terhubung dari start ke goal.' },
+            wood: { id: 'wood', name: 'Wood', color: '#b45309', accent: '#d97706', cost: 3.2, stiffness: 0.92, breakRatio: 0.14, road: false, desc: 'Kayu penyangga murah. Cocok untuk struktur segitiga ringan.' },
+            steel: { id: 'steel', name: 'Steel', color: '#3b82f6', accent: '#60a5fa', cost: 5.4, stiffness: 1.25, breakRatio: 0.085, road: false, desc: 'Baja super kuat. Diperlukan untuk jembatan bentang panjang.' },
+            cable: { id: 'cable', name: 'Cable', color: '#94a3b8', accent: '#cbd5e1', cost: 2.1, stiffness: 0.95, breakRatio: 0.25, road: false, desc: 'Kabel gantung. Hanya menahan gaya tarik, melorot bila ditekan.' }
+        };
+
+        // 16 HAND-CRAFTED UNIQUE LEVELS
+        const levels = [
+            {
+                name: 'Pebble Creek',
+                description: 'Bentang sungai pendek. Mobil perkotaan ringan melintas. Belajar buat dek jalan & rangka segitiga kayu penyangga.',
+                reward: 'Bridge Apprentice', budget: 230, targetBudget: 155,
+                vehicles: [{ name: 'City Car', mass: 1.1, speed: 0.0019, color: '#80ffdb' }],
+                groundY: 620, waterY: 462,
+                islands: [
+                    { x: 0, y: 510, w: 220, h: 210, topColor: '#7f9868', sideColor: '#475346' },
+                    { x: 980, y: 500, w: 220, h: 220, topColor: '#869f6d', sideColor: '#495646' }
+                ],
+                anchors: [
+                    { x: 180, y: 510, fixed: true, start: true },
+                    { x: 1020, y: 500, fixed: true, goal: true },
+                    { x: 180, y: 620, fixed: true },
+                    { x: 1020, y: 620, fixed: true }
+                ]
+            },
+            {
+                name: 'Twin Fork River',
+                description: 'Sungai bercabang dua. Ada bukit kecil di tengah untuk tiang penahan tengah. Dua kendaraan lewat beriringan.',
+                reward: 'Efficient Architect', budget: 380, targetBudget: 285,
+                vehicles: [{ name: 'Hatchback', mass: 1.3, speed: 0.0018, color: '#f4f1de' }, { name: 'Delivery Van', mass: 1.6, speed: 0.0015, color: '#ffd166' }],
+                groundY: 620, waterY: 470,
+                islands: [
+                    { x: 0, y: 500, w: 180, h: 220, topColor: '#809d66', sideColor: '#465443' },
+                    { x: 500, y: 560, w: 180, h: 160, topColor: '#8ca773', sideColor: '#536149' },
+                    { x: 1030, y: 510, w: 170, h: 210, topColor: '#809d66', sideColor: '#465443' }
+                ],
+                anchors: [
+                    { x: 150, y: 500, fixed: true, start: true },
+                    { x: 540, y: 560, fixed: true },
+                    { x: 1050, y: 510, fixed: true, goal: true },
+                    { x: 150, y: 620, fixed: true },
+                    { x: 540, y: 650, fixed: true },
+                    { x: 1050, y: 620, fixed: true }
+                ]
+            },
+            {
+                name: 'Iron Span Gap',
+                description: 'Ngarai batu yang lebar. Sebuah truk besar bermuatan harus melintas. Baja (steel) wajib diposisikan di rangka utama.',
+                reward: 'Load Expert', budget: 520, targetBudget: 395,
+                vehicles: [{ name: 'Heavy Truck', mass: 2.5, speed: 0.0012, color: '#ff7b72' }],
+                groundY: 620, waterY: 480,
+                islands: [
+                    { x: 0, y: 490, w: 180, h: 230, topColor: '#bd8f67', sideColor: '#62422c' },
+                    { x: 1020, y: 490, w: 180, h: 230, topColor: '#bd8f67', sideColor: '#62422c' }
+                ],
+                anchors: [
+                    { x: 140, y: 490, fixed: true, start: true },
+                    { x: 1060, y: 490, fixed: true, goal: true },
+                    { x: 140, y: 610, fixed: true },
+                    { x: 1060, y: 610, fixed: true }
+                ]
+            },
+            {
+                name: 'Summit Convoy',
+                description: 'Lembah bersalju ekstrem. Iring-iringan 3 mobil (sedan, van, dan truk) melaju beruntun. Rangka ganda dibutuhkan.',
+                reward: 'Summit Veteran', budget: 660, targetBudget: 510,
+                vehicles: [{ name: 'City Car', mass: 1.1, speed: 0.0019, color: '#80ffdb' }, { name: 'Van', mass: 1.6, speed: 0.0014, color: '#ffe066' }, { name: 'Truck', mass: 2.5, speed: 0.0011, color: '#ff7b72' }],
+                groundY: 620, waterY: 490,
+                islands: [
+                    { x: 0, y: 510, w: 155, h: 210, topColor: '#7f9f9b', sideColor: '#4b5f5c' },
+                    { x: 350, y: 580, w: 140, h: 140, topColor: '#7f9f9b', sideColor: '#4b5f5c' },
+                    { x: 700, y: 570, w: 140, h: 150, topColor: '#7f9f9b', sideColor: '#4b5f5c' },
+                    { x: 1050, y: 510, w: 150, h: 210, topColor: '#7f9f9b', sideColor: '#4b5f5c' }
+                ],
+                anchors: [
+                    { x: 120, y: 510, fixed: true, start: true },
+                    { x: 420, y: 580, fixed: true },
+                    { x: 770, y: 570, fixed: true },
+                    { x: 1080, y: 510, fixed: true, goal: true },
+                    { x: 120, y: 620, fixed: true },
+                    { x: 420, y: 670, fixed: true },
+                    { x: 770, y: 660, fixed: true },
+                    { x: 1080, y: 620, fixed: true }
+                ]
+            },
+            {
+                name: 'Deep Gorge',
+                description: 'Jurang tebing sangat dalam dengan angin sedang. Tiang tengah dilarang. Solusinya gantung deck dengan kabel (cable) suspensi.',
+                reward: 'Suspension Master', budget: 580, targetBudget: 440,
+                vehicles: [{ name: 'Pickup Truck', mass: 1.7, speed: 0.0016, color: '#00f2fe' }],
+                groundY: 620, waterY: 530,
+                islands: [
+                    { x: 0, y: 380, w: 200, h: 340, topColor: '#9086a3', sideColor: '#504863' },
+                    { x: 1000, y: 380, w: 200, h: 340, topColor: '#9086a3', sideColor: '#504863' }
+                ],
+                anchors: [
+                    { x: 160, y: 380, fixed: true, start: true },
+                    { x: 1040, y: 380, fixed: true, goal: true },
+                    { x: 160, y: 180, fixed: true, desc: 'High Anchor Left' },
+                    { x: 1040, y: 180, fixed: true, desc: 'High Anchor Right' }
+                ]
+            },
+            {
+                name: 'Drawbridge Gorge',
+                description: 'Sebuah kapal besar butuh ruang tinggi di tengah jurang. Deck jalan harus melengkung tinggi di atas sungai.',
+                reward: 'Arch Designer', budget: 780, targetBudget: 620,
+                vehicles: [{ name: 'Cargo Truck', mass: 2.7, speed: 0.00115, color: '#ff007f' }],
+                groundY: 620, waterY: 480,
+                islands: [
+                    { x: 0, y: 480, w: 180, h: 240, topColor: '#83a887', sideColor: '#446648' },
+                    { x: 1020, y: 480, w: 180, h: 240, topColor: '#83a887', sideColor: '#446648' }
+                ],
+                anchors: [
+                    { x: 140, y: 480, fixed: true, start: true },
+                    { x: 1060, y: 480, fixed: true, goal: true },
+                    { x: 140, y: 600, fixed: true },
+                    { x: 1060, y: 600, fixed: true }
+                ]
+            },
+            {
+                name: 'The Leap of Faith',
+                description: 'Teater lompatan akrobatik! Tebing kiri tinggi, tebing kanan rendah. Bangun lintasan lompat agar mobil melayang dan mendarat mulus.',
+                reward: 'Stunt Coordinator', budget: 490, targetBudget: 380,
+                vehicles: [{ name: 'Stunt Buggy', mass: 1.0, speed: 0.0022, color: '#ffb347' }],
+                groundY: 620, waterY: 520,
+                islands: [
+                    { x: 0, y: 390, w: 260, h: 330, topColor: '#b8a67b', sideColor: '#756542' },
+                    { x: 920, y: 530, w: 280, h: 190, topColor: '#b8a67b', sideColor: '#756542' }
+                ],
+                anchors: [
+                    { x: 220, y: 390, fixed: true, start: true },
+                    { x: 960, y: 530, fixed: true, goal: true },
+                    { x: 220, y: 490, fixed: true }
+                ]
+            },
+            {
+                name: 'Windy Valley',
+                description: 'Lembah angin kencang (High Wind). Angin meniup kencang struktur jembatan ke samping. Desain harus sangat kaku dan terikat silang.',
+                reward: 'Wind Breaker', budget: 560, targetBudget: 420,
+                vehicles: [{ name: 'Van Caravan', mass: 1.8, speed: 0.0014, color: '#ffe066' }],
+                groundY: 620, waterY: 500,
+                islands: [
+                    { x: 0, y: 500, w: 200, h: 220, topColor: '#7f9f9b', sideColor: '#4b5f5c' },
+                    { x: 1000, y: 500, w: 200, h: 220, topColor: '#7f9f9b', sideColor: '#4b5f5c' }
+                ],
+                anchors: [
+                    { x: 160, y: 500, fixed: true, start: true },
+                    { x: 1040, y: 500, fixed: true, goal: true },
+                    { x: 160, y: 620, fixed: true },
+                    { x: 1040, y: 620, fixed: true }
+                ]
+            },
+            {
+                name: 'Monolith Pillar',
+                description: 'Ada pilar menara batu raksasa berdiri kokoh di tengah jurang. Manfaatkan node anchor pilar tersebut untuk penahan jembatan suspensi.',
+                reward: 'Tower Architect', budget: 680, targetBudget: 530,
+                vehicles: [{ name: 'SUV Cruiser', mass: 1.9, speed: 0.0016, color: '#00f2fe' }],
+                groundY: 620, waterY: 480,
+                islands: [
+                    { x: 0, y: 510, w: 180, h: 210, topColor: '#9086a3', sideColor: '#504863' },
+                    { x: 570, y: 240, w: 60, h: 480, topColor: '#9086a3', sideColor: '#30283d' }, // Tower island
+                    { x: 1020, y: 510, w: 180, h: 210, topColor: '#9086a3', sideColor: '#504863' }
+                ],
+                anchors: [
+                    { x: 140, y: 510, fixed: true, start: true },
+                    { x: 1060, y: 510, fixed: true, goal: true },
+                    { x: 600, y: 240, fixed: true, desc: 'Tower Top Anchor' },
+                    { x: 600, y: 380, fixed: true, desc: 'Tower Mid Anchor' },
+                    { x: 140, y: 610, fixed: true }
+                ]
+            },
+            {
+                name: 'Double Crossing',
+                description: 'Dua kendaraan meluncur dari ujung tebing yang berlawanan pada saat bersamaan! Pastikan struktur tidak roboh akibat beban berpapasan.',
+                reward: 'Traffic Marshal', budget: 740, targetBudget: 580,
+                vehicles: [{ name: 'Sedan A', mass: 1.3, speed: 0.0018, color: '#ff5c5c' }, { name: 'Sedan B', mass: 1.3, speed: 0.0018, color: '#7fc4ff' }],
+                groundY: 620, waterY: 470,
+                islands: [
+                    { x: 0, y: 490, w: 200, h: 230, topColor: '#8fae71', sideColor: '#52624c' },
+                    { x: 1000, y: 490, w: 200, h: 230, topColor: '#8fae71', sideColor: '#52624c' }
+                ],
+                anchors: [
+                    { x: 160, y: 490, fixed: true, start: true },
+                    { x: 1040, y: 490, fixed: true, goal: true },
+                    { x: 160, y: 600, fixed: true },
+                    { x: 1040, y: 600, fixed: true }
+                ]
+            },
+            {
+                name: 'Alpine pass',
+                description: 'Ngarai tinggi dengan dasar bebatuan curam. Air mengalir deras. Material baja sangat direkomendasikan.',
+                reward: 'Canyon Master', budget: 620, targetBudget: 490,
+                vehicles: [{ name: 'Delivery Van', mass: 1.6, speed: 0.0015, color: '#ffd166' }],
+                groundY: 620, waterY: 510,
+                islands: [
+                    { x: 0, y: 460, w: 220, h: 260, topColor: '#7f9f9b', sideColor: '#4b5f5c' },
+                    { x: 980, y: 460, w: 220, h: 260, topColor: '#7f9f9b', sideColor: '#4b5f5c' }
+                ],
+                anchors: [
+                    { x: 180, y: 460, fixed: true, start: true },
+                    { x: 1020, y: 460, fixed: true, goal: true },
+                    { x: 180, y: 580, fixed: true },
+                    { x: 1020, y: 580, fixed: true }
+                ]
+            },
+            {
+                name: 'Drawbridge Gap XL',
+                description: 'Ngarai kolosal dengan celah air yang sangat luas. Diperlukan konstruksi penopang baja yang masif di dasar tebing.',
+                reward: 'Structural Giant', budget: 950, targetBudget: 750,
+                vehicles: [{ name: 'Freight Truck', mass: 2.8, speed: 0.0011, color: '#a78bfa' }],
+                groundY: 620, waterY: 490,
+                islands: [
+                    { x: 0, y: 480, w: 180, h: 240, topColor: '#bd8f67', sideColor: '#62422c' },
+                    { x: 1020, y: 480, w: 180, h: 240, topColor: '#bd8f67', sideColor: '#62422c' }
+                ],
+                anchors: [
+                    { x: 140, y: 480, fixed: true, start: true },
+                    { x: 1060, y: 480, fixed: true, goal: true },
+                    { x: 140, y: 610, fixed: true },
+                    { x: 1060, y: 610, fixed: true }
+                ]
+            },
+            {
+                name: 'Island Hopper',
+                description: 'Gugusan pulau terapung. Ada dua celah sungai kecil berturut-turut. Rancang jembatan multi-span yang terhubung ke daratan tengah.',
+                reward: 'Archipelago Road', budget: 850, targetBudget: 650,
+                vehicles: [{ name: 'Hatchback', mass: 1.3, speed: 0.0018, color: '#ffb347' }, { name: 'SUV Cruiser', mass: 1.9, speed: 0.0015, color: '#00f2fe' }],
+                groundY: 620, waterY: 485,
+                islands: [
+                    { x: 0, y: 490, w: 160, h: 230, topColor: '#83a887', sideColor: '#446648' },
+                    { x: 440, y: 520, w: 280, h: 200, topColor: '#83a887', sideColor: '#446648' }, // central island
+                    { x: 1040, y: 490, w: 160, h: 230, topColor: '#83a887', sideColor: '#446648' }
+                ],
+                anchors: [
+                    { x: 120, y: 490, fixed: true, start: true },
+                    { x: 460, y: 520, fixed: true },
+                    { x: 700, y: 520, fixed: true },
+                    { x: 1080, y: 490, fixed: true, goal: true },
+                    { x: 120, y: 610, fixed: true },
+                    { x: 1080, y: 610, fixed: true }
+                ]
+            },
+            {
+                name: 'Serpent Creek',
+                description: 'Ngarai berkelok-kelok dengan tebing curam. Elevasi ujung tebing berbeda setinggi 80 piksel. Rancang deck turunan yang landai.',
+                reward: 'Slope Planner', budget: 540, targetBudget: 420,
+                vehicles: [{ name: 'City Car', mass: 1.1, speed: 0.0019, color: '#80ffdb' }],
+                groundY: 620, waterY: 470,
+                islands: [
+                    { x: 0, y: 420, w: 200, h: 300, topColor: '#7f9868', sideColor: '#475346' },
+                    { x: 960, y: 500, w: 240, h: 220, topColor: '#7f9868', sideColor: '#475346' }
+                ],
+                anchors: [
+                    { x: 160, y: 420, fixed: true, start: true },
+                    { x: 1000, y: 500, fixed: true, goal: true },
+                    { x: 160, y: 540, fixed: true },
+                    { x: 1000, y: 620, fixed: true }
+                ]
+            },
+            {
+                name: 'Overpass Ramp',
+                description: 'Membangun jembatan layang melintasi jalan raya bawah yang tidak boleh ditabrak. Angkar pengikat hanya diizinkan di tebing ujung.',
+                reward: 'Overpass Veteran', budget: 760, targetBudget: 610,
+                vehicles: [{ name: 'Delivery Van', mass: 1.6, speed: 0.0015, color: '#ffd166' }],
+                groundY: 620, waterY: 530,
+                islands: [
+                    { x: 0, y: 430, w: 160, h: 290, topColor: '#bd8f67', sideColor: '#62422c' },
+                    { x: 420, y: 590, w: 360, h: 130, topColor: '#5a6275', sideColor: '#3c414d', desc: 'Lower Road Barrier (No building touch)' },
+                    { x: 1040, y: 430, w: 160, h: 290, topColor: '#bd8f67', sideColor: '#62422c' }
+                ],
+                anchors: [
+                    { x: 120, y: 430, fixed: true, start: true },
+                    { x: 1080, y: 430, fixed: true, goal: true },
+                    { x: 120, y: 560, fixed: true },
+                    { x: 1080, y: 560, fixed: true }
+                ]
+            },
+            {
+                name: 'The Ultimate Arch',
+                description: 'Ngarai kolosal sepanjang 900 piksel tanpa pilar penopang tengah sama sekali! Rancang struktur busur lengkung baja raksasa di bawah deck.',
+                reward: 'Grandmaster Bridge', budget: 1100, targetBudget: 850,
+                vehicles: [{ name: 'Heavy Truck XL', mass: 2.9, speed: 0.0011, color: '#ff007f' }, { name: 'Heavy Truck XXL', mass: 3.2, speed: 0.0010, color: '#ff3b30' }],
+                groundY: 620, waterY: 480,
+                islands: [
+                    { x: 0, y: 460, w: 140, h: 260, topColor: '#8ca773', sideColor: '#536149' },
+                    { x: 1060, y: 460, w: 140, h: 260, topColor: '#8ca773', sideColor: '#536149' }
+                ],
+                anchors: [
+                    { x: 100, y: 460, fixed: true, start: true },
+                    { x: 1100, y: 460, fixed: true, goal: true },
+                    { x: 100, y: 580, fixed: true },
+                    { x: 1100, y: 580, fixed: true }
+                ]
+            },
+            {
+                name: 'Sandbox Endless',
+                description: 'Level Sandbox Acak. Tiap ganti ke level ini, posisi pulau & jurang berubah otomatis secara prosedural!',
+                reward: 'Master of Chaos',
+                budget: 1500, targetBudget: 800,
+                vehicles: [{ name: 'Random Car', mass: 1.8, speed: 0.0016, color: '#ff33aa' }],
+                groundY: 620, waterY: 500,
+                islands: [], anchors: []
+            }
+        ];
+
+        function refreshLevelPicker() {
+            if (!ui.levelPicker) return;
+            ui.levelPicker.innerHTML = levels.map((level, idx) => `
+                <option value="${idx}">Level ${idx + 1} - ${level.name}</option>
+            `).join('');
+            ui.levelPicker.value = String(state.levelIndex);
+        }
+
+        const state = {
+            phase: 'build',
+            levelIndex: 0,
+            selectedTool: 'road',
+            pendingNode: null,
+            hoverNode: null,
+            dragNodeId: null,
+            dragStart: null,
+            dragSnapshot: null,
+            simNodes: [],
+            simSegments: [],
+            nodes: [],
+            segments: [],
+            history: [],
+            redoHistory: [],
+            path: [],
+            vehicleIndex: 0,
+            vehicleProgress: 0,
+            simClock: 0,
+            maxStress: 0,
+            brokenCount: 0,
+            simSpeed: 1,
+            simPaused: false,
+            windMode: 0,
+            fragileMode: false,
+            best: loadBest(),
+            pointer: { x: 0, y: 0, inside: false },
+            camShake: 0,
+            lastTime: 0,
+            introDismissed: false,
+            gridSnap: true,
+            gridSize: 36,
+            /* Camera panning & zoom variables */
+            cam: { x: 0, y: 0, zoom: 1 },
+            /* Collapse state */
+            collapseTimer: 0,
+            collapseReason: '',
+            collapseVehicle: null,  /* { x, y, vx, vy, angle, angVel, color, name, splashed } */
+            collapseSplashes: [],   /* water splash particles */
+            /* Drifting clouds */
+            clouds: Array.from({ length: 12 }, () => ({
+                x: Math.random() * 2000 - 200,
+                y: Math.random() * 200 + 40,
+                w: Math.random() * 120 + 85,
+                h: Math.random() * 20 + 16,
+                speed: 0.15 + Math.random() * 0.25
+            }))
+        };
+
+        function loadBest() {
+            try {
+                return JSON.parse(localStorage.getItem(BEST_KEY) || '{}');
+            } catch {
+                return {};
+            }
+        }
+
+        function saveBest(levelName, value) {
+            const prev = state.best[levelName];
+            if (prev == null || value < prev) {
+                state.best[levelName] = value;
+                localStorage.setItem(BEST_KEY, JSON.stringify(state.best));
+            }
+        }
+
+        function snap(value) {
+            if (!state.gridSnap) return value;
+            return Math.round(value / state.gridSize) * state.gridSize;
+        }
+
+        function dist(a, b) {
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            return Math.hypot(dx, dy);
+        }
+
+        function formatMoney(num) {
+            return '$' + Math.round(num);
+        }
+
+        function cloneNode(node) {
+            return { ...node, px: node.x, py: node.y };
+        }
+
+        function cloneSegment(seg) {
+            return { ...seg, broken: false, stress: 0, fatigue: 0 };
+        }
+
+        function getLevel() {
+            return levels[state.levelIndex];
+        }
+
+        function getDifficultyProfile() {
+            const levelNum = state.levelIndex + 1;
+            const hardStep = Math.max(0, levelNum - 4);
+            return {
+                gravityBoost: 1 + hardStep * 0.025,
+                windBoost: hardStep * 0.015,
+                breakPenalty: Math.max(0.7, 1 - hardStep * 0.025),
+                fatigueBoost: 1 + hardStep * 0.08,
+                speedBoost: 1 + hardStep * 0.035,
+                stressCap: Math.max(115, 150 - hardStep * 3),
+                splashLimit: 85 - Math.min(20, hardStep * 2)
+            };
+        }
+
+        function getNodeById(id, source = state.nodes) {
+            return source.find(node => node.id === id);
+        }
+
+        // Camera coordinate projection
+        function screenToWorld(ev) {
+            const rect = canvas.getBoundingClientRect();
+            const canvasX = ev.clientX - rect.left;
+            const canvasY = ev.clientY - rect.top;
+            return {
+                x: (canvasX - state.cam.x) / state.cam.zoom,
+                y: (canvasY - state.cam.y) / state.cam.zoom
+            };
+        }
+
+        function getMaterial(type) {
+            return materials[type];
+        }
+
+        function getBudgetUsed() {
+            return state.segments.reduce((sum, seg) => sum + seg.cost, 0);
+        }
+
+        function getRoadLength() {
+            return state.segments.filter(seg => seg.type === 'road').reduce((sum, seg) => sum + seg.rest, 0) / 10;
+        }
+
+        function setPhase(next) {
+            state.phase = next;
+            const label = next === 'build' ? 'Build' : next === 'collapse' ? 'Test' : 'Test';
+            ui.phaseLabel.textContent = label;
+            ui.phaseLabel.classList.toggle('is-test', next === 'test' || next === 'collapse');
+            ui.buildHint.textContent = next === 'build'
+                ? 'Klik dua titik untuk menggambar segmen. Gunakan road untuk jalur kendaraan.'
+                : next === 'collapse'
+                    ? 'Jembatan runtuh! Saksikan keruntuhannya...'
+                    : 'Struktur sedang diuji. Perhatikan warna stress dan bagian yang mulai retak.';
+            updateUndoButton();
+        }
+
+        function snapshotBuildState() {
+            return {
+                nodes: state.nodes.map(node => ({ ...node })),
+                segments: state.segments.map(seg => ({ ...seg }))
+            };
+        }
+
+        function commitHistory(snapshot) {
+            state.history.push(snapshot);
+            if (state.history.length > 100) state.history.shift(); // Upgraded to 100 steps
+            state.redoHistory = [];
+            updateUndoButton();
+        }
+
+        function restoreBuildState(snapshot) {
+            state.nodes = snapshot.nodes.map(node => ({ ...node }));
+            state.segments = snapshot.segments.map(seg => ({ ...seg }));
+            state.pendingNode = null;
+            recomputeSegmentGeometry();
+            updateStats();
+        }
+
+        function updateUndoButton() {
+            if (!ui.undoBtn) return;
+            ui.undoBtn.disabled = state.phase !== 'build' || state.history.length === 0;
+            if (ui.redoBtn) {
+                ui.redoBtn.disabled = state.phase !== 'build' || state.redoHistory.length === 0;
+            }
+        }
+
+        function undoBuild() {
+            if (state.phase !== 'build' || state.history.length === 0) return;
+            state.redoHistory.push(snapshotBuildState());
+            const snapshot = state.history.pop();
+            restoreBuildState(snapshot);
+            SFX.hit();
+            updateUndoButton();
+            saveCurrentBuild();
+        }
+
+        function redoBuild() {
+            if (state.phase !== 'build' || state.redoHistory.length === 0) return;
+            state.history.push(snapshotBuildState());
+            const snapshot = state.redoHistory.pop();
+            restoreBuildState(snapshot);
+            SFX.move();
+            updateUndoButton();
+            saveCurrentBuild();
+        }
+
+        function setSpeed(multiplier) {
+            state.simSpeed = multiplier;
+            ui.speedBtn.innerHTML = '⚡ x' + multiplier;
+        }
+
+        function cycleSpeed() {
+            const speeds = [1, 2, 4];
+            const idx = speeds.indexOf(state.simSpeed);
+            const next = speeds[(idx + 1) % speeds.length];
+            setSpeed(next);
+            SFX.move();
+        }
+
+        function updateFragileButton() {
+            if (!ui.fragileBtn) return;
+            ui.fragileBtn.innerHTML = state.fragileMode ? '🧊 Fragile' : '🧊 Normal';
+            ui.fragileBtn.classList.toggle('is-fragile', state.fragileMode);
+        }
+
+        function toggleFragileMode() {
+            if (state.phase === 'test') return;
+            state.fragileMode = !state.fragileMode;
+            updateFragileButton();
+            flashHint(state.fragileMode
+                ? 'Fragile Mode aktif: material lebih rapuh, fatigue lebih cepat naik.'
+                : 'Fragile Mode nonaktif: kembali ke ketahanan normal.');
+            SFX.move();
+        }
+
+        function getWindFactor() {
+            return [0, 0.038, 0.095][state.windMode] || 0;
+        }
+
+        function updateWindButton() {
+            const labels = ['Off', 'Low', 'High'];
+            ui.windBtn.innerHTML = '💨 ' + labels[state.windMode];
+            ui.windBtn.classList.toggle('is-fragile', state.windMode > 0);
+        }
+
+        function cycleWindMode() {
+            state.windMode = (state.windMode + 1) % 3;
+            updateWindButton();
+            flashHint('Wind mode: ' + (['Off', 'Low', 'High'][state.windMode]) + '.');
+            SFX.move();
+        }
+
+        function updatePauseButton() {
+            ui.pauseBtn.innerHTML = state.simPaused ? '▶ Play' : '⏸ Pause';
+            ui.pauseBtn.classList.toggle('is-fragile', state.simPaused);
+        }
+
+        function togglePauseSimulation() {
+            if (state.phase !== 'test') return;
+            state.simPaused = !state.simPaused;
+            updatePauseButton();
+            flashHint(state.simPaused ? 'Simulasi dijeda.' : 'Simulasi dilanjutkan.');
+            SFX.click();
+        }
+
+        function getSaveMap() {
+            try {
+                return JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+            } catch {
+                return {};
+            }
+        }
+
+        function saveCurrentBuild() {
+            const level = getLevel();
+            const all = getSaveMap();
+            all[level.name] = snapshotBuildState();
+            localStorage.setItem(SAVE_KEY, JSON.stringify(all));
+        }
+
+        function loadCurrentBuild() {
+            if (state.phase !== 'build') return;
+            const level = getLevel();
+            const all = getSaveMap();
+            const data = all[level.name];
+            if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.segments)) {
+                flashHint('Belum ada save untuk level ini.');
+                SFX.hit();
+                return;
+            }
+            commitHistory(snapshotBuildState());
+            restoreBuildState(data);
+            flashHint('Build dimuat dari save lokal.');
+            SFX.score();
+            saveCurrentBuild();
+        }
+
+        function maybeLoadAutosave() {
+            const level = getLevel();
+            const all = getSaveMap();
+            const data = all[level.name];
+            if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.segments)) return;
+            state.nodes = data.nodes.map(node => ({ ...node }));
+            state.segments = data.segments.map(seg => ({ ...seg }));
+            recomputeSegmentGeometry();
+        }
+
+        // AUTO SCAFFOLD GENERATING STABILITY TRUSSES
+        function autoScaffold() {
+            if (state.phase !== 'build') return;
+            const level = getLevel();
+            const start = state.nodes.find(node => node.start);
+            const goal = state.nodes.find(node => node.goal);
+            if (!start || !goal) return;
+            commitHistory(snapshotBuildState());
+            state.segments = [];
+            
+            const span = goal.x - start.x;
+            const stepCount = Math.ceil(span / 130);
+            const step = span / stepCount;
+            const deckY = (start.y + goal.y) * 0.5;
+
+            // Generate deck nodes and roads
+            const deckNodes = [start];
+            for (let i = 1; i < stepCount; i++) {
+                const node = createNode({ x: start.x + step * i, y: deckY });
+                deckNodes.push(node);
+            }
+            deckNodes.push(goal);
+
+            // Connect road segments
+            for (let i = 0; i < deckNodes.length - 1; i++) {
+                addSegment(deckNodes[i], deckNodes[i+1], 'road');
+            }
+
+            // Generate sub-deck truss support (Arched/Truss shape)
+            const trussNodes = [];
+            for (let i = 1; i < deckNodes.length - 1; i++) {
+                const node = deckNodes[i];
+                // Arch formula
+                const distToCenter = Math.abs(i - stepCount / 2);
+                const offset = (1 - (distToCenter / (stepCount / 2))) * 110 + 60;
+                const supportY = Math.min(level.groundY - 40, deckY + offset);
+                const baseNode = createNode({ x: node.x, y: supportY });
+                trussNodes.push(baseNode);
+
+                // Vertical Support
+                addSegment(node, baseNode, 'wood');
+            }
+
+            // Connecting lower bridge base arch
+            if (trussNodes.length > 0) {
+                // Connect start to first support base
+                addSegment(start, trussNodes[0], 'wood');
+                
+                // Connect intermediate bases
+                for (let i = 0; i < trussNodes.length - 1; i++) {
+                    addSegment(trussNodes[i], trussNodes[i+1], 'steel'); // Steel arch center
+                    addSegment(deckNodes[i+1], trussNodes[i], 'wood'); // Cross brace
+                    addSegment(deckNodes[i+1], trussNodes[i+1], 'wood'); // Cross brace
+                }
+                
+                // Connect last support base to goal
+                addSegment(trussNodes[trussNodes.length - 1], goal, 'wood');
+                addSegment(deckNodes[deckNodes.length - 2], trussNodes[trussNodes.length - 1], 'wood');
+            }
+
+            flashHint('Auto Arch Scaffold selesai.');
+            SFX.score();
+            saveCurrentBuild();
+            updateStats();
+        }
+
+        function getProjectedRank() {
+            const level = getLevel();
+            return getRank(getBudgetUsed(), level.targetBudget, state.phase === 'test' ? state.maxStress : Math.max(45, state.maxStress));
+        }
+
+        function updateHealthCheck() {
+            const level = getLevel();
+            const budget = getBudgetUsed();
+            const roadReady = buildRoadPath().length > 0;
+            const roadCount = state.segments.filter(seg => seg.type === 'road').length;
+            const supportCount = state.segments.length - roadCount;
+            const supportRatio = roadCount ? supportCount / roadCount : 0;
+
+            ui.projectedRankLabel.textContent = getProjectedRank();
+            ui.checkRoad.textContent = roadReady ? 'Road Linked: OK' : 'Road Linked: Missing';
+            ui.checkSupport.textContent = supportRatio >= 1.15 ? 'Support Ratio: Good' : 'Support Ratio: Low';
+            ui.checkBudget.textContent = budget <= level.budget ? 'Budget Safe: OK' : 'Budget Safe: Over';
+
+            ui.checkRoad.classList.toggle('ok', roadReady);
+            ui.checkSupport.classList.toggle('ok', supportRatio >= 1.15);
+            ui.checkBudget.classList.toggle('ok', budget <= level.budget);
+
+            if (!roadReady) {
+                ui.healthHint.textContent = 'Jalur jalan belum tersambung utuh dari awal ke akhir.';
+            } else if (supportRatio < 1.15) {
+                ui.healthHint.textContent = 'Support masih kurang. Tambahkan rangka pengaku silang.';
+            } else if (budget > level.budget) {
+                ui.healthHint.textContent = 'Melebihi budget. Ganti sebagian segmen besi dengan kayu.';
+            } else {
+                ui.healthHint.textContent = 'Desain terlihat kokoh. Jalankan penyeberangan mobil.';
+            }
+        }
+
+        function initMaterialCards() {
+            // Materials panel removed; descriptions moved to tooltips
+        }
+
+        function selectTool(tool) {
+            state.selectedTool = tool;
+            state.pendingNode = null;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tool === tool));
+            SFX.click();
+        }
+
+        function initLevel(index, keepIntro = false) {
+            state.levelIndex = Math.max(0, Math.min(levels.length - 1, index));
+            const level = getLevel();
+            
+            // Camera position reset & center based on window viewport
+            const targetZoom = Math.min(1.2, Math.max(0.55, Math.min(window.innerWidth / 1200, window.innerHeight / 720)));
+            state.cam = {
+                zoom: targetZoom,
+                x: window.innerWidth / 2 - 600 * targetZoom,
+                y: window.innerHeight / 2 - 360 * targetZoom
+            };
+            
+            // Procedural generator for Sandbox Endless
+            if (level.name === 'Sandbox Endless' && (!keepIntro || !level.islands || level.islands.length === 0)) {
+                const y1 = Math.floor(300 + Math.random() * 200);
+                const y2 = Math.floor(300 + Math.random() * 200);
+                const gap = 350 + Math.random() * 280;
+                const x2 = 220 + gap;
+                level.islands = [
+                    { x: 0, y: y1, w: 220, h: 800, topColor: '#bd8f67', sideColor: '#62422c' },
+                    { x: x2, y: y2, w: 1200 - x2, h: 800, topColor: '#bd8f67', sideColor: '#62422c' }
+                ];
+                level.anchors = [
+                    { x: 170, y: y1, fixed: true, start: true }, { x: 170, y: y1+110, fixed: true },
+                    { x: x2 + 50, y: y2, fixed: true, goal: true }, { x: x2 + 50, y: y2+110, fixed: true }
+                ];
+                level.waterY = Math.max(y1, y2) + 70;
+                level.vehicles = [{ name: 'Random Truck', mass: +(1.2 + Math.random() * 2.1).toFixed(2), speed: 0.0015, color: '#00f2fe' }];
+            }
+
+            state.hotspotId = null;
+            if (!keepIntro) state.deathMarker = null;
+
+            state.nodes = level.anchors.map((anchor, idx) => ({
+                id: 'a' + idx,
+                x: anchor.x,
+                y: anchor.y,
+                fixed: !!anchor.fixed,
+                start: !!anchor.start,
+                goal: !!anchor.goal,
+                anchor: true
+            }));
+            state.segments = [];
+            state.pendingNode = null;
+            state.hoverNode = null;
+            state.dragNodeId = null;
+            state.dragStart = null;
+            state.dragSnapshot = null;
+            state.history = [];
+            state.redoHistory = [];
+            state.vehicleIndex = 0;
+            state.vehicleProgress = 0;
+            state.maxStress = 0;
+            state.brokenCount = 0;
+            state.simPaused = false;
+            state.path = [];
+            setSpeed(1);
+            setPhase('build');
+            ui.missionTitle.textContent = level.name;
+            ui.missionCopy.textContent = level.description;
+            ui.vehicleLabel.textContent = level.vehicles.map(vehicle => vehicle.name).join(' + ');
+            ui.targetBudgetLabel.textContent = formatMoney(level.targetBudget);
+            ui.rewardLabel.textContent = level.reward;
+            ui.nextLevelBtn.disabled = true;
+            ui.resultOverlay.classList.add('hidden');
+            ui.resultNextBtn.disabled = false;
+            ui.resultNextBtn.textContent = state.levelIndex === levels.length - 1 ? 'Main Lagi' : 'Lanjut';
+            ui.levelLabel.textContent = String(state.levelIndex + 1);
+            if (ui.levelPicker) ui.levelPicker.value = String(state.levelIndex);
+            
+            const best = state.best[level.name];
+            ui.bestLabel.textContent = best == null ? '-' : formatMoney(best);
+            maybeLoadAutosave();
+            updateStats();
+            
+            if (!keepIntro && !state.introDismissed) {
+                ui.startOverlay.classList.remove('hidden');
+            }
+            updatePauseButton();
+            updateWindButton();
+            updateFragileButton();
+            updateUndoButton();
+        }
+
+        function updateStats() {
+            const budget = getBudgetUsed();
+            const level = getLevel();
+            ui.budgetLabel.textContent = formatMoney(budget) + ' / ' + formatMoney(level.budget);
+            ui.stressLabel.textContent = Math.round(state.maxStress) + '%';
+            ui.roadLengthLabel.textContent = getRoadLength().toFixed(1) + ' m';
+            
+            const rc = state.segments.filter(s=>s.type==='road').reduce((v,s)=>v+s.cost,0);
+            const wc = state.segments.filter(s=>s.type==='wood').reduce((v,s)=>v+s.cost,0);
+            const sc = state.segments.filter(s=>s.type==='steel').reduce((v,s)=>v+s.cost,0);
+            const cc = state.segments.filter(s=>s.type==='cable').reduce((v,s)=>v+s.cost,0);
+            ui.pieceCountLabel.innerHTML = `<span style="color:#ffdca6">R:${Math.round(rc)}</span> <span style="color:#cf9c78">W:${Math.round(wc)}</span> <span style="color:#d6efff">S:${Math.round(sc)}</span> <span style="color:#c6d4ea">C:${Math.round(cc)}</span>`;
+            
+            ui.brokenCountLabel.textContent = String(state.brokenCount);
+            const vehicleCount = level.vehicles.length;
+            const convoyBase = vehicleCount === 0 ? 0 : (state.vehicleIndex / vehicleCount) * 100;
+            const vehiclePart = state.phase === 'test' && vehicleCount ? (state.vehicleProgress * (100 / vehicleCount)) : 0;
+            const progress = Math.min(100, convoyBase + vehiclePart);
+            ui.progressLabel.textContent = Math.round(progress) + '%';
+            ui.stressFill.style.width = Math.min(100, state.maxStress) + '%';
+            ui.stressFill.style.background = state.maxStress > 90
+                ? 'linear-gradient(90deg,#ff6b6b,#ff2d55)'
+                : state.maxStress > 65
+                    ? 'linear-gradient(90deg,#ffb347,#ffcc33)'
+                    : 'linear-gradient(90deg,#73ffd1,#72b7ff)';
+            ui.startTestBtn.disabled = budget > level.budget || state.phase === 'test' || state.phase === 'collapse';
+            ui.budgetLabel.parentElement.classList.toggle('warn', budget > level.budget * 0.95);
+            updateHealthCheck();
+        }
+
+        function findNearestNode(point, maxDist = 24, source = state.nodes) {
+            let nearest = null;
+            let best = maxDist;
+            for (const node of source) {
+                const d = dist(point, node);
+                if (d < best) {
+                    best = d;
+                    nearest = node;
+                }
+            }
+            return nearest;
+        }
+
+        function createNode(point) {
+            const level = getLevel();
+            const node = {
+                id: 'n' + Math.random().toString(36).slice(2, 9),
+                x: Math.max(72, Math.min(BASE_W - 72, snap(point.x))),
+                y: Math.max(120, Math.min(level.groundY - 30, snap(point.y))),
+                fixed: false,
+                anchor: false,
+                start: false,
+                goal: false
+            };
+            state.nodes.push(node);
+            return node;
+        }
+
+        function getOrCreateNode(point) {
+            return findNearestNode(point) || createNode(point);
+        }
+
+        function segmentExists(aId, bId) {
+            return state.segments.some(seg => (seg.a === aId && seg.b === bId) || (seg.a === bId && seg.b === aId));
+        }
+
+        function addSegment(aNode, bNode, type) {
+            if (!aNode || !bNode || aNode.id === bNode.id) return;
+            if (segmentExists(aNode.id, bNode.id)) return;
+            const mat = getMaterial(type);
+            const length = dist(aNode, bNode);
+            if (length < 24) return;
+            const cost = (length / 36) * mat.cost;
+            if (getBudgetUsed() + cost > getLevel().budget) {
+                flashHint('Budget tidak cukup untuk segmen ini.');
+                SFX.hit();
+                return;
+            }
+            commitHistory(snapshotBuildState());
+            state.segments.push({
+                id: 's' + Math.random().toString(36).slice(2, 9),
+                a: aNode.id,
+                b: bNode.id,
+                type,
+                rest: length,
+                cost,
+                broken: false,
+                stress: 0,
+                fatigue: 0
+            });
+            SFX.click();
+            updateStats();
+        }
+
+        function recomputeSegmentGeometry() {
+            for (const seg of state.segments) {
+                const a = getNodeById(seg.a);
+                const b = getNodeById(seg.b);
+                if (!a || !b) continue;
+                seg.rest = dist(a, b);
+                seg.cost = (seg.rest / 36) * getMaterial(seg.type).cost;
+            }
+        }
+
+        function eraseAt(point) {
+            for (let i = state.segments.length - 1; i >= 0; i--) {
+                const seg = state.segments[i];
+                const a = getNodeById(seg.a);
+                const b = getNodeById(seg.b);
+                if (distanceToSegment(point, a, b) < 14) {
+                    commitHistory(snapshotBuildState());
+                    state.segments.splice(i, 1);
+                    cleanupDanglingNodes();
+                    SFX.hit();
+                    updateStats();
+                    return;
+                }
+            }
+        }
+
+        function cleanupDanglingNodes() {
+            const used = new Set();
+            state.segments.forEach(seg => { used.add(seg.a); used.add(seg.b); });
+            state.nodes = state.nodes.filter(node => node.anchor || used.has(node.id));
+        }
+
+        function distanceToSegment(point, a, b) {
+            if (!a || !b) return Infinity;
+            const l2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+            if (l2 === 0) return dist(point, a);
+            let t = ((point.x - a.x) * (b.x - a.x) + (point.y - a.y) * (b.y - a.y)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            return Math.hypot(point.x - (a.x + t * (b.x - a.x)), point.y - (a.y + t * (b.y - a.y)));
+        }
+
+        function flashHint(message) {
+            ui.buildHint.textContent = message;
+            clearTimeout(flashHint.timer);
+            flashHint.timer = setTimeout(() => {
+                if (state.phase === 'build') {
+                    ui.buildHint.textContent = 'Klik dua titik untuk menggambar segmen. Gunakan road untuk jalur kendaraan.';
+                }
+            }, 1800);
+        }
+
+        function buildRoadPath(sourceSegments = state.segments) {
+            const roadSegments = sourceSegments.filter(seg => seg.type === 'road' && !seg.broken);
+            const startNode = state.nodes.find(node => node.start);
+            const goalNode = state.nodes.find(node => node.goal);
+            if (!startNode || !goalNode) return [];
+            const graph = new Map();
+            roadSegments.forEach(seg => {
+                if (!graph.has(seg.a)) graph.set(seg.a, []);
+                if (!graph.has(seg.b)) graph.set(seg.b, []);
+                graph.get(seg.a).push({ to: seg.b, cost: seg.rest });
+                graph.get(seg.b).push({ to: seg.a, cost: seg.rest });
+            });
+            const costs = new Map([[startNode.id, 0]]);
+            const prev = new Map();
+            const queue = [{ id: startNode.id, cost: 0 }];
+            while (queue.length) {
+                queue.sort((a, b) => a.cost - b.cost);
+                const current = queue.shift();
+                if (current.id === goalNode.id) break;
+                const edges = graph.get(current.id) || [];
+                for (const edge of edges) {
+                    const nextCost = current.cost + edge.cost;
+                    if (!costs.has(edge.to) || nextCost < costs.get(edge.to)) {
+                        costs.set(edge.to, nextCost);
+                        prev.set(edge.to, current.id);
+                        queue.push({ id: edge.to, cost: nextCost });
+                    }
+                }
+            }
+            if (!prev.has(goalNode.id) && goalNode.id !== startNode.id) return [];
+            const path = [goalNode.id];
+            let cursor = goalNode.id;
+            while (cursor !== startNode.id) {
+                cursor = prev.get(cursor);
+                if (!cursor) return [];
+                path.unshift(cursor);
+            }
+            return path;
+        }
+
+        function startSimulation() {
+            if (state.phase === 'test' || state.phase === 'collapse') return;
+            const level = getLevel();
+            const profile = getDifficultyProfile();
+            const path = buildRoadPath();
+            if (!path.length) {
+                flashHint('Road harus tersambung dari start ke goal.');
+                SFX.hit();
+                return;
+            }
+            if (getBudgetUsed() > level.budget) {
+                flashHint('Budget terlewati. Rapikan desain dulu.');
+                SFX.hit();
+                return;
+            }
+            state.path = path;
+            state.simNodes = state.nodes.map(cloneNode);
+            state.simSegments = state.segments.map(cloneSegment);
+            state.vehicleIndex = 0;
+            state.vehicleProgress = 0;
+            state.maxStress = 0;
+            state.brokenCount = 0;
+            
+            // Extreme auto-wind for advanced levels
+            if (state.levelIndex >= 5 && state.windMode === 0) {
+                state.windMode = 1;
+                updateWindButton();
+            }
+            if (state.levelIndex >= 9 && state.windMode < 2) {
+                state.windMode = 2;
+                updateWindButton();
+            }
+            
+            setPhase('test');
+            ui.resultOverlay.classList.add('hidden');
+            SFX.score();
+        }
+
+        function getPathPoint(progress, sourceNodes = state.simNodes.length ? state.simNodes : state.nodes) {
+            if (!state.path.length) return null;
+            const nodes = state.path.map(id => getNodeById(id, sourceNodes));
+            let total = 0;
+            const lengths = [];
+            for (let i = 0; i < nodes.length - 1; i++) {
+                const len = dist(nodes[i], nodes[i + 1]);
+                lengths.push(len);
+                total += len;
+            }
+            let target = total * progress;
+            for (let i = 0; i < lengths.length; i++) {
+                if (target <= lengths[i]) {
+                    const a = nodes[i];
+                    const b = nodes[i + 1];
+                    const t = lengths[i] === 0 ? 0 : target / lengths[i];
+                    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, a, b, t };
+                }
+                target -= lengths[i];
+            }
+            const last = nodes[nodes.length - 1];
+            return { x: last.x, y: last.y, a: last, b: last, t: 1 };
+        }
+
+        function applyVehicleLoad() {
+            const level = getLevel();
+            const vehicle = level.vehicles[state.vehicleIndex];
+            const pathPoint = getPathPoint(state.vehicleProgress, state.simNodes);
+            if (!vehicle || !pathPoint) return;
+            const load = 0.45 + vehicle.mass * 0.75;
+            if (pathPoint.a && !pathPoint.a.fixed) {
+                pathPoint.a.y += load * (1 - pathPoint.t);
+            }
+            if (pathPoint.b && !pathPoint.b.fixed) {
+                pathPoint.b.y += load * pathPoint.t;
+            }
+        }
+
+        // PHYSICS SIMULATION ENGINE - VERLET INTEGRATION WITH 32 ITERATIONS
+        function updateSimulation(dt) {
+            if (state.phase !== 'test') return;
+            if (state.simPaused) {
+                updateStats();
+                return;
+            }
+            const level = getLevel();
+            const profile = getDifficultyProfile();
+            const gravity = 0.22 * profile.gravityBoost;
+            const windStrength = getWindFactor() + profile.windBoost;
+            const windTime = performance.now() * 0.0012;
+
+            // Physics step update
+            for (const node of state.simNodes) {
+                if (node.fixed) continue;
+                const vx = (node.x - node.px) * 0.993;
+                const vy = (node.y - node.py) * 0.993;
+                node.px = node.x;
+                node.py = node.y;
+                // Wind turbulence forces
+                const gust = Math.sin(windTime + node.y * 0.015) * windStrength;
+                node.x += vx + gust;
+                node.y += vy + gravity;
+            }
+
+            applyVehicleLoad();
+
+            // Upgraded to 32 constraint iterations for perfect stability
+            for (let iteration = 0; iteration < 32; iteration++) {
+                for (const seg of state.simSegments) {
+                    if (seg.broken) continue;
+                    const a = getNodeById(seg.a, state.simNodes);
+                    const b = getNodeById(seg.b, state.simNodes);
+                    const mat = getMaterial(seg.type);
+                    const dx = b.x - a.x;
+                    const dy = b.y - a.y;
+                    const current = Math.hypot(dx, dy) || 0.0001;
+                    const diff = (current - seg.rest) / current;
+                    
+                    // Cable structural slack
+                    if (seg.type === 'cable' && diff < 0) continue;
+
+                    const stiffness = mat.stiffness * 0.52;
+                    const offsetX = dx * 0.5 * diff * stiffness;
+                    const offsetY = dy * 0.5 * diff * stiffness;
+                    if (!a.fixed) {
+                        a.x += offsetX;
+                        a.y += offsetY;
+                    }
+                    if (!b.fixed) {
+                        b.x -= offsetX;
+                        b.y -= offsetY;
+                    }
+                }
+            }
+
+            state.maxStress = 0;
+            let newlyBroken = 0;
+            for (const seg of state.simSegments) {
+                if (seg.broken) continue;
+                const a = getNodeById(seg.a, state.simNodes);
+                const b = getNodeById(seg.b, state.simNodes);
+                const mat = getMaterial(seg.type);
+                const current = Math.hypot(b.x - a.x, b.y - a.y);
+                const stretch = Math.abs(current - seg.rest) / seg.rest;
+                const breakRatioBase = state.fragileMode ? mat.breakRatio * 0.70 : mat.breakRatio;
+                const breakRatio = breakRatioBase * profile.breakPenalty;
+                const stressRatio = stretch / breakRatio;
+                seg.stress = stressRatio * 100;
+                state.maxStress = Math.max(state.maxStress, seg.stress);
+                if (seg.stress > 75) state.hotspotId = seg.id;
+
+                // Fatigue calculations
+                const fatigueGain = (state.fragileMode ? 1.6 : 1) * profile.fatigueBoost;
+                if (stressRatio > 1) {
+                    seg.fatigue += (0.15 * dt + (stressRatio - 1) * 0.09 * dt) * fatigueGain;
+                } else if (stressRatio > 0.7) {
+                    seg.fatigue += (stressRatio - 0.7) * 0.035 * dt * fatigueGain;
+                } else {
+                    seg.fatigue = Math.max(0, (seg.fatigue || 0) - 0.01 * dt);
+                }
+                
+                if (seg.fatigue >= 1 || stressRatio > (state.fragileMode ? 1.15 : 1.3)) {
+                    seg.broken = true;
+                    newlyBroken += 1;
+                    const midX = (a.x + b.x) * 0.5;
+                    const midY = (a.y + b.y) * 0.5;
+                    
+                    // Spark particles
+                    spawnParticles(midX, midY, mat.color, 15, 7);
+                    spawnParticles(midX, midY, '#ff3366', 8, 9); // Red sparks
+                }
+            }
+
+            if (newlyBroken > 0) {
+                SFX.explode();
+                state.camShake = 16;
+            }
+            state.brokenCount = state.simSegments.filter(seg => seg.broken).length;
+
+            // Recalculate route path dynamically
+            const freshPath = buildRoadPath(state.simSegments);
+            if (!freshPath.length) {
+                startCollapse('Deck jalan runtuh atau terputus.');
+                return;
+            }
+            state.path = freshPath;
+
+            const vehicle = level.vehicles[state.vehicleIndex];
+            state.vehicleProgress += vehicle.speed * dt * profile.speedBoost;
+
+            const point = getPathPoint(Math.min(1, state.vehicleProgress), state.simNodes);
+            
+            // Exhaust smoke particles
+            if (point && Math.random() < 0.28 * state.simSpeed) {
+                const vAngle = Math.atan2(point.b.y - point.a.y, point.b.x - point.a.x);
+                const ex = point.x - Math.cos(vAngle) * 22;
+                const ey = point.y - 12 - Math.sin(vAngle) * 22;
+                spawnParticles(ex, ey, '#8e8e93', 1, 1);
+            }
+
+            if (!point || point.y > level.waterY + profile.splashLimit) {
+                startCollapse('Kendaraan tenggelam atau jatuh ke air.');
+                return;
+            }
+
+            if (state.maxStress > profile.stressCap) {
+                startCollapse('Batas tegangan terlampaui. Struktur gagal.');
+                return;
+            }
+
+            if (state.vehicleProgress >= 1) {
+                state.vehicleIndex += 1;
+                state.vehicleProgress = 0;
+                if (state.vehicleIndex >= level.vehicles.length) {
+                    completeLevel();
+                } else {
+                    SFX.score();
+                }
+            }
+            updateStats();
+        }
+
+        function startCollapse(reason) {
+            if (state.phase === 'collapse') return;
+            const level = getLevel();
+            const vehicle = level.vehicles[state.vehicleIndex];
+
+            let vx = 0, vy = 0, vAngle = 0;
+            const point = getPathPoint(Math.min(1, state.vehicleProgress), state.simNodes);
+            if (point && vehicle) {
+                vAngle = Math.atan2(point.b.y - point.a.y, point.b.x - point.a.x);
+                state.collapseVehicle = {
+                    x: point.x,
+                    y: point.y - 16,
+                    vx: vehicle.speed * 90 + 0.6,
+                    vy: -1.2,
+                    angle: vAngle,
+                    angVel: (Math.random() - 0.5) * 0.08,
+                    color: vehicle.color,
+                    name: vehicle.name,
+                    splashed: false
+                };
+                state.deathMarker = { x: state.collapseVehicle.x, y: state.collapseVehicle.y };
+            } else {
+                state.collapseVehicle = null;
+            }
+
+            state.collapseReason = reason;
+            state.collapseTimer = 0;
+            state.collapseSplashes = [];
+            state.camShake = 22;
+
+            // Trigger full collapse cascades
+            for (const seg of state.simSegments) {
+                if (!seg.broken && seg.type === 'road') {
+                    seg.broken = true;
+                    const a = getNodeById(seg.a, state.simNodes);
+                    const b = getNodeById(seg.b, state.simNodes);
+                    if (a && b) {
+                        const mx = (a.x + b.x) * 0.5, my = (a.y + b.y) * 0.5;
+                        spawnParticles(mx, my, '#f7c66d', 8);
+                    }
+                }
+            }
+
+            setPhase('collapse');
+            SFX.explode();
+            SFX.gameOver();
+        }
+
+        function updateCollapse(dt) {
+            if (state.phase !== 'collapse') return;
+            const level = getLevel();
+            const gravity = 0.35;
+            const COLLAPSE_DURATION = 150; 
+
+            state.collapseTimer += dt;
+
+            for (const node of state.simNodes) {
+                if (node.fixed) continue;
+                const vx = (node.x - node.px) * 0.985;
+                const vy = (node.y - node.py) * 0.985;
+                node.px = node.x;
+                node.py = node.y;
+                node.x += vx;
+                node.y += vy + gravity;
+            }
+
+            for (let iter = 0; iter < 4; iter++) {
+                for (const seg of state.simSegments) {
+                    if (seg.broken) continue;
+                    const a = getNodeById(seg.a, state.simNodes);
+                    const b = getNodeById(seg.b, state.simNodes);
+                    const mat = getMaterial(seg.type);
+                    const dx = b.x - a.x;
+                    const dy = b.y - a.y;
+                    const current = Math.hypot(dx, dy) || 0.0001;
+                    const diff = (current - seg.rest) / current;
+                    if (seg.type === 'cable' && diff < 0) continue;
+                    const stiffness = mat.stiffness * 0.52;
+                    const offsetX = dx * 0.5 * diff * stiffness;
+                    const offsetY = dy * 0.5 * diff * stiffness;
+                    if (!a.fixed) { a.x += offsetX; a.y += offsetY; }
+                    if (!b.fixed) { b.x -= offsetX; b.y -= offsetY; }
+                }
+            }
+
+            // Splashes on water level crossing
+            for (const node of state.simNodes) {
+                if (node.fixed) continue;
+                if (node.py < level.waterY && node.y >= level.waterY) {
+                    spawnSplash(node.x, level.waterY);
+                }
+            }
+
+            // Vehicle physics freefall
+            if (state.collapseVehicle && !state.collapseVehicle.splashed) {
+                const v = state.collapseVehicle;
+                v.vy += gravity;
+                v.x += v.vx * dt;
+                v.y += v.vy * dt;
+                v.angle += v.angVel * dt;
+                v.angVel += (Math.random() - 0.5) * 0.004 * dt;
+
+                // Splashes water splash drops
+                if (v.y >= level.waterY) {
+                    v.splashed = true;
+                    v.y = level.waterY;
+                    v.vy = 0; v.vx = 0;
+                    spawnSplash(v.x, level.waterY, 26);
+                    state.camShake = 18;
+                    SFX.hit();
+                }
+            }
+
+            if (state.collapseVehicle && state.collapseVehicle.splashed) {
+                state.collapseVehicle.y += 0.35 * dt; // Sink
+                state.collapseVehicle.angle += 0.003 * dt;
+            }
+
+            // Splash decay loop
+            for (let i = state.collapseSplashes.length - 1; i >= 0; i--) {
+                const s = state.collapseSplashes[i];
+                s.x += s.vx * dt;
+                s.y += s.vy * dt;
+                s.vy += 0.15 * dt;
+                s.life -= s.decay * dt;
+                if (s.life <= 0) state.collapseSplashes.splice(i, 1);
+            }
+
+            state.brokenCount = state.simSegments.filter(seg => seg.broken).length;
+            updateStats();
+
+            if (state.collapseTimer >= COLLAPSE_DURATION) {
+                finishCollapse();
+            }
+        }
+
+        function spawnSplash(x, waterY, count = 12) {
+            for (let i = 0; i < count; i++) {
+                state.collapseSplashes.push({
+                    x: x + (Math.random() - 0.5) * 22,
+                    y: waterY,
+                    vx: (Math.random() - 0.5) * 4.5,
+                    vy: -2.5 - Math.random() * 4.5,
+                    life: 1,
+                    decay: 0.012 + Math.random() * 0.015,
+                    r: 2.2 + Math.random() * 3.8,
+                    color: Math.random() > 0.4 ? '#a0dcff' : '#ffffff'
+                });
+            }
+            // Ripple foam rings
+            for (let i = 0; i < 6; i++) {
+                state.collapseSplashes.push({
+                    x: x + (Math.random() - 0.5) * 12,
+                    y: waterY + 2,
+                    vx: (i < 3 ? -1 : 1) * (1.2 + Math.random() * 2.2),
+                    vy: 0,
+                    life: 0.85,
+                    decay: 0.016,
+                    r: 1.8 + Math.random() * 2.2,
+                    color: 'rgba(180,230,255,0.5)'
+                });
+            }
+        }
+
+        function drawCollapseSplashes() {
+            for (const s of state.collapseSplashes) {
+                ctx.save();
+                ctx.globalAlpha = s.life * 0.85;
+                ctx.fillStyle = s.color;
+                ctx.shadowColor = '#80cfff';
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r * s.life, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function drawCollapseVehicle() {
+            if (!state.collapseVehicle) return;
+            const v = state.collapseVehicle;
+            const isSinking = v.splashed;
+            ctx.save();
+            ctx.translate(v.x, v.y);
+            ctx.rotate(v.angle);
+            if (isSinking) ctx.globalAlpha = Math.max(0.12, 1 - (v.y - getLevel().waterY) * 0.007);
+
+            // Shadow
+            if (!isSinking) {
+                ctx.fillStyle = 'rgba(0,0,0,0.25)';
+                ctx.beginPath();
+                ctx.ellipse(0, 14, 20, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Body
+            const bodyGrad = ctx.createLinearGradient(-22, -12, -22, 8);
+            bodyGrad.addColorStop(0, v.color);
+            bodyGrad.addColorStop(1, lerpColor(v.color, '#000000', 0.35));
+            ctx.fillStyle = bodyGrad;
+            ctx.strokeStyle = 'rgba(12,16,24,0.8)';
+            ctx.lineWidth = 2;
+            roundedRectPath(-22, -12, 44, 20, 7);
+            ctx.fill();
+            ctx.stroke();
+
+            // Windshield
+            ctx.fillStyle = 'rgba(140,200,255,0.3)';
+            roundedRectPath(-8, -18, 16, 8, 3);
+            ctx.fill();
+
+            // Wheels
+            ctx.fillStyle = '#18243e';
+            ctx.beginPath();
+            ctx.arc(-12, 10, 6, 0, Math.PI * 2);
+            ctx.arc(12, 10, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function finishCollapse() {
+            setPhase('build');
+            ui.resultBadge.textContent = 'Simulation Failed';
+            ui.resultTitle.textContent = 'Jembatan Runtuh';
+            ui.resultText.textContent = state.collapseReason;
+            ui.resultBudget.textContent = formatMoney(getBudgetUsed());
+            ui.resultStress.textContent = Math.round(state.maxStress) + '%';
+            ui.resultRank.textContent = 'F';
+            
+            // Set stars inside result overlay to none
+            if (ui.resultStarsWrap) {
+                ui.resultStarsWrap.innerHTML = 
+                    `<span class="rating-star">★</span><span class="rating-star">★</span><span class="rating-star">★</span>`;
+            }
+
+            ui.resultOverlay.classList.remove('hidden');
+            ui.resultNextBtn.disabled = true;
+            state.simNodes = [];
+            state.simSegments = [];
+            state.vehicleIndex = 0;
+            state.vehicleProgress = 0;
+            state.collapseVehicle = null;
+            state.collapseSplashes = [];
+            updateStats();
+        }
+
+        function getRank(budget, targetBudget, maxStress) {
+            if (budget <= targetBudget && maxStress < 75) return 'S';
+            if (budget <= targetBudget * 1.15 && maxStress < 90) return 'A';
+            if (budget <= targetBudget * 1.30 && maxStress < 105) return 'B';
+            return 'C';
+        }
+
+        function completeLevel() {
+            setPhase('build');
+            const budget = getBudgetUsed();
+            const level = getLevel();
+            saveBest(level.name, budget);
+            
+            const rank = getRank(budget, level.targetBudget, state.maxStress);
+            
+            // Stars formula: 3 stars if budget <= targetBudget, 2 stars if <= budget limit, 1 star if completed.
+            let stars = 1;
+            if (budget <= level.targetBudget && state.maxStress < 75) stars = 3;
+            else if (budget <= level.budget && state.maxStress < 92) stars = 2;
+
+            if (ui.resultStarsWrap) {
+                ui.resultStarsWrap.innerHTML = Array.from({ length: 3 }, (_, idx) => 
+                    `<span class="rating-star${idx < stars ? ' active' : ''}">★</span>`
+                ).join('');
+            }
+
+            ui.resultBadge.textContent = 'Simulation Complete';
+            ui.resultTitle.textContent = 'Konvoi Berhasil Menyeberang';
+            ui.resultText.textContent = `Desainmu lolos tes ${level.reward}. Budget ${formatMoney(budget)} dengan stress puncak ${Math.round(state.maxStress)}%.`;
+            ui.resultBudget.textContent = formatMoney(budget);
+            ui.resultStress.textContent = Math.round(state.maxStress) + '%';
+            ui.resultRank.textContent = rank;
+            ui.resultOverlay.classList.remove('hidden');
+            ui.resultNextBtn.disabled = false;
+            ui.nextLevelBtn.disabled = false;
+            ui.bestLabel.textContent = formatMoney(state.best[level.name]);
+            state.simNodes = [];
+            state.simSegments = [];
+            state.vehicleIndex = level.vehicles.length;
+            state.vehicleProgress = 1;
+            SFX.win();
+            updateStats();
+        }
+
+        // STATIC SCENERY: SKY, NEBULA & STARS AND WIND GUSTS
+        function drawSkyAndNebula() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, BASE_H);
+            gradient.addColorStop(0, '#bae6fd'); // sky-200
+            gradient.addColorStop(1, '#fef08a'); // yellow-200
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, BASE_W, BASE_H);
+
+            drawClouds();
+        }
+
+        function drawClouds() {
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+            for (const cloud of state.clouds) {
+                cloud.x += cloud.speed * 0.25;
+                if (cloud.x > BASE_W + 120) {
+                    cloud.x = -cloud.w - 60;
+                    cloud.y = Math.random() * 220 + 30;
+                }
+                // Capsule shape clouds
+                const h = cloud.h;
+                ctx.beginPath();
+                ctx.arc(cloud.x + h / 2, cloud.y + h / 2, h / 2, Math.PI / 2, Math.PI * 1.5);
+                ctx.lineTo(cloud.x + cloud.w - h / 2, cloud.y);
+                ctx.arc(cloud.x + cloud.w - h / 2, cloud.y + h / 2, h / 2, Math.PI * 1.5, Math.PI / 2);
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        // WIND FORCE INDICATOR LINES
+        function drawWindVisualizer() {
+            if (state.windMode === 0) return;
+            ctx.save();
+            ctx.strokeStyle = 'rgba(0, 242, 254, 0.28)';
+            ctx.lineWidth = state.windMode === 2 ? 2.5 : 1.2;
+            const wt = performance.now() * 0.0012;
+            const count = state.windMode === 1 ? 14 : 32;
+            for (let i = 0; i < count; i++) {
+                const wx = (i * 90 + wt * (650 + i * 40)) % BASE_W;
+                const wy = (i * 47 + Math.sin(wt * 1.8 + i) * 60) % BASE_H;
+                ctx.beginPath();
+                ctx.moveTo(wx, wy);
+                ctx.lineTo(wx + (state.windMode === 2 ? 40 : 25), wy);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // COORDINATE GRID LINES
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(15, 23, 42, 0.06)';
+            ctx.lineWidth = 0.5;
+            for (let x = -BASE_W * 2; x <= BASE_W * 3; x += state.gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, -BASE_H * 2);
+                ctx.lineTo(x, BASE_H * 3);
+                ctx.stroke();
+            }
+            for (let y = -BASE_H * 2; y <= BASE_H * 3; y += state.gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(-BASE_W * 2, y);
+                ctx.lineTo(BASE_W * 3, y);
+                ctx.stroke();
+            }
+        }
+
+        // SINE WAVE ANIMATED WATER SYSTEM
+        function drawWater(level) {
+            const now = performance.now();
+            const waterDepth = BASE_H * 3;
+            const waterGrad = ctx.createLinearGradient(0, level.waterY, 0, level.waterY + 280);
+            waterGrad.addColorStop(0, '#0ea5e9'); // sky blue
+            waterGrad.addColorStop(0.4, '#0284c7');
+            waterGrad.addColorStop(1, '#0369a1');
+            ctx.fillStyle = waterGrad;
+            ctx.fillRect(-BASE_W * 2, level.waterY, BASE_W * 5, waterDepth);
+
+            // Shimmer shine line
+            ctx.save();
+            ctx.globalAlpha = 0.4;
+            const surfGrad = ctx.createLinearGradient(0, level.waterY, 0, level.waterY + 12);
+            surfGrad.addColorStop(0, 'rgba(255,255,255,0.9)');
+            surfGrad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = surfGrad;
+            ctx.fillRect(-BASE_W * 2, level.waterY, BASE_W * 5, 12);
+            ctx.restore();
+
+            // Procedural waves
+            ctx.save();
+            for (let layer = 0; layer < 3; layer++) {
+                ctx.globalAlpha = 0.45 - layer * 0.12;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2.0 - layer * 0.4;
+                ctx.beginPath();
+                const yBase = level.waterY + 4 + layer * 12;
+                for (let x = -BASE_W; x <= BASE_W * 2; x += 6) {
+                    const waveY = yBase + Math.sin(x * 0.016 + now * 0.0016 + layer * 1.4) * (2.8 + layer * 1.8)
+                        + Math.sin(x * 0.008 + now * 0.0009) * 2;
+                    if (x === -BASE_W) ctx.moveTo(x, waveY);
+                    else ctx.lineTo(x, waveY);
+                }
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // DYNAMIC LANDSCAPE AND SCENERY TEXTURES
+        function drawIslands(level) {
+            level.islands.forEach(island => {
+                const drawH = 900; 
+                
+                // Underground strata gradient (warm daylight cliffs)
+                const iGrad = ctx.createLinearGradient(island.x, island.y, island.x, island.y + drawH);
+                iGrad.addColorStop(0, '#b45309'); // Warm ochre brown
+                iGrad.addColorStop(0.1, '#78350f');
+                iGrad.addColorStop(0.4, '#451a03');
+                iGrad.addColorStop(1, '#1c0d02');
+                ctx.fillStyle = iGrad;
+                
+                ctx.beginPath();
+                ctx.moveTo(island.x, island.y);
+                ctx.lineTo(island.x + island.w, island.y);
+                ctx.lineTo(island.x + island.w - 30, island.y + drawH);
+                ctx.lineTo(island.x + 30, island.y + drawH);
+                ctx.closePath();
+                ctx.fill();
+
+                // Surface layer top soil (vibrant daylight grass green)
+                const topGrad = ctx.createLinearGradient(island.x, island.y, island.x + island.w, island.y + 24);
+                topGrad.addColorStop(0, '#4ade80'); // bright green
+                topGrad.addColorStop(1, '#22c55e');
+                ctx.fillStyle = topGrad;
+                ctx.beginPath();
+                ctx.moveTo(island.x, island.y);
+                ctx.lineTo(island.x + island.w, island.y);
+                ctx.lineTo(island.x + island.w - 24, island.y + 24);
+                ctx.lineTo(island.x + 24, island.y + 24);
+                ctx.closePath();
+                ctx.fill();
+
+                // Grass outlines
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(island.x + 4, island.y);
+                ctx.lineTo(island.x + island.w - 4, island.y);
+                ctx.stroke();
+                ctx.restore();
+
+                // Draw scenic trees / grass tufts (realistic vegetation scenery)
+                ctx.save();
+                ctx.fillStyle = '#15803d'; // Darker grass green
+                ctx.globalAlpha = 0.85;
+                for (let tx = island.x + 20; tx < island.x + island.w - 20; tx += 48) {
+                    const noise = Math.sin(tx * 0.05) * 8;
+                    // Draw grass tuft
+                    ctx.beginPath();
+                    ctx.moveTo(tx, island.y);
+                    ctx.lineTo(tx - 3, island.y - 12 - noise);
+                    ctx.lineTo(tx + 2, island.y - 4);
+                    ctx.lineTo(tx + 6, island.y - 15 - noise * 0.5);
+                    ctx.lineTo(tx + 8, island.y);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                ctx.restore();
+            });
+
+            // Special Scenic Ship for Level 7 (Drawbridge Gorge)
+            if (level.name.includes('Drawbridge') || state.levelIndex === 6 || state.levelIndex === 11) {
+                const shipTime = performance.now() * 0.00008;
+                const shipX = (shipTime * 1400 - 150) % (BASE_W + 400) - 200;
+                ctx.save();
+                ctx.translate(shipX, level.waterY - 14);
+                
+                // Ship hull
+                ctx.fillStyle = '#334155';
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(-60, 10);
+                ctx.lineTo(50, 10);
+                ctx.lineTo(75, -12); // Bow
+                ctx.lineTo(-75, -12); // Stern
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Cabin / Funnel
+                ctx.fillStyle = '#f1f5f9';
+                ctx.fillRect(-45, -34, 40, 22);
+                ctx.fillStyle = '#ef4444'; // Red Funnel
+                ctx.fillRect(5, -42, 12, 30);
+                
+                // Funnel Smoke particle spawn
+                if (Math.random() < 0.15) {
+                    spawnParticles(11 + shipX, level.waterY - 56, 'rgba(200,200,200,0.5)', 1, 2);
+                }
+                ctx.restore();
+            }
+        }
+
+        function drawAnchors(source = state.nodes) {
+            source.forEach(node => {
+                if (!node.anchor) return;
+                const color = node.start ? '#10b981' : node.goal ? '#f59e0b' : '#3b82f6';
+                ctx.save();
+                ctx.translate(node.x, node.y);
+
+                // Main circle (No glow/shadow)
+                ctx.fillStyle = color;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(0, 0, 11, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Inner dot
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Specular highlight
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.beginPath();
+                ctx.arc(-3, -3, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Render Flags for Start/Goal
+                if (node.start || node.goal) {
+                    ctx.fillStyle = node.start ? '#10b981' : '#f59e0b';
+                    ctx.fillRect(0, -28, 16, 12);
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(0, -28);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            });
+            
+            // Last crash location hologram marker
+            if (state.phase === 'build' && state.deathMarker) {
+                ctx.save();
+                ctx.translate(state.deathMarker.x, Math.min(state.deathMarker.y, BASE_H - 40));
+                ctx.fillStyle = 'rgba(255, 92, 168, 0.45)';
+                ctx.font = '700 20px Bebas Neue';
+                ctx.shadowColor = 'rgba(255,92,168,0.8)';
+                ctx.shadowBlur = 10;
+                ctx.fillText('✕ LAST CRASH', -42, -12);
+                
+                ctx.strokeStyle = 'rgba(255, 92, 168, 0.16)';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, BASE_H);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        function lerpColor(from, to, t) {
+            const a = hexToRgb(from);
+            const b = hexToRgb(to);
+            const mix = {
+                r: Math.round(a.r + (b.r - a.r) * t),
+                g: Math.round(a.g + (b.g - a.g) * t),
+                b: Math.round(a.b + (b.b - a.b) * t)
+            };
+            return `rgb(${mix.r}, ${mix.g}, ${mix.b})`;
+        }
+
+        function hexToRgb(hex) {
+            const raw = hex.replace('#', '');
+            const full = raw.length === 3 ? raw.split('').map(ch => ch + ch).join('') : raw;
+            const value = parseInt(full, 16);
+            return { r: value >> 16 & 255, g: value >> 8 & 255, b: value & 255 };
+        }
+
+        function roundedRectPath(x, y, w, h, r) {
+            const radius = Math.min(r, w * 0.5, h * 0.5);
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + w - radius, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+            ctx.lineTo(x + w, y + h - radius);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+            ctx.lineTo(x + radius, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        function drawSegments(nodes, segments) {
+            for (const seg of segments) {
+                const a = getNodeById(seg.a, nodes);
+                const b = getNodeById(seg.b, nodes);
+                if (!a || !b) continue;
+                const mat = getMaterial(seg.type);
+                const broken = !!seg.broken;
+                const stress = seg.stress || 0;
+                const fatigue = seg.fatigue || 0;
+                const hot = Math.min(1, stress / 100);
+                ctx.save();
+                ctx.lineCap = 'round';
+
+                const baseWidth = seg.type === 'road' ? 12 : seg.type === 'steel' ? 8 : 6.5;
+                const mainColor = broken ? 'rgba(255,80,80,0.2)' : lerpColor(mat.color, '#ff4455', hot);
+
+                // Stress highlights
+                if (!broken && hot > 0.28) {
+                    ctx.lineWidth = baseWidth + 8;
+                    ctx.strokeStyle = `rgba(255, 68, 85, ${hot * 0.25})`;
+                    ctx.shadowColor = '#ff3b30';
+                    ctx.shadowBlur = hot * 20;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+
+                // Sagging / compression cables buckling calculations
+                const currentLen = Math.hypot(b.x - a.x, b.y - a.y);
+                const isSagging = seg.type === 'cable' && currentLen < seg.rest - 1.5;
+
+                ctx.lineWidth = baseWidth;
+                if (broken) {
+                    ctx.strokeStyle = mainColor;
+                    ctx.setLineDash([10, 10]);
+                } else {
+                    ctx.strokeStyle = mainColor;
+                    ctx.shadowColor = mat.color;
+                    ctx.shadowBlur = 5;
+                }
+                
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                if (isSagging) {
+                    const cx = (a.x + b.x) * 0.5;
+                    const sagAmount = Math.min((seg.rest - currentLen) * 0.72, 34);
+                    const cy = (a.y + b.y) * 0.5 + sagAmount;
+                    ctx.quadraticCurveTo(cx, cy, b.x, b.y);
+                } else {
+                    ctx.lineTo(b.x, b.y);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Highlight details
+                ctx.lineWidth = seg.type === 'road' ? 3.4 : 2.0;
+                ctx.strokeStyle = broken ? 'rgba(255,255,255,0.06)' : mat.accent;
+                ctx.setLineDash(seg.type === 'cable' ? [3, 4] : []);
+                
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                if (isSagging) {
+                    const cx = (a.x + b.x) * 0.5;
+                    const sagAmount = Math.min((seg.rest - currentLen) * 0.72, 34);
+                    const cy = (a.y + b.y) * 0.5 + sagAmount;
+                    ctx.quadraticCurveTo(cx, cy, b.x, b.y);
+                } else {
+                    ctx.lineTo(b.x, b.y);
+                }
+                ctx.stroke();
+
+                // Road deck marking dots
+                if (!broken && seg.type === 'road') {
+                    ctx.lineWidth = 1.2;
+                    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    ctx.setLineDash([5, 15]);
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // Fatigue textures warning cracks
+                if (!broken && fatigue > 0.4) {
+                    ctx.lineWidth = 2.0;
+                    ctx.strokeStyle = `rgba(255, 59, 48, ${Math.min(0.85, fatigue)})`;
+                    ctx.setLineDash([4, 8]);
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                }
+                
+                // Hotspot warning pulse
+                if (state.phase === 'build' && seg.id === state.hotspotId) {
+                    ctx.lineWidth = baseWidth + 5;
+                    ctx.strokeStyle = `rgba(255, 0, 127, ${0.4 + 0.4 * Math.sin(performance.now() * 0.006)})`;
+                    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+                }
+                ctx.restore();
+            }
+        }
+
+        function drawNodes(nodes) {
+            for (const node of nodes) {
+                if (node.anchor) continue;
+                ctx.save();
+                ctx.shadowColor = 'rgba(200,230,255,0.5)';
+                ctx.shadowBlur = 6;
+                ctx.fillStyle = 'rgba(223,244,255,0.95)';
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                ctx.beginPath();
+                ctx.arc(node.x - 1.2, node.y - 1.2, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function drawPending() {
+            if (state.phase !== 'build' || !state.pendingNode || !state.pointer.inside) return;
+            const mat = getMaterial(state.selectedTool);
+            const toX = snap(state.pointer.x);
+            const toY = snap(state.pointer.y);
+            ctx.save();
+            // Glow preview line
+            ctx.strokeStyle = mat ? mat.color : 'rgba(255,255,255,0.4)';
+            ctx.globalAlpha = 0.28;
+            ctx.lineWidth = 10;
+            ctx.shadowColor = mat ? mat.color : '#fff';
+            ctx.shadowBlur = 14;
+            ctx.beginPath();
+            ctx.moveTo(state.pendingNode.x, state.pendingNode.y);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            // Dashed layout preview
+            ctx.globalAlpha = 0.65;
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([8, 8]);
+            ctx.lineDashOffset = -performance.now() * 0.035;
+            ctx.beginPath();
+            ctx.moveTo(state.pendingNode.x, state.pendingNode.y);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // RENDER VEHICLES WITH ROLLING WHEELS AND HEADLIGHT CONES
+        function drawVehicle() {
+            if (state.phase === 'collapse') {
+                drawCollapseVehicle();
+                return;
+            }
+            if (state.phase !== 'test') return;
+            const level = getLevel();
+            const vehicle = level.vehicles[state.vehicleIndex];
+            const point = getPathPoint(Math.min(1, state.vehicleProgress), state.simNodes);
+            if (!vehicle || !point) return;
+            const angle = Math.atan2(point.b.y - point.a.y, point.b.x - point.a.x);
+            
+            // Wheels rotational speed calculation
+            const rotation = (state.vehicleProgress * BASE_W * 0.08) % (Math.PI * 2);
+
+            ctx.save();
+            ctx.translate(point.x, point.y - 16);
+            ctx.rotate(angle);
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.32)';
+            ctx.beginPath();
+            ctx.ellipse(0, 14, 24, 4.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Vehicle Body
+            const bodyGrad = ctx.createLinearGradient(-22, -12, -22, 8);
+            bodyGrad.addColorStop(0, vehicle.color);
+            bodyGrad.addColorStop(1, lerpColor(vehicle.color, '#000000', 0.35));
+            ctx.fillStyle = bodyGrad;
+            ctx.strokeStyle = 'rgba(12,16,24,0.85)';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = vehicle.color;
+            ctx.shadowBlur = 10;
+            roundedRectPath(-22, -12, 44, 20, 7);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.stroke();
+
+            // Windshield
+            ctx.fillStyle = 'rgba(140,200,255,0.32)';
+            roundedRectPath(-8, -18, 16, 8, 3);
+            ctx.fill();
+
+            // Headlights glow
+            ctx.fillStyle = '#ffffcc';
+            ctx.shadowColor = '#ffffaa';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(20, -4, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(20, 2, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Headlight beam light cones
+            const isNight = state.levelIndex % 4 === 3;
+            const beamGrad = ctx.createLinearGradient(22, 0, isNight ? 180 : 80, 0);
+            beamGrad.addColorStop(0, isNight ? 'rgba(255,255,200,0.45)' : 'rgba(255,255,200,0.16)');
+            beamGrad.addColorStop(0.5, isNight ? 'rgba(255,255,200,0.18)' : 'rgba(255,255,200,0.05)');
+            beamGrad.addColorStop(1, 'rgba(255,255,200,0)');
+            ctx.fillStyle = beamGrad;
+            ctx.beginPath();
+            ctx.moveTo(22, -6);
+            ctx.lineTo(isNight ? 180 : 80, isNight ? -35 : -16);
+            ctx.lineTo(isNight ? 180 : 80, isNight ? 35 : 16);
+            ctx.lineTo(22, 6);
+            ctx.closePath();
+            ctx.fill();
+
+            // Red Taillights
+            ctx.fillStyle = '#ff4444';
+            ctx.shadowColor = '#ff2222';
+            ctx.shadowBlur = 4;
+            ctx.beginPath();
+            ctx.arc(-20, -3, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(-20, 3, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Rolling wheels (with spokes details rotating!)
+            ctx.lineWidth = 1.5;
+            const drawWheel = (wx, wy) => {
+                ctx.save();
+                ctx.translate(wx, wy);
+                ctx.rotate(rotation);
+                
+                // Black rubber tire
+                ctx.fillStyle = '#18243e';
+                ctx.beginPath();
+                ctx.arc(0, 0, 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Silver hub & spokes
+                ctx.strokeStyle = '#c0c0c0';
+                ctx.beginPath();
+                ctx.moveTo(-5, 0); ctx.lineTo(5, 0);
+                ctx.moveTo(0, -5); ctx.lineTo(0, 5);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(0, 0, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            };
+            drawWheel(-12, 10);
+            drawWheel(12, 10);
+
+            // Specular body highlights
+            ctx.fillStyle = 'rgba(255,255,255,0.12)';
+            roundedRectPath(-18, -11, 36, 5, 3);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // PREMIUM HUD OVERLAY OVER CANVASES
+        function drawHUD() {
+            // Stats are represented in the HTML Topbar and Sidebar panels.
+        }
+
+        function drawVignette() {
+            const grd = ctx.createRadialGradient(
+                BASE_W * 0.5, BASE_H * 0.48, BASE_H * 0.35,
+                BASE_W * 0.5, BASE_H * 0.48, BASE_H * 0.9
+            );
+            grd.addColorStop(0, 'transparent');
+            grd.addColorStop(0.7, 'rgba(0,0,0,0.05)');
+            grd.addColorStop(1, 'rgba(0,0,0,0.3)');
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, BASE_W, BASE_H);
+        }
+
+        function drawHoverHighlight(nodes, segments) {
+            if (state.phase !== 'build' || !state.pointer.inside) return;
+            for (const seg of segments) {
+                const a = getNodeById(seg.a, nodes);
+                const b = getNodeById(seg.b, nodes);
+                if (!a || !b) continue;
+                if (distanceToSegment(state.pointer, a, b) < 14) {
+                    ctx.save();
+                    ctx.lineCap = 'round';
+                    ctx.lineWidth = (seg.type === 'road' ? 12 : 8) + 8;
+                    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+                    ctx.shadowColor = 'rgba(0, 242, 254, 0.2)';
+                    ctx.shadowBlur = 12;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                    ctx.restore();
+                    break;
+                }
+            }
+        }
+
+        function render() {
+            const level = getLevel();
+            ctx.save();
+            
+            // HiDPI Multipliers
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, BASE_W, BASE_H);
+            
+            let shakeX = 0, shakeY = 0;
+            if (state.camShake > 0) {
+                state.camShake *= 0.86;
+                shakeX = (Math.random() - 0.5) * state.camShake;
+                shakeY = (Math.random() - 0.5) * state.camShake;
+            }
+
+            // A: Sky background (un-zoomed)
+            drawSkyAndNebula();
+            drawWindVisualizer();
+
+            // B: Simulation World (zoomed + panned camera)
+            ctx.save();
+            ctx.translate(state.cam.x + shakeX, state.cam.y + shakeY);
+            ctx.scale(state.cam.zoom, state.cam.zoom);
+
+            drawGrid();
+            drawWater(level);
+            drawIslands(level);
+            
+            const isActive = (state.phase === 'test' || state.phase === 'collapse');
+            const renderNodes = isActive && state.simNodes.length ? state.simNodes : state.nodes;
+            const renderSegments = isActive && state.simSegments.length ? state.simSegments : state.segments;
+            
+            drawHoverHighlight(renderNodes, renderSegments);
+            drawSegments(renderNodes, renderSegments);
+            drawNodes(renderNodes);
+            drawAnchors(renderNodes);
+            drawVehicle();
+            if (state.phase === 'collapse') drawCollapseSplashes();
+            drawParticles();
+            
+            ctx.restore();
+
+            // C: HUD panels static overlay
+            drawVignette();
+            drawHUD();
+            
+            ctx.restore();
+        }
+
+        function tick(ts) {
+            const dt = Math.min(1.8, (ts - state.lastTime) / 16.6667 || 1);
+            state.lastTime = ts;
+            updateSimulation(dt * state.simSpeed);
+            updateCollapse(dt);
+            updateParticles(dt);
+            render();
+            requestAnimationFrame(tick);
+        }
+
+        function resetBuild() {
+            if (state.phase === 'collapse') {
+                state.collapseVehicle = null;
+                state.collapseSplashes = [];
+                initLevel(state.levelIndex, true);
+                SFX.hit();
+                return;
+            }
+            if (state.phase === 'build' && (state.segments.length > 0 || state.nodes.length > getLevel().anchors.length)) {
+                const ok = window.confirm('Reset build level ini? Progress saat ini akan hilang.');
+                if (!ok) return;
+            }
+            initLevel(state.levelIndex, true);
+            SFX.hit();
+        }
+
+        function nextLevel() {
+            ui.resultOverlay.classList.add('hidden');
+            if (state.levelIndex >= levels.length - 1) {
+                initLevel(0, true);
+                return;
+            }
+            initLevel(state.levelIndex + 1, true);
+            SFX.score();
+        }
+
+        // CANVAS CAMERA PANNING & INTERACTIVE DRAWING LISTENERS
+        let isPanning = false;
+        let panStart = { x: 0, y: 0 };
+        let camStart = { x: 0, y: 0 };
+
+        canvas.addEventListener('pointerdown', ev => {
+            // Right-click or middle-click or Shift+Left-click triggers drag pan camera
+            if (ev.button === 2 || ev.button === 1 || (ev.button === 0 && ev.shiftKey)) {
+                isPanning = true;
+                panStart = { x: ev.clientX, y: ev.clientY };
+                camStart = { x: state.cam.x, y: state.cam.y };
+                ev.preventDefault();
+                return;
+            }
+
+            if (state.phase !== 'build') return;
+            if (!state.introDismissed) {
+                state.introDismissed = true;
+                ui.startOverlay.classList.add('hidden');
+            }
+            const point = screenToWorld(ev);
+
+            if (state.selectedTool === 'move') {
+                const target = findNearestNode(point, 20);
+                if (target && !target.anchor) {
+                    state.dragNodeId = target.id;
+                    state.dragStart = { x: target.x, y: target.y };
+                    state.dragSnapshot = snapshotBuildState();
+                }
+                return;
+            }
+
+            if (state.selectedTool === 'erase') {
+                eraseAt(point);
+                return;
+            }
+            const node = getOrCreateNode(point);
+            if (!state.pendingNode) {
+                state.pendingNode = node;
+            } else {
+                addSegment(state.pendingNode, node, state.selectedTool);
+                state.pendingNode = null;
+            }
+        });
+
+        canvas.addEventListener('pointermove', ev => {
+            const point = screenToWorld(ev);
+            state.pointer.x = point.x;
+            state.pointer.y = point.y;
+            state.pointer.inside = true;
+
+            if (isPanning) {
+                const dx = ev.clientX - panStart.x;
+                const dy = ev.clientY - panStart.y;
+                state.cam.x = camStart.x + dx;
+                state.cam.y = camStart.y + dy;
+                return;
+            }
+
+            state.hoverNode = findNearestNode(point);
+
+            if (state.phase === 'build' && state.dragNodeId) {
+                const node = getNodeById(state.dragNodeId);
+                if (node && !node.anchor) {
+                    const level = getLevel();
+                    node.x = Math.max(72, Math.min(BASE_W - 72, snap(point.x)));
+                    node.y = Math.max(120, Math.min(level.groundY - 30, snap(point.y)));
+                    recomputeSegmentGeometry();
+                    updateStats();
+                }
+            }
+        });
+
+        canvas.addEventListener('pointerup', () => {
+            if (isPanning) {
+                isPanning = false;
+                return;
+            }
+            if (state.dragNodeId) {
+                const node = getNodeById(state.dragNodeId);
+                const moved = node && state.dragStart
+                    ? Math.hypot(node.x - state.dragStart.x, node.y - state.dragStart.y) > 1
+                    : false;
+                if (moved && state.dragSnapshot) {
+                    commitHistory(state.dragSnapshot);
+                }
+                state.dragNodeId = null;
+                state.dragStart = null;
+                state.dragSnapshot = null;
+                updateStats();
+            }
+        });
+
+        canvas.addEventListener('pointerleave', () => {
+            state.pointer.inside = false;
+            state.hoverNode = null;
+            isPanning = false;
+        });
+
+        // Context menu bypass
+        canvas.addEventListener('contextmenu', ev => ev.preventDefault());
+
+        // Mouse zoom centering calculations
+        canvas.addEventListener('wheel', ev => {
+            ev.preventDefault();
+            const zoomFactor = 1.08;
+            
+            const rect = canvas.getBoundingClientRect();
+            const mx = (ev.clientX - rect.left) * (BASE_W / rect.width);
+            const my = (ev.clientY - rect.top) * (BASE_H / rect.height);
+            
+            const wx = (mx - state.cam.x) / state.cam.zoom;
+            const wy = (my - state.cam.y) / state.cam.zoom;
+            
+            if (ev.deltaY < 0) {
+                state.cam.zoom = Math.min(3.0, state.cam.zoom * zoomFactor);
+            } else {
+                state.cam.zoom = Math.max(0.55, state.cam.zoom / zoomFactor);
+            }
+            
+            state.cam.x = mx - wx * state.cam.zoom;
+            state.cam.y = my - wy * state.cam.zoom;
+        }, { passive: false });
+
+        // TOOLTIPS AND HOVER EXPLANATIONS (Update 5)
+        const tooltip = document.getElementById('pb-tooltip');
+        document.addEventListener('mouseover', (e) => {
+            const el = e.target.closest('[data-desc]');
+            if (el) {
+                tooltip.innerHTML = `<strong>${el.textContent || el.title}</strong>${el.dataset.desc}`;
+                tooltip.classList.add('show');
+            } else {
+                tooltip.classList.remove('show');
+            }
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (tooltip.classList.contains('show')) {
+                tooltip.style.left = (e.clientX + 14) + 'px';
+                tooltip.style.top = (e.clientY + 14) + 'px';
+            }
+        });
+
+        // KEYBOARD EVENT CONTROLS
+        document.addEventListener('keydown', ev => {
+            const hasModifier = ev.ctrlKey || ev.metaKey || ev.altKey;
+            if (ev.key === ' ') {
+                ev.preventDefault();
+                if (state.phase === 'build') startSimulation();
+            }
+            if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') {
+                ev.preventDefault();
+                undoBuild();
+            }
+            if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'y') {
+                ev.preventDefault();
+                redoBuild();
+            }
+            if (ev.key.toLowerCase() === 'r' && !hasModifier) {
+                resetBuild();
+            }
+            if (ev.key.toLowerCase() === 't') {
+                cycleSpeed();
+            }
+            if (ev.key.toLowerCase() === 'p') {
+                togglePauseSimulation();
+            }
+            if (ev.key.toLowerCase() === 'w') {
+                cycleWindMode();
+            }
+            if (ev.key.toLowerCase() === 'f') {
+                toggleFragileMode();
+            }
+            if (ev.key.toLowerCase() === 'g') {
+                // Toggle Grid snap (Update 28)
+                state.gridSnap = !state.gridSnap;
+                if (ui.gridSnapBtn) {
+                    ui.gridSnapBtn.textContent = '🌐 Snap: ' + (state.gridSnap ? 'On' : 'Off');
+                    ui.gridSnapBtn.classList.toggle('is-fragile', !state.gridSnap);
+                }
+                flashHint(state.gridSnap ? 'Grid snap menyala.' : 'Grid snap dimatikan.');
+                SFX.move();
+            }
+            if (ev.key.toLowerCase() === 'v' && !hasModifier) {
+                toggleSidebar();
+            }
+            if (ev.key.toLowerCase() === 'h') {
+                flashHint('Pintasan: Space tes, Ctrl+Z undo, G snap grid, R reset, P pause, W wind, F fragile, V panel.');
+            }
+            if (ev.key === '1') selectTool('road');
+            if (ev.key === '2') selectTool('wood');
+            if (ev.key === '3') selectTool('steel');
+            if (ev.key === '4') selectTool('move');
+            if (ev.key === '5') selectTool('erase');
+        });
+
+        // BIND INTERACTIVE HUD BUTTONS
+        document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+            btn.addEventListener('click', () => selectTool(btn.dataset.tool));
+        });
+
+        function toggleSidebar() {
+            if (ui.sidePanel) {
+                ui.sidePanel.classList.toggle('hidden');
+                const isHidden = ui.sidePanel.classList.contains('hidden');
+                if (ui.toggleSidebarBtn) {
+                    ui.toggleSidebarBtn.classList.toggle('active', !isHidden);
+                }
+                flashHint(isHidden ? 'Panel disembunyikan.' : 'Panel ditampilkan.');
+                SFX.click();
+            }
+        }
+        if (ui.toggleSidebarBtn) {
+            ui.toggleSidebarBtn.addEventListener('click', toggleSidebar);
+        }
+
+        ui.startTestBtn.addEventListener('click', startSimulation);
+        ui.resetBuildBtn.addEventListener('click', resetBuild);
+        ui.nextLevelBtn.addEventListener('click', nextLevel);
+        ui.levelPicker.addEventListener('change', () => {
+            const idx = Number(ui.levelPicker.value);
+            if (Number.isNaN(idx)) return;
+            initLevel(idx, true);
+            ui.resultOverlay.classList.add('hidden');
+            SFX.click();
+        });
+        ui.undoBtn.addEventListener('click', undoBuild);
+        ui.redoBtn.addEventListener('click', redoBuild);
+        ui.speedBtn.addEventListener('click', cycleSpeed);
+        ui.pauseBtn.addEventListener('click', togglePauseSimulation);
+        ui.windBtn.addEventListener('click', cycleWindMode);
+        ui.scaffoldBtn.addEventListener('click', autoScaffold);
+        ui.saveBtn.addEventListener('click', () => {
+            saveCurrentBuild();
+            flashHint('Build tersimpan di browser lokal.');
+            SFX.score();
+        });
+        ui.loadBtn.addEventListener('click', loadCurrentBuild);
+        ui.fragileBtn.addEventListener('click', toggleFragileMode);
+        ui.overlayStartBtn.addEventListener('click', () => {
+            state.introDismissed = true;
+            ui.startOverlay.classList.add('hidden');
+            SFX.click();
+        });
+        ui.retryBtn.addEventListener('click', () => {
+            ui.resultOverlay.classList.add('hidden');
+            resetBuild();
+        });
+        ui.resultNextBtn.addEventListener('click', () => {
+            if (ui.resultNextBtn.disabled) return;
+            nextLevel();
+        });
+
+        // Grid toggle bindings (Update 28)
+        if (ui.gridSnapBtn) {
+            ui.gridSnapBtn.addEventListener('click', () => {
+                state.gridSnap = !state.gridSnap;
+                ui.gridSnapBtn.textContent = '🌐 Snap: ' + (state.gridSnap ? 'On' : 'Off');
+                ui.gridSnapBtn.classList.toggle('is-fragile', !state.gridSnap);
+                SFX.click();
+            });
+        }
+        if (ui.gridSizeSelect) {
+            ui.gridSizeSelect.addEventListener('change', () => {
+                state.gridSize = Number(ui.gridSizeSelect.value);
+                SFX.click();
+            });
+        }
+
+        // Collapsible floating panels listener (Clean UI)
+        document.querySelectorAll('.panel-head').forEach(head => {
+            head.addEventListener('click', () => {
+                head.parentElement.classList.toggle('collapsed');
+                if (typeof SFX !== 'undefined' && SFX.click) SFX.click();
+            });
+        });
+
+        initMaterialCards();
+        refreshLevelPicker();
+        initLevel(0);
+        updateStats();
+        updatePauseButton();
+        updateWindButton();
+        requestAnimationFrame(tick);
+    </script>
+    <script src="mobile-touch.js"></script>
+</body>
+
+</html>

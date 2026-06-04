@@ -1,0 +1,502 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Breakout | ZI GAME</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --cyan: #00ffe7;
+            --pink: #ff2d78;
+            --purple: #b537f2;
+            --gold: #ffe600;
+            --bg: #02020f;
+        }
+
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Background */
+        .bg-layer {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        }
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image:
+                linear-gradient(rgba(0,255,231,.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,231,.025) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .orb {
+            position: absolute; border-radius: 50%; filter: blur(120px); pointer-events: none;
+        }
+        .o1 { width: 500px; height: 500px; top: -20%; left: -10%; background: radial-gradient(circle, rgba(0,255,231,.09), transparent 70%); }
+        .o2 { width: 450px; height: 450px; bottom: -15%; right: -10%; background: radial-gradient(circle, rgba(181,55,242,.09), transparent 70%); }
+
+        /* Topbar */
+        .topbar {
+            position: relative; z-index: 10;
+            width: 100%; max-width: 800px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px 10px;
+        }
+        .back-btn {
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; letter-spacing: 1px;
+            color: rgba(255,255,255,.4);
+            border: 1px solid rgba(255,255,255,.1);
+            padding: 7px 14px; border-radius: 10px;
+            transition: all .2s;
+        }
+        .back-btn:hover { color: var(--cyan); border-color: rgba(0,255,231,.3); }
+
+        .game-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 22px; letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* Score bar */
+        .scorebar {
+            position: relative; z-index: 10;
+            width: 100%; max-width: 800px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 20px 12px;
+            gap: 12px;
+        }
+        .score-item { text-align: center; }
+        .score-lbl {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px; letter-spacing: 2px;
+            color: rgba(255,255,255,.3); text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+        .score-val {
+            font-family: 'Bebas Neue', cursive; font-size: 28px; line-height: 1;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .score-val.gold { background: linear-gradient(135deg, var(--gold), #ffaa00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .lives-display { display: flex; gap: 5px; font-size: 14px; align-items: center; }
+
+        /* Canvas */
+        .canvas-wrap {
+            position: relative; z-index: 10;
+        }
+        canvas {
+            display: block;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,.07);
+            box-shadow: 0 0 0 1px rgba(0,255,231,.04), 0 0 60px rgba(0,100,255,.12), 0 24px 80px rgba(0,0,0,.7);
+            max-width: 95vw;
+            touch-action: none;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: absolute; inset: 0;
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center; gap: 14px;
+            border-radius: 16px;
+            background: rgba(2,2,15,.92);
+            backdrop-filter: blur(20px);
+            z-index: 20;
+        }
+        .overlay.show { display: flex; }
+        .ov-icon { font-size: 56px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1) both; }
+        .ov-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: clamp(36px,8vw,60px); letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .ov-sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px; letter-spacing: 2px;
+            color: rgba(255,255,255,.4);
+        }
+        .ov-btn {
+            margin-top: 8px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: #000; border: none;
+            padding: 13px 40px; border-radius: 50px;
+            font-family: 'Outfit', sans-serif; font-weight: 700;
+            font-size: 14px; letter-spacing: 1px; cursor: pointer;
+            transition: all .2s;
+        }
+        .ov-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,255,231,.4); }
+
+        @keyframes popIn {
+            from { transform: scale(.4); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+
+        /* Hint */
+        .hint {
+            position: relative; z-index: 10;
+            margin-top: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px; letter-spacing: 1.5px;
+            color: rgba(255,255,255,.2); text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-layer">
+        <div class="bg-grid"></div>
+        <div class="orb o1"></div>
+        <div class="orb o2"></div>
+    </div>
+
+    <div class="topbar">
+        <a href="index.html" class="back-btn">← BACK</a>
+        <div class="game-title">⚡ Neon Breakout</div>
+        <div style="width:72px"></div>
+    </div>
+
+    <div class="scorebar">
+        <div class="score-item">
+            <div class="score-lbl">Score</div>
+            <div class="score-val" id="scoreEl">0</div>
+        </div>
+        <div class="score-item">
+            <div class="score-lbl">Best</div>
+            <div class="score-val gold" id="bestEl">0</div>
+        </div>
+        <div class="score-item">
+            <div class="score-lbl">Lives</div>
+            <div class="lives-display" id="livesEl">❤️ ❤️ ❤️</div>
+        </div>
+        <div class="score-item">
+            <div class="score-lbl">Level</div>
+            <div class="score-val" id="levelEl">1</div>
+        </div>
+    </div>
+
+    <div class="canvas-wrap">
+        <canvas id="gameCanvas"></canvas>
+        <div class="overlay show" id="overlay">
+            <div class="ov-icon" id="oIcon">⚡</div>
+            <div class="ov-title" id="oTitle">NEON BREAKOUT</div>
+            <div class="ov-sub" id="oSub">Gerakkan mouse / sentuh paddle</div>
+            <button class="ov-btn" onclick="startGame()">MULAI MAIN</button>
+        </div>
+    </div>
+
+    <div class="hint">MOUSE / TOUCH — geser paddle kiri & kanan</div>
+
+    <script>
+    const cvs = document.getElementById('gameCanvas');
+    const ctx = cvs.getContext('2d');
+    const overlay = document.getElementById('overlay');
+
+    // Sizing
+    function getSize() {
+        const maxW = Math.min(window.innerWidth * 0.92, 780);
+        const H = Math.min(window.innerHeight * 0.72, 580);
+        return { W: Math.floor(maxW), H: Math.floor(H) };
+    }
+    let { W, H } = getSize();
+    cvs.width = W; cvs.height = H;
+    window.addEventListener('resize', () => {
+        const s = getSize(); W = s.W; H = s.H;
+        cvs.width = W; cvs.height = H;
+        initLevel();
+    });
+
+    // Colors for brick rows
+    const BRICK_COLORS = [
+        { fill: '#ff2d78', glow: 'rgba(255,45,120,' },
+        { fill: '#b537f2', glow: 'rgba(181,55,242,' },
+        { fill: '#00ffe7', glow: 'rgba(0,255,231,' },
+        { fill: '#ffe600', glow: 'rgba(255,230,0,' },
+        { fill: '#00b4d8', glow: 'rgba(0,180,216,' },
+    ];
+
+    // State
+    let ball, paddle, bricks, particles, score, best, lives, level, running, animId;
+    let touchX = null;
+    best = parseInt(localStorage.getItem('nb_best') || '0');
+    document.getElementById('bestEl').textContent = best;
+
+    function initLevel() {
+        const pw = Math.max(70, W * 0.18);
+        const ph = Math.max(10, H * 0.032);
+        paddle = { x: W/2 - pw/2, y: H - ph - 14, w: pw, h: ph };
+
+        const bCols = 7, bRows = 5;
+        const bW = (W - 32) / bCols - 6;
+        const bH = Math.max(16, H * 0.06);
+        bricks = [];
+        for (let r = 0; r < bRows; r++) {
+            for (let c = 0; c < bCols; c++) {
+                bricks.push({
+                    x: 16 + c * (bW + 6),
+                    y: 28 + r * (bH + 6),
+                    w: bW, h: bH,
+                    color: BRICK_COLORS[r % BRICK_COLORS.length],
+                    alive: true, hp: r === 0 ? 2 : 1
+                });
+            }
+        }
+
+        const spd = (W * 0.009) * (1 + (level - 1) * 0.15);
+        ball = {
+            x: W / 2, y: H / 2,
+            vx: spd * (Math.random() > 0.5 ? 1 : -1),
+            vy: -spd, r: Math.max(7, W * 0.017),
+            trail: []
+        };
+        particles = [];
+    }
+
+    function startGame() {
+        overlay.classList.remove('show');
+        score = 0; lives = 3; level = 1;
+        updateUI();
+        initLevel();
+        if (animId) cancelAnimationFrame(animId);
+        running = true;
+        animId = requestAnimationFrame(loop);
+    }
+
+    function updateUI() {
+        document.getElementById('scoreEl').textContent = score.toLocaleString();
+        document.getElementById('levelEl').textContent = level;
+        const h = ['❤️','❤️','❤️'].slice(0, lives).join(' ');
+        document.getElementById('livesEl').textContent = h || '💀';
+    }
+
+    // Input
+    cvs.addEventListener('mousemove', e => {
+        const rect = cvs.getBoundingClientRect();
+        paddle.x = (e.clientX - rect.left) * (W / rect.width) - paddle.w / 2;
+        clampPaddle();
+    });
+    cvs.addEventListener('touchmove', e => {
+        e.preventDefault();
+        const rect = cvs.getBoundingClientRect();
+        paddle.x = (e.touches[0].clientX - rect.left) * (W / rect.width) - paddle.w / 2;
+        clampPaddle();
+    }, { passive: false });
+    function clampPaddle() { paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x)); }
+
+    // Particles
+    function spawnParticles(x, y, color, count = 12) {
+        for (let i = 0; i < count; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            const spd = Math.random() * 3.5 + 1;
+            particles.push({ x, y, vx: Math.cos(ang)*spd, vy: Math.sin(ang)*spd, r: Math.random()*3+1, alpha: 1, color });
+        }
+    }
+
+    // Main loop
+    function loop() {
+        if (!running) return;
+        update();
+        draw();
+        animId = requestAnimationFrame(loop);
+    }
+
+    function update() {
+        // Move ball
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        // Trail
+        ball.trail.push({ x: ball.x, y: ball.y });
+        if (ball.trail.length > 14) ball.trail.shift();
+
+        // Wall bounce
+        if (ball.x - ball.r <= 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
+        if (ball.x + ball.r >= W) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); }
+        if (ball.y - ball.r <= 0) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); }
+
+        // Paddle collision
+        if (ball.vy > 0 &&
+            ball.y + ball.r >= paddle.y &&
+            ball.y - ball.r <= paddle.y + paddle.h &&
+            ball.x >= paddle.x - ball.r &&
+            ball.x <= paddle.x + paddle.w + ball.r) {
+            ball.y = paddle.y - ball.r;
+            const ratio = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
+            const spd = Math.hypot(ball.vx, ball.vy);
+            const ang = ratio * 0.75;
+            ball.vx = Math.sin(ang) * spd;
+            ball.vy = -Math.cos(ang) * spd;
+            spawnParticles(ball.x, paddle.y, '#00ffe7', 8);
+        }
+
+        // Bottom — lose life
+        if (ball.y - ball.r > H + 20) {
+            lives--;
+            updateUI();
+            if (lives <= 0) {
+                endGame(false); return;
+            }
+            // Reset ball
+            const spd = Math.hypot(ball.vx, ball.vy);
+            ball.x = W/2; ball.y = H/2;
+            ball.vx = spd * (Math.random() > 0.5 ? 1 : -1);
+            ball.vy = -Math.abs(ball.vy);
+            ball.trail = [];
+        }
+
+        // Brick collisions
+        bricks.forEach(b => {
+            if (!b.alive) return;
+            if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
+                ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
+                b.hp--;
+                if (b.hp <= 0) {
+                    b.alive = false;
+                    score += 10 * level;
+                    if (score > best) { best = score; localStorage.setItem('nb_best', best); document.getElementById('bestEl').textContent = best; }
+                    spawnParticles(b.x + b.w/2, b.y + b.h/2, b.color.fill, 14);
+                }
+                // Bounce direction
+                const overlapX = Math.min(ball.x + ball.r - b.x, b.x + b.w - (ball.x - ball.r));
+                const overlapY = Math.min(ball.y + ball.r - b.y, b.y + b.h - (ball.y - ball.r));
+                if (overlapX < overlapY) ball.vx *= -1;
+                else ball.vy *= -1;
+                updateUI();
+            }
+        });
+
+        // Level clear
+        if (bricks.every(b => !b.alive)) {
+            level++;
+            if (level > 5) { endGame(true); return; }
+            initLevel();
+        }
+
+        // Particles
+        particles = particles.filter(p => p.alpha > 0.01);
+        particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.vx *= 0.94; p.vy *= 0.94; p.alpha *= 0.9; });
+    }
+
+    function draw() {
+        // BG
+        ctx.fillStyle = '#010110';
+        ctx.fillRect(0, 0, W, H);
+
+        // Bricks
+        bricks.forEach(b => {
+            if (!b.alive) return;
+            const isDamaged = b.hp < 2 && b.color === BRICK_COLORS[0];
+            ctx.save();
+            ctx.shadowColor = b.color.fill;
+            ctx.shadowBlur = b.hp === 2 ? 18 : 10;
+            const grad = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
+            const alpha = b.hp === 2 ? 'cc' : '99';
+            grad.addColorStop(0, b.color.fill + (b.hp === 2 ? 'ee' : 'aa'));
+            grad.addColorStop(1, b.color.fill + (b.hp === 2 ? '99' : '55'));
+            ctx.fillStyle = grad;
+            roundRect(ctx, b.x, b.y, b.w, b.h, 7);
+            ctx.fill();
+            // Shine
+            ctx.shadowBlur = 0;
+            const shine = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h * 0.5);
+            shine.addColorStop(0, 'rgba(255,255,255,.2)');
+            shine.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = shine;
+            roundRect(ctx, b.x + 2, b.y + 2, b.w - 4, b.h * 0.5 - 2, 5);
+            ctx.fill();
+            ctx.restore();
+        });
+
+        // Ball trail
+        ball.trail.forEach((t, i) => {
+            const a = (i / ball.trail.length) * 0.35;
+            const r2 = ball.r * (i / ball.trail.length) * 0.7;
+            ctx.fillStyle = `rgba(0,255,231,${a})`;
+            ctx.beginPath(); ctx.arc(t.x, t.y, r2, 0, Math.PI*2); ctx.fill();
+        });
+
+        // Ball
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,255,231,.9)'; ctx.shadowBlur = 24;
+        const ballGrad = ctx.createRadialGradient(ball.x - ball.r*.3, ball.y - ball.r*.3, 0, ball.x, ball.y, ball.r);
+        ballGrad.addColorStop(0, '#ffffff');
+        ballGrad.addColorStop(.4, '#00ffe7');
+        ballGrad.addColorStop(1, '#00b8a0');
+        ctx.fillStyle = ballGrad;
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+
+        // Paddle
+        ctx.save();
+        ctx.shadowColor = '#ff2d78'; ctx.shadowBlur = 20;
+        const pg = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x + paddle.w, paddle.y + paddle.h);
+        pg.addColorStop(0, '#ff2d78');
+        pg.addColorStop(1, '#b537f2');
+        ctx.fillStyle = pg;
+        roundRect(ctx, paddle.x, paddle.y, paddle.w, paddle.h, paddle.h/2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        const shine2 = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.h);
+        shine2.addColorStop(0, 'rgba(255,255,255,.3)'); shine2.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = shine2;
+        roundRect(ctx, paddle.x + 2, paddle.y + 1, paddle.w - 4, paddle.h * 0.5, paddle.h/2);
+        ctx.fill();
+        ctx.restore();
+
+        // Particles
+        particles.forEach(p => {
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.shadowColor = p.color; ctx.shadowBlur = 8;
+            ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+        });
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    function endGame(won) {
+        running = false;
+        document.getElementById('oIcon').textContent = won ? '🏆' : '💀';
+        document.getElementById('oTitle').textContent = won ? 'JUARA!' : 'GAME OVER';
+        document.getElementById('oSub').textContent = won
+            ? `Skor: ${score.toLocaleString()} — Semua level selesai!`
+            : `Skor Akhir: ${score.toLocaleString()}`;
+        overlay.classList.add('show');
+    }
+
+    // Initial draw
+    initLevel();
+    draw();
+    </script>
+    <script src="sounds.js"></script>
+    <script src="mobile-touch.js"></script>
+</body>
+</html>

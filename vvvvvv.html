@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VVVVVV | ZI GAME</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg1:#0b0e2a;
+            --bg2:#0a1a20;
+            --line:#8ee6f4;
+            --accent:#81c784;
+            --danger:#ff4f6d;
+            --phase:#f8de66;
+            --trinket:#ffe68c;
+            --door:#8a7ff0;
+            --tele:#73f2e8;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{
+            background:
+                radial-gradient(ellipse at 20% 20%,rgba(129,199,132,.2),transparent 48%),
+                radial-gradient(ellipse at 80% 80%,rgba(77,208,225,.14),transparent 44%),
+                linear-gradient(145deg,var(--bg1),var(--bg2),var(--bg1));
+            color:#e8eaff;
+            font-family:'Outfit',sans-serif;
+            min-height:100vh;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:28px 14px;
+        }
+        .back-btn{
+            position:fixed;
+            top:18px;
+            left:18px;
+            text-decoration:none;
+            color:#e8eaff;
+            font-family:'JetBrains Mono',monospace;
+            font-size:12px;
+            padding:10px 16px;
+            border:1px solid rgba(129,199,132,.35);
+            border-radius:12px;
+            background:rgba(15,18,55,.78);
+            backdrop-filter:blur(14px);
+            transition:all .25s;
+            z-index:10;
+        }
+        .back-btn:hover{border-color:var(--accent);background:rgba(129,199,132,.22)}
+        .game-shell{
+            width:min(1120px,100%);
+            border:1px solid rgba(142,230,244,.32);
+            border-radius:20px;
+            background:rgba(9,12,38,.74);
+            box-shadow:0 22px 65px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.04);
+            overflow:hidden;
+            animation:lift .7s ease;
+        }
+        .hud{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            flex-wrap:wrap;
+            padding:12px 16px;
+            border-bottom:1px solid rgba(142,230,244,.22);
+            background:linear-gradient(90deg,rgba(11,14,42,.95),rgba(20,23,64,.8));
+        }
+        .title{font-family:'Bebas Neue',cursive;letter-spacing:1px;font-size:34px;line-height:1}
+        .stats{display:flex;gap:10px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(220,230,255,.88)}
+        .stats strong{color:#fff}
+        .actions{display:flex;gap:8px;flex-wrap:wrap}
+        .mini-btn{
+            border:1px solid rgba(142,230,244,.3);
+            border-radius:10px;
+            padding:6px 10px;
+            background:rgba(21,27,66,.65);
+            color:#e8eaff;
+            font-family:'JetBrains Mono',monospace;
+            font-size:11px;
+            cursor:pointer;
+        }
+        .mini-btn:hover{border-color:var(--line)}
+        .mini-btn.active{border-color:var(--accent);background:rgba(129,199,132,.2)}
+        .hint{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(220,230,255,.65);padding:0 16px 8px}
+        .phase-meter{padding:0 16px 12px}
+        .phase-track{height:8px;border-radius:10px;background:rgba(255,255,255,.08);overflow:hidden;border:1px solid rgba(248,222,102,.3)}
+        .phase-fill{height:100%;width:100%;background:linear-gradient(90deg,rgba(248,222,102,.95),rgba(255,240,170,.8));transform-origin:left center}
+        .canvas-wrap{
+            position:relative;
+            padding:14px;
+            background:repeating-linear-gradient(90deg,rgba(255,255,255,.015) 0,rgba(255,255,255,.015) 1px,transparent 1px,transparent 18px);
+        }
+        canvas{
+            width:100%;
+            max-height:67vh;
+            aspect-ratio:30/17;
+            border-radius:12px;
+            border:1px solid rgba(142,230,244,.26);
+            image-rendering:pixelated;
+            image-rendering:crisp-edges;
+            background:#0a1030;
+            display:block;
+        }
+        .status-banner{
+            position:absolute;
+            top:50%;
+            left:50%;
+            transform:translate(-50%,-50%);
+            padding:14px 18px;
+            border-radius:12px;
+            font-family:'JetBrains Mono',monospace;
+            font-size:13px;
+            letter-spacing:.4px;
+            background:rgba(5,9,25,.86);
+            border:1px solid rgba(142,230,244,.35);
+            pointer-events:none;
+            opacity:0;
+            transition:opacity .2s;
+            text-align:center;
+        }
+        .status-banner.show{opacity:1}
+        .help-modal{
+            position:absolute;
+            inset:16px;
+            border-radius:12px;
+            padding:16px;
+            background:rgba(7,12,30,.9);
+            border:1px solid rgba(142,230,244,.3);
+            font-family:'JetBrains Mono',monospace;
+            font-size:12px;
+            line-height:1.7;
+            opacity:0;
+            pointer-events:none;
+            transition:opacity .2s;
+        }
+        .help-modal.show{opacity:1;pointer-events:auto}
+        .touch-row{display:none;gap:8px;padding:0 14px 14px}
+        .touch-btn{
+            flex:1;
+            border:none;
+            border-radius:12px;
+            padding:12px 0;
+            font-family:'JetBrains Mono',monospace;
+            font-size:13px;
+            color:#e8eaff;
+            background:linear-gradient(180deg,rgba(125,138,247,.35),rgba(70,78,155,.45));
+            border:1px solid rgba(142,230,244,.28);
+            touch-action:manipulation;
+        }
+        .touch-btn.flip{background:linear-gradient(180deg,rgba(129,199,132,.45),rgba(57,124,92,.45));font-weight:700}
+        .touch-btn.dash{background:linear-gradient(180deg,rgba(255,150,110,.4),rgba(155,85,65,.45));font-weight:700}
+        @keyframes lift{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+        @media (max-width:950px){
+            .title{font-size:28px}
+            .touch-row{display:flex}
+            .hint{font-size:10px}
+            .hud{padding:10px 12px}
+            .stats{font-size:10px}
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn"><- Kembali</a>
+
+    <main class="game-shell">
+        <header class="hud">
+            <h1 class="title">VVVVVV++</h1>
+            <div class="stats">
+                <span>Lv: <strong id="levelText">1</strong></span>
+                <span>Death: <strong id="deathText">0</strong></span>
+                <span>CP: <strong id="checkpointText">A1</strong></span>
+                <span>G: <strong id="gravityText">Bawah</strong></span>
+                <span>Time: <strong id="timeText">00:00.00</strong></span>
+                <span>Best: <strong id="bestText">--:--.--</strong></span>
+                <span>Split: <strong id="splitText">--:--.--</strong></span>
+                <span>Trinket: <strong id="trinketText">0/0</strong></span>
+                <span>Dash: <strong id="dashText">Ready</strong></span>
+                <span>FlipCD: <strong id="flipCdText">Ready</strong></span>
+                <span>Key: <strong id="keyText">No</strong></span>
+                <span>Medal: <strong id="medalText">-</strong></span>
+                <span>Orb: <strong id="orbText">0</strong></span>
+                <span>FPS: <strong id="fpsText">0</strong></span>
+            </div>
+            <div class="actions">
+                <button id="pauseBtn" class="mini-btn" type="button">Pause (P)</button>
+                <button id="restartBtn" class="mini-btn" type="button">Restart (R)</button>
+                <button id="muteBtn" class="mini-btn" type="button">SFX ON</button>
+                <button id="assistBtn" class="mini-btn" type="button">Assist (H)</button>
+                <button id="hardcoreBtn" class="mini-btn" type="button">Hardcore</button>
+                <button id="shakeBtn" class="mini-btn" type="button">Shake ON</button>
+                <button id="continueBtn" class="mini-btn" type="button">Continue</button>
+                <button id="fullBtn" class="mini-btn" type="button">Fullscreen</button>
+                <button id="helpBtn" class="mini-btn" type="button">Help (?)</button>
+                <button id="lv1Btn" class="mini-btn" type="button">L1</button>
+                <button id="lv2Btn" class="mini-btn" type="button">L2</button>
+                <button id="lv3Btn" class="mini-btn" type="button">L3</button>
+            </div>
+        </header>
+        <p class="hint">Gerak: A/D atau Panah | Flip: Space/W/Up | Dash: Shift/Z | Pause: P | Help: ?</p>
+        <div class="phase-meter"><div class="phase-track"><div id="phaseFill" class="phase-fill"></div></div></div>
+
+        <section class="canvas-wrap">
+            <canvas id="game" width="960" height="544"></canvas>
+            <div id="statusBanner" class="status-banner">Mode baru aktif. Coba key-door, teleport, boost, dan laser.</div>
+            <div id="helpModal" class="help-modal">
+                <strong>Tile Baru</strong><br>
+                K = Key, D = Door, U/V = Teleport, ! = Boost, L = Laser (aktif saat phase ON), B = Phase Block.<br>
+                >/< = Wind, T = Trinket, C = Checkpoint, G = Portal.<br>
+                F = Fragile block, X = Auto flip zone, ~ = Slow field, Q = Time orb.<br>
+                Portal butuh semua trinket level. Tekan H untuk Assist Mode.
+            </div>
+        </section>
+
+        <section class="touch-row" aria-label="Kontrol sentuh">
+            <button class="touch-btn" id="leftBtn" type="button">Kiri</button>
+            <button class="touch-btn flip" id="flipBtn" type="button">Flip</button>
+            <button class="touch-btn dash" id="dashBtn" type="button">Dash</button>
+            <button class="touch-btn" id="rightBtn" type="button">Kanan</button>
+        </section>
+    </main>
+
+    <script>
+        window.ZI_BGM_MAP = Object.assign({}, window.ZI_BGM_MAP || {}, { vvvvvv: "electro" });
+
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+
+        const levelText = document.getElementById("levelText");
+        const deathText = document.getElementById("deathText");
+        const checkpointText = document.getElementById("checkpointText");
+        const gravityText = document.getElementById("gravityText");
+        const timeText = document.getElementById("timeText");
+        const bestText = document.getElementById("bestText");
+        const splitText = document.getElementById("splitText");
+        const trinketText = document.getElementById("trinketText");
+        const dashText = document.getElementById("dashText");
+        const flipCdText = document.getElementById("flipCdText");
+        const keyText = document.getElementById("keyText");
+        const medalText = document.getElementById("medalText");
+        const orbText = document.getElementById("orbText");
+        const fpsText = document.getElementById("fpsText");
+        const phaseFill = document.getElementById("phaseFill");
+        const statusBanner = document.getElementById("statusBanner");
+        const helpModal = document.getElementById("helpModal");
+
+        const pauseBtn = document.getElementById("pauseBtn");
+        const restartBtn = document.getElementById("restartBtn");
+        const muteBtn = document.getElementById("muteBtn");
+        const assistBtn = document.getElementById("assistBtn");
+        const hardcoreBtn = document.getElementById("hardcoreBtn");
+        const shakeBtn = document.getElementById("shakeBtn");
+        const continueBtn = document.getElementById("continueBtn");
+        const fullBtn = document.getElementById("fullBtn");
+        const helpBtn = document.getElementById("helpBtn");
+        const lv1Btn = document.getElementById("lv1Btn");
+        const lv2Btn = document.getElementById("lv2Btn");
+        const lv3Btn = document.getElementById("lv3Btn");
+
+        const TILE = 32;
+        const COLS = 30;
+        const ROWS = 17;
+        const PHASE_PERIOD = 1.6;
+        const BASE_DASH_COOLDOWN = 1.2;
+        const ASSIST_DASH_COOLDOWN = 0.8;
+        const FLIP_COOLDOWN = 0.16;
+        const TELEPORT_COOLDOWN = 0.35;
+        const AUTOFLIP_COOLDOWN = 0.2;
+        const FRAGILE_RESPAWN = 2.5;
+        const PAR_TIMES = [45000, 60000, 70000];
+
+        const BEST_KEY = "zi-vvvvvv-plus-best-ms";
+        const UNLOCK_KEY = "zi-vvvvvv-plus-unlocked-level";
+        const SETTINGS_KEY = "zi-vvvvvv-plus-settings";
+
+        function loadSettings() {
+            const raw = localStorage.getItem(SETTINGS_KEY);
+            if (!raw) return { hardcore: false, shakeEnabled: true };
+            try {
+                const obj = JSON.parse(raw);
+                return {
+                    hardcore: !!obj.hardcore,
+                    shakeEnabled: obj.shakeEnabled !== false
+                };
+            } catch (_) {
+                return { hardcore: false, shakeEnabled: true };
+            }
+        }
+
+        function saveSettings() {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+                hardcore: state.hardcore,
+                shakeEnabled: state.shakeEnabled
+            }));
+        }
+
+        const LEVELS = [
+            [
+                "##############################",
+                "#........K...................#",
+                "#.................T....G.....#",
+                "#.........>..#####....D......#",
+                "#.........^.........L........#",
+                "#..S....####....O..F..####...#",
+                "#....................!.......#",
+                "#......#######....U..........#",
+                "#..............####..........#",
+                "#.........X..T.......C...V...#",
+                "#...............####.........#",
+                "#....####.....B..............#",
+                "#..............v....<........#",
+                "#.............#####....~.....#",
+                "#.........................T..#",
+                "#............................#",
+                "##############################"
+            ],
+            [
+                "##############################",
+                "#.........v..............G...#",
+                "#..S.....#####......D........#",
+                "#.............B..............#",
+                "#......T.......######....K...#",
+                "#............O....F...^......#",
+                "#.....U...####...............#",
+                "#....................#####...#",
+                "#....C..............L........#",
+                "#....>....#####..............#",
+                "#......................####..#",
+                "#..............v.............#",
+                "#..#####....X.....T......Q...#",
+                "#.............######....<....#",
+                "#..............~....!........#",
+                "#...................V..T.....#",
+                "##############################"
+            ],
+            [
+                "##############################",
+                "#..S......^...............G..#",
+                "#.....########...............#",
+                "#......T..............B......#",
+                "#...........U#######......K..#",
+                "#............................#",
+                "#..#####.................C...#",
+                "#..........O....D....#####...#",
+                "#..............v.............#",
+                "#....#####..........T........#",
+                "#.............Q......>....F..#",
+                "#..............#######.......#",
+                "#....^...........L...........#",
+                "#...........T.........#####..#",
+                "#......X....V....~..<....!...#",
+                "#............................#",
+                "##############################"
+            ]
+        ];
+
+        const input = { left:false, right:false, flipQueued:false, dashQueued:false };
+
+        const state = {
+            levelIndex:0,
+            deaths:0,
+            gravityDir:1,
+            tileMap:[],
+            spawn:{x:96,y:96},
+            checkpoint:{x:96,y:96,name:"A1"},
+            player:{x:96,y:96,w:20,h:20,vx:0,vy:0,grounded:false,facing:1},
+            drones:[],
+            trinkets:0,
+            totalTrinkets:0,
+            levelTrinkets:0,
+            levelTotalTrinkets:0,
+            runMs:0,
+            splitMs:[null,null,null],
+            bestMs:loadBestTime(),
+            paused:false,
+            won:false,
+            phaseTimer:0,
+            phaseOn:true,
+            bannerTimer:1.8,
+            bannerText:"Mode baru aktif.",
+            shake:0,
+            trail:[],
+            deathMarks:[],
+            dashCd:0,
+            flipCd:0,
+            teleportCd:0,
+            muted:false,
+            assist:false,
+            hardcore:false,
+            shakeEnabled:true,
+            hasKey:false,
+            teleA:null,
+            teleB:null,
+            fragileRespawn:{},
+            autoFlipCd:0,
+            timeOrbs:0,
+            medal:"-",
+            fps:0,
+            unlocked:loadUnlockedLevel(),
+            showHelp:false
+        };
+
+        const settings = loadSettings();
+        state.hardcore = settings.hardcore;
+        state.shakeEnabled = settings.shakeEnabled;
+
+        function loadBestTime() {
+            const raw = localStorage.getItem(BEST_KEY);
+            if (!raw) return null;
+            const parsed = Number(raw);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+
+        function loadUnlockedLevel() {
+            const raw = localStorage.getItem(UNLOCK_KEY);
+            const parsed = Number(raw);
+            if (!Number.isFinite(parsed)) return 0;
+            return Math.max(0, Math.min(LEVELS.length - 1, Math.floor(parsed)));
+        }
+
+        function saveUnlockedLevel(idx) {
+            state.unlocked = Math.max(state.unlocked, idx);
+            localStorage.setItem(UNLOCK_KEY, String(state.unlocked));
+        }
+
+        function saveBestTime(ms) {
+            localStorage.setItem(BEST_KEY, String(ms));
+            state.bestMs = ms;
+        }
+
+        let audioCtx = null;
+        function beep(freq, dur, vol) {
+            if (state.muted) return;
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioCtx.currentTime;
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = "square";
+            o.frequency.setValueAtTime(freq, now);
+            g.gain.setValueAtTime(0.0001, now);
+            g.gain.exponentialRampToValueAtTime(vol, now + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.start(now);
+            o.stop(now + dur + 0.02);
+        }
+
+        function formatMs(ms) {
+            const sec = Math.floor(ms / 1000);
+            const cs = Math.floor((ms % 1000) / 10);
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0") + "." + String(cs).padStart(2, "0");
+        }
+
+        function tileAt(tx, ty) {
+            if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) return "#";
+            return state.tileMap[ty][tx];
+        }
+
+        function isSolid(ch) {
+            if (ch === "#") return true;
+            if (ch === "B") return state.phaseOn;
+            if (ch === "D") return !state.hasKey;
+            if (ch === "F") return true;
+            return false;
+        }
+
+        function tileKey(tx, ty) {
+            return tx + "," + ty;
+        }
+
+        function isFragileSolid(tx, ty) {
+            return !state.fragileRespawn[tileKey(tx, ty)];
+        }
+
+        function showBanner(text, seconds) {
+            state.bannerText = text;
+            state.bannerTimer = seconds || 1.3;
+            statusBanner.textContent = text;
+        }
+
+        function shake(power) {
+            if (!state.shakeEnabled) return;
+            state.shake = Math.max(state.shake, power);
+        }
+
+        function restartRun() {
+            state.trinkets = 0;
+            state.timeOrbs = 0;
+            state.runMs = 0;
+            state.won = false;
+            state.splitMs = [null, null, null];
+            state.medal = "-";
+            loadLevel(0, true);
+            showBanner("Run diulang.", 1);
+        }
+
+        function jumpToLevel(level) {
+            if (level > state.unlocked) {
+                showBanner("Level belum kebuka.", 0.9);
+                return;
+            }
+            state.runMs = 0;
+            state.splitMs = [null, null, null];
+            state.trinkets = 0;
+            state.timeOrbs = 0;
+            state.won = false;
+            state.medal = "-";
+            loadLevel(level, true);
+            showBanner("Masuk level " + (level + 1) + ".", 0.9);
+        }
+
+        function continueFromUnlock() {
+            jumpToLevel(state.unlocked);
+        }
+
+        function loadLevel(index, resetDeaths) {
+            state.levelIndex = index;
+            state.tileMap = LEVELS[index].map((row) => row.split(""));
+            state.drones = [];
+            state.phaseOn = true;
+            state.phaseTimer = 0;
+            state.levelTrinkets = 0;
+            state.levelTotalTrinkets = 0;
+            state.hasKey = false;
+            state.teleA = null;
+            state.teleB = null;
+            state.fragileRespawn = {};
+            if (resetDeaths) state.deaths = 0;
+
+            let foundSpawn = false;
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    const ch = state.tileMap[y][x];
+                    if (ch === "S") {
+                        state.spawn = { x: x * TILE + 6, y: y * TILE + 6 };
+                        foundSpawn = true;
+                    }
+                    if (ch === "T") state.levelTotalTrinkets += 1;
+                    if (ch === "U") state.teleA = { x: x * TILE + 6, y: y * TILE + 6 };
+                    if (ch === "V") state.teleB = { x: x * TILE + 6, y: y * TILE + 6 };
+                    if (ch === "O") {
+                        state.drones.push({
+                            x: x * TILE + 6,
+                            y: y * TILE + 6,
+                            w: 20,
+                            h: 20,
+                            minX: (x - 3) * TILE + 6,
+                            maxX: (x + 3) * TILE + 6,
+                            vx: (x % 2 === 0 ? 1 : -1) * 95
+                        });
+                        state.tileMap[y][x] = ".";
+                    }
+                }
+            }
+
+            if (!foundSpawn) state.spawn = { x: 96, y: 96 };
+            state.checkpoint = { x: state.spawn.x, y: state.spawn.y, name: "A" + (index + 1) };
+            resetPlayer(false);
+            state.gravityDir = 1;
+            state.dashCd = 0;
+            state.flipCd = 0;
+            state.teleportCd = 0;
+            state.autoFlipCd = 0;
+            showBanner("Level " + (index + 1) + " dimulai.", 1.15);
+            beep(660, 0.08, 0.04);
+            updateHud();
+        }
+
+        function resetPlayer(countDeath) {
+            if (countDeath) state.deaths += 1;
+            const p = state.player;
+            p.x = state.checkpoint.x;
+            p.y = state.checkpoint.y;
+            p.vx = 0;
+            p.vy = 0;
+            p.grounded = false;
+            state.trail.length = 0;
+            updateHud();
+        }
+
+        function updateHud() {
+            levelText.textContent = String(state.levelIndex + 1);
+            deathText.textContent = String(state.deaths);
+            checkpointText.textContent = state.checkpoint.name;
+            gravityText.textContent = state.gravityDir === 1 ? "Bawah" : "Atas";
+            timeText.textContent = formatMs(state.runMs);
+            bestText.textContent = state.bestMs === null ? "--:--.--" : formatMs(state.bestMs);
+            splitText.textContent = state.splitMs[state.levelIndex] === null ? "--:--.--" : formatMs(state.splitMs[state.levelIndex]);
+            trinketText.textContent = state.trinkets + "/" + state.totalTrinkets;
+            dashText.textContent = state.dashCd <= 0 ? "Ready" : state.dashCd.toFixed(1) + "s";
+            flipCdText.textContent = state.flipCd <= 0 ? "Ready" : state.flipCd.toFixed(2) + "s";
+            keyText.textContent = state.hasKey ? "Yes" : "No";
+            medalText.textContent = state.medal;
+            orbText.textContent = String(state.timeOrbs);
+            fpsText.textContent = String(Math.round(state.fps));
+            pauseBtn.textContent = state.paused ? "Lanjut (P)" : "Pause (P)";
+            muteBtn.textContent = state.muted ? "SFX OFF" : "SFX ON";
+            assistBtn.classList.toggle("active", state.assist);
+            assistBtn.textContent = state.assist ? "Assist ON (H)" : "Assist (H)";
+            hardcoreBtn.classList.toggle("active", state.hardcore);
+            hardcoreBtn.textContent = state.hardcore ? "Hardcore ON" : "Hardcore";
+            shakeBtn.classList.toggle("active", state.shakeEnabled);
+            shakeBtn.textContent = state.shakeEnabled ? "Shake ON" : "Shake OFF";
+            helpBtn.classList.toggle("active", state.showHelp);
+            lv1Btn.classList.toggle("active", state.levelIndex === 0);
+            lv2Btn.classList.toggle("active", state.levelIndex === 1);
+            lv3Btn.classList.toggle("active", state.levelIndex === 2);
+            lv2Btn.disabled = state.unlocked < 1;
+            lv3Btn.disabled = state.unlocked < 2;
+            continueBtn.textContent = "Continue L" + (state.unlocked + 1);
+            phaseFill.style.transform = "scaleX(" + (1 - state.phaseTimer / PHASE_PERIOD).toFixed(3) + ")";
+            helpModal.classList.toggle("show", state.showHelp);
+        }
+
+        function queueFlip() { input.flipQueued = true; }
+        function queueDash() { input.dashQueued = true; }
+
+        function overlapRect(px, py, pw, ph, rx, ry, rw, rh) {
+            return px < rx + rw && px + pw > rx && py < ry + rh && py + ph > ry;
+        }
+
+        function forEachOverlapTile(px, py, pw, ph, cb) {
+            const minX = Math.floor(px / TILE);
+            const maxX = Math.floor((px + pw - 1) / TILE);
+            const minY = Math.floor(py / TILE);
+            const maxY = Math.floor((py + ph - 1) / TILE);
+            for (let ty = minY; ty <= maxY; ty++) {
+                for (let tx = minX; tx <= maxX; tx++) cb(tx, ty, tileAt(tx, ty));
+            }
+        }
+
+        function updateDrones(dt) {
+            const speedScale = state.assist ? 0.7 : 1;
+            for (const d of state.drones) {
+                d.x += d.vx * dt * speedScale;
+                if (d.x < d.minX) { d.x = d.minX; d.vx = Math.abs(d.vx); }
+                if (d.x > d.maxX) { d.x = d.maxX; d.vx = -Math.abs(d.vx); }
+            }
+        }
+
+        function killPlayer(msg) {
+            state.deathMarks.push({ x: state.player.x, y: state.player.y, ttl: 8 });
+            if (state.deathMarks.length > 6) state.deathMarks.shift();
+            showBanner(msg, 0.9);
+            shake(8);
+            beep(180, 0.1, 0.05);
+            if (state.hardcore) {
+                showBanner("Hardcore gagal. Run direset.", 1.2);
+                restartRun();
+                return;
+            }
+            resetPlayer(true);
+        }
+
+        function useTeleport(target) {
+            const p = state.player;
+            p.x = target.x;
+            p.y = target.y;
+            p.vx *= 0.5;
+            p.vy = 0;
+            state.teleportCd = TELEPORT_COOLDOWN;
+            shake(3);
+            beep(820, 0.07, 0.04);
+        }
+
+        function updatePhysics(dt) {
+            if (state.paused || state.won || state.showHelp) return;
+
+            state.runMs += dt * 1000;
+            state.phaseTimer += dt;
+            if (state.phaseTimer >= PHASE_PERIOD) {
+                state.phaseTimer -= PHASE_PERIOD;
+                state.phaseOn = !state.phaseOn;
+                beep(state.phaseOn ? 430 : 310, 0.04, 0.03);
+            }
+
+            const dashCooldown = state.assist ? ASSIST_DASH_COOLDOWN : BASE_DASH_COOLDOWN;
+            state.dashCd = Math.max(0, state.dashCd - dt);
+            state.flipCd = Math.max(0, state.flipCd - dt);
+            state.teleportCd = Math.max(0, state.teleportCd - dt);
+            state.autoFlipCd = Math.max(0, state.autoFlipCd - dt);
+            for (const key of Object.keys(state.fragileRespawn)) {
+                state.fragileRespawn[key] -= dt;
+                if (state.fragileRespawn[key] <= 0) delete state.fragileRespawn[key];
+            }
+            updateDrones(dt);
+
+            const p = state.player;
+            const accel = 1200;
+            const maxSpeed = 285;
+            const friction = 1700;
+            const gravity = state.assist ? 920 : 1120;
+
+            if (input.left && !input.right) {
+                p.vx -= accel * dt;
+                p.facing = -1;
+            } else if (input.right && !input.left) {
+                p.vx += accel * dt;
+                p.facing = 1;
+            } else {
+                if (p.vx > 0) p.vx = Math.max(0, p.vx - friction * dt);
+                if (p.vx < 0) p.vx = Math.min(0, p.vx + friction * dt);
+            }
+
+            p.vx = Math.max(-maxSpeed, Math.min(maxSpeed, p.vx));
+
+            if (input.flipQueued) {
+                input.flipQueued = false;
+                if (state.flipCd <= 0) {
+                    state.gravityDir *= -1;
+                    state.flipCd = FLIP_COOLDOWN;
+                    p.vy = 230 * state.gravityDir;
+                    p.grounded = false;
+                    shake(3);
+                    beep(820, 0.06, 0.03);
+                    updateHud();
+                }
+            }
+
+            if (input.dashQueued) {
+                input.dashQueued = false;
+                if (state.dashCd <= 0) {
+                    const dir = input.left ? -1 : input.right ? 1 : p.facing;
+                    p.vx = dir * 510;
+                    state.dashCd = dashCooldown;
+                    shake(2);
+                    beep(990, 0.05, 0.03);
+                }
+            }
+
+            p.vy += gravity * state.gravityDir * dt;
+
+            p.x += p.vx * dt;
+            forEachOverlapTile(p.x, p.y, p.w, p.h, (tx, ty, ch) => {
+                if (ch === "F" && !isFragileSolid(tx, ty)) return;
+                if (!isSolid(ch)) return;
+                const tileX = tx * TILE;
+                if (p.vx > 0) p.x = tileX - p.w;
+                else if (p.vx < 0) p.x = tileX + TILE;
+                p.vx = 0;
+            });
+
+            p.y += p.vy * dt;
+            p.grounded = false;
+            forEachOverlapTile(p.x, p.y, p.w, p.h, (tx, ty, ch) => {
+                if (ch === "F" && !isFragileSolid(tx, ty)) return;
+                if (!isSolid(ch)) return;
+                const tileY = ty * TILE;
+                if (p.vy > 0) {
+                    p.y = tileY - p.h;
+                    if (state.gravityDir === 1) p.grounded = true;
+                } else if (p.vy < 0) {
+                    p.y = tileY + TILE;
+                    if (state.gravityDir === -1) p.grounded = true;
+                }
+                p.vy = 0;
+            });
+
+            forEachOverlapTile(p.x, p.y, p.w, p.h, (tx, ty, ch) => {
+                if (ch === ">") p.vx += 180 * dt;
+                if (ch === "<") p.vx -= 180 * dt;
+                if (ch === "!" && overlapRect(p.x, p.y, p.w, p.h, tx * TILE, ty * TILE, TILE, TILE)) {
+                    p.vy = -state.gravityDir * 500;
+                    shake(2);
+                    beep(600, 0.05, 0.03);
+                }
+                if (ch === "~" && overlapRect(p.x, p.y, p.w, p.h, tx * TILE, ty * TILE, TILE, TILE)) {
+                    p.vx *= 0.9;
+                }
+                if (ch === "X" && state.autoFlipCd <= 0 && overlapRect(p.x, p.y, p.w, p.h, tx * TILE, ty * TILE, TILE, TILE)) {
+                    state.gravityDir *= -1;
+                    p.vy = 240 * state.gravityDir;
+                    state.autoFlipCd = AUTOFLIP_COOLDOWN;
+                    shake(2);
+                    beep(760, 0.04, 0.03);
+                }
+                if (ch === "F" && overlapRect(p.x, p.y, p.w, p.h, tx * TILE, ty * TILE, TILE, TILE)) {
+                    const fk = tileKey(tx, ty);
+                    if (!state.fragileRespawn[fk]) state.fragileRespawn[fk] = FRAGILE_RESPAWN;
+                }
+            });
+
+            if (p.x < -45 || p.x > canvas.width + 45 || p.y < -130 || p.y > canvas.height + 130) {
+                killPlayer("Terlalu jauh dari arena.");
+                return;
+            }
+
+            let touchedHazard = false;
+            forEachOverlapTile(p.x, p.y, p.w, p.h, (tx, ty, ch) => {
+                const tileX = tx * TILE;
+                const tileY = ty * TILE;
+
+                if ((ch === "^" || ch === "v") && overlapRect(p.x, p.y, p.w, p.h, tileX, tileY, TILE, TILE)) touchedHazard = true;
+                if (ch === "L" && state.phaseOn && overlapRect(p.x, p.y, p.w, p.h, tileX, tileY, TILE, TILE)) touchedHazard = true;
+
+                if (ch === "K" && overlapRect(p.x, p.y, p.w, p.h, tileX, tileY, TILE, TILE)) {
+                    state.hasKey = true;
+                    state.tileMap[ty][tx] = ".";
+                    showBanner("Key didapat. Door terbuka.", 0.9);
+                    beep(740, 0.09, 0.05);
+                    updateHud();
+                }
+
+                if (ch === "C" && overlapRect(p.x, p.y, p.w, p.h, tileX, tileY, TILE, TILE)) {
+                    const tag = String.fromCharCode(65 + state.levelIndex) + (tx + 1);
+                    state.checkpoint = { x: tx * TILE + 6, y: ty * TILE + 6, name: tag };
+                    state.tileMap[ty][tx] = ".";
+                    showBanner("Checkpoint " + tag + " aktif.", 0.8);
+                    beep(520, 0.06, 0.04);
+                    updateHud();
+                }
+
+                if (ch === "T" && overlapRect(p.x, p.y, p.w, p.h, tileX, tileY, TILE, TILE)) {
+                    state.trinkets += 1;
+                    state.levelTrinkets += 1;
+                    state.tileMap[ty][tx] = ".";
+                    showBanner("Trinket didapat.", 0.7);
+                    beep(1180, 0.09, 0.05);
+                    updateHud();
+                }
+
+                if (ch === "Q" && overlapRect(p.x, p.y, p.w, p.h, tileX, tileY, TILE, TILE)) {
+                    state.timeOrbs += 1;
+                    state.runMs = Math.max(0, state.runMs - 3000);
+                    state.tileMap[ty][tx] = ".";
+                    showBanner("Time orb! -3.00 detik", 0.8);
+                    beep(1320, 0.08, 0.05);
+                    updateHud();
+                }
+
+                if (ch === "U" && state.teleB && state.teleportCd <= 0 && overlapRect(p.x, p.y, p.w, p.h, tileX, tileY, TILE, TILE)) {
+                    useTeleport(state.teleB);
+                }
+                if (ch === "V" && state.teleA && state.teleportCd <= 0 && overlapRect(p.x, p.y, p.w, p.h, tileX, tileY, TILE, TILE)) {
+                    useTeleport(state.teleA);
+                }
+
+                if (ch === "G" && overlapRect(p.x, p.y, p.w, p.h, tileX, tileY, TILE, TILE)) {
+                    if (state.levelTrinkets < state.levelTotalTrinkets && !state.assist) {
+                        showBanner("Portal terkunci. Ambil semua trinket.", 1.1);
+                        return;
+                    }
+                    state.splitMs[state.levelIndex] = Math.floor(state.runMs);
+                    const par = PAR_TIMES[state.levelIndex] || 60000;
+                    if (state.runMs <= par) state.medal = "GOLD";
+                    else if (state.runMs <= par * 1.25) state.medal = "SILVER";
+                    else state.medal = "BRONZE";
+                    const next = state.levelIndex + 1;
+                    if (next >= LEVELS.length) {
+                        state.won = true;
+                        if (state.bestMs === null || state.runMs < state.bestMs) saveBestTime(Math.floor(state.runMs));
+                        showBanner("Selesai! Tekan R untuk ulang run.", 3);
+                        beep(900, 0.11, 0.05);
+                        beep(1180, 0.12, 0.04);
+                    } else {
+                        saveUnlockedLevel(next);
+                        showBanner("Level " + (next + 1) + " terbuka.", 1);
+                        beep(740, 0.09, 0.03);
+                        loadLevel(next, false);
+                    }
+                }
+            });
+
+            for (const d of state.drones) {
+                if (overlapRect(p.x, p.y, p.w, p.h, d.x, d.y, d.w, d.h)) {
+                    touchedHazard = true;
+                    break;
+                }
+            }
+
+            if (touchedHazard) {
+                killPlayer("Kena hazard.");
+                return;
+            }
+
+            if (state.phaseOn) {
+                forEachOverlapTile(p.x, p.y, p.w, p.h, (tx, ty, ch) => {
+                    if (ch === "B" && overlapRect(p.x, p.y, p.w, p.h, tx * TILE, ty * TILE, TILE, TILE)) killPlayer("Terjepit phase block.");
+                });
+            }
+
+            state.trail.push({ x:p.x, y:p.y, g:state.gravityDir, a:0.55 });
+            if (state.trail.length > 12) state.trail.shift();
+            for (const t of state.trail) t.a -= dt * 1.7;
+            state.trail = state.trail.filter((t) => t.a > 0);
+
+            for (const m of state.deathMarks) m.ttl -= dt;
+            state.deathMarks = state.deathMarks.filter((m) => m.ttl > 0);
+        }
+
+        function drawStars(time) {
+            const t = time * 0.00018;
+            for (let i = 0; i < 130; i++) {
+                const x = (i * 137.27 + t * (12 + (i % 6))) % canvas.width;
+                const y = (i * 69.13 + t * (5 + (i % 5))) % canvas.height;
+                const a = 0.2 + ((i * 17) % 100) / 100 * 0.4;
+                ctx.fillStyle = "rgba(180,210,255," + a.toFixed(3) + ")";
+                ctx.fillRect(x, y, 2, 2);
+            }
+        }
+
+        function drawTile(x, y, ch) {
+            const px = x * TILE;
+            const py = y * TILE;
+
+            if (ch === "#") {
+                ctx.fillStyle = "#272f62";
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = "rgba(255,255,255,.11)";
+                ctx.fillRect(px, py, TILE, 4);
+                ctx.strokeStyle = "rgba(142,230,244,.23)";
+                ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
+                return;
+            }
+
+            if (ch === "^") {
+                ctx.fillStyle = "#ff4f6d";
+                ctx.beginPath();
+                ctx.moveTo(px + 3, py + TILE - 3);
+                ctx.lineTo(px + TILE * 0.5, py + 3);
+                ctx.lineTo(px + TILE - 3, py + TILE - 3);
+                ctx.closePath();
+                ctx.fill();
+                return;
+            }
+
+            if (ch === "v") {
+                ctx.fillStyle = "#ff4f6d";
+                ctx.beginPath();
+                ctx.moveTo(px + 3, py + 3);
+                ctx.lineTo(px + TILE * 0.5, py + TILE - 3);
+                ctx.lineTo(px + TILE - 3, py + 3);
+                ctx.closePath();
+                ctx.fill();
+                return;
+            }
+
+            if (ch === "C") {
+                ctx.fillStyle = "rgba(129,199,132,.35)";
+                ctx.fillRect(px + 4, py + 4, TILE - 8, TILE - 8);
+                ctx.strokeStyle = "#81c784";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(px + 6, py + 6, TILE - 12, TILE - 12);
+                return;
+            }
+
+            if (ch === "G") {
+                ctx.strokeStyle = "#8ee6f4";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(px + 6, py + 6, TILE - 12, TILE - 12);
+                ctx.strokeStyle = "#fff";
+                ctx.strokeRect(px + 10, py + 10, TILE - 20, TILE - 20);
+                return;
+            }
+
+            if (ch === "T") {
+                ctx.fillStyle = "rgba(255,230,140,.25)";
+                ctx.fillRect(px + 6, py + 6, TILE - 12, TILE - 12);
+                ctx.fillStyle = "#ffe68c";
+                ctx.beginPath();
+                ctx.moveTo(px + TILE * 0.5, py + 5);
+                ctx.lineTo(px + TILE - 6, py + TILE * 0.5);
+                ctx.lineTo(px + TILE * 0.5, py + TILE - 5);
+                ctx.lineTo(px + 6, py + TILE * 0.5);
+                ctx.closePath();
+                ctx.fill();
+                return;
+            }
+
+            if (ch === "B") {
+                if (state.phaseOn) {
+                    ctx.fillStyle = "rgba(248,222,102,.45)";
+                    ctx.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
+                    ctx.strokeStyle = "rgba(255,240,170,.9)";
+                    ctx.strokeRect(px + 2, py + 2, TILE - 4, TILE - 4);
+                } else {
+                    ctx.strokeStyle = "rgba(248,222,102,.35)";
+                    ctx.setLineDash([5, 4]);
+                    ctx.strokeRect(px + 4, py + 4, TILE - 8, TILE - 8);
+                    ctx.setLineDash([]);
+                }
+                return;
+            }
+
+            if (ch === "F") {
+                const broken = !isFragileSolid(x, y);
+                if (broken) {
+                    ctx.strokeStyle = "rgba(255,220,170,.35)";
+                    ctx.setLineDash([4, 4]);
+                    ctx.strokeRect(px + 4, py + 4, TILE - 8, TILE - 8);
+                    ctx.setLineDash([]);
+                } else {
+                    ctx.fillStyle = "rgba(255,220,170,.45)";
+                    ctx.fillRect(px + 3, py + 3, TILE - 6, TILE - 6);
+                    ctx.strokeStyle = "rgba(255,245,210,.75)";
+                    ctx.beginPath();
+                    ctx.moveTo(px + 8, py + 8);
+                    ctx.lineTo(px + TILE - 8, py + TILE - 8);
+                    ctx.moveTo(px + TILE - 10, py + 7);
+                    ctx.lineTo(px + 8, py + TILE - 10);
+                    ctx.stroke();
+                }
+                return;
+            }
+
+            if (ch === ">" || ch === "<") {
+                ctx.fillStyle = "rgba(120,220,255,.2)";
+                ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 4);
+                ctx.fillStyle = "#8ee6f4";
+                ctx.beginPath();
+                if (ch === ">") {
+                    ctx.moveTo(px + 9, py + 8);
+                    ctx.lineTo(px + TILE - 8, py + TILE * 0.5);
+                    ctx.lineTo(px + 9, py + TILE - 8);
+                } else {
+                    ctx.moveTo(px + TILE - 9, py + 8);
+                    ctx.lineTo(px + 8, py + TILE * 0.5);
+                    ctx.lineTo(px + TILE - 9, py + TILE - 8);
+                }
+                ctx.closePath();
+                ctx.fill();
+                return;
+            }
+
+            if (ch === "K") {
+                ctx.fillStyle = "rgba(255,220,120,.25)";
+                ctx.fillRect(px + 5, py + 5, TILE - 10, TILE - 10);
+                ctx.fillStyle = "#ffd86b";
+                ctx.fillRect(px + 11, py + 8, 10, 4);
+                ctx.fillRect(px + 16, py + 12, 4, 12);
+                ctx.fillRect(px + 13, py + 19, 3, 6);
+                ctx.fillRect(px + 20, py + 19, 3, 6);
+                return;
+            }
+
+            if (ch === "D") {
+                if (state.hasKey) {
+                    ctx.strokeStyle = "rgba(138,127,240,.5)";
+                    ctx.setLineDash([4, 4]);
+                    ctx.strokeRect(px + 5, py + 5, TILE - 10, TILE - 10);
+                    ctx.setLineDash([]);
+                } else {
+                    ctx.fillStyle = "rgba(138,127,240,.45)";
+                    ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 4);
+                    ctx.strokeStyle = "rgba(200,190,255,.8)";
+                    ctx.strokeRect(px + 4, py + 4, TILE - 8, TILE - 8);
+                }
+                return;
+            }
+
+            if (ch === "U" || ch === "V") {
+                ctx.fillStyle = "rgba(115,242,232,.18)";
+                ctx.fillRect(px + 3, py + 3, TILE - 6, TILE - 6);
+                ctx.strokeStyle = "#73f2e8";
+                ctx.strokeRect(px + 5, py + 5, TILE - 10, TILE - 10);
+                ctx.fillStyle = "#73f2e8";
+                ctx.fillText(ch, px + 12, py + 21);
+                return;
+            }
+
+            if (ch === "!") {
+                ctx.fillStyle = "rgba(255,160,120,.25)";
+                ctx.fillRect(px + 3, py + 3, TILE - 6, TILE - 6);
+                ctx.fillStyle = "#ffb277";
+                ctx.beginPath();
+                ctx.moveTo(px + TILE * 0.5, py + 6);
+                ctx.lineTo(px + TILE - 6, py + TILE - 6);
+                ctx.lineTo(px + 6, py + TILE - 6);
+                ctx.closePath();
+                ctx.fill();
+                return;
+            }
+
+            if (ch === "L") {
+                if (state.phaseOn) {
+                    ctx.fillStyle = "rgba(255,70,70,.45)";
+                    ctx.fillRect(px + 8, py + 2, TILE - 16, TILE - 4);
+                    ctx.fillStyle = "rgba(255,200,200,.8)";
+                    ctx.fillRect(px + 14, py + 2, 4, TILE - 4);
+                } else {
+                    ctx.strokeStyle = "rgba(255,120,120,.35)";
+                    ctx.strokeRect(px + 10, py + 3, TILE - 20, TILE - 6);
+                }
+                return;
+            }
+
+            if (ch === "X") {
+                ctx.fillStyle = "rgba(150,210,255,.18)";
+                ctx.fillRect(px + 3, py + 3, TILE - 6, TILE - 6);
+                ctx.strokeStyle = "#9fd5ff";
+                ctx.beginPath();
+                ctx.moveTo(px + 8, py + 8);
+                ctx.lineTo(px + TILE - 8, py + TILE - 8);
+                ctx.moveTo(px + TILE - 8, py + 8);
+                ctx.lineTo(px + 8, py + TILE - 8);
+                ctx.stroke();
+                return;
+            }
+
+            if (ch === "~") {
+                ctx.fillStyle = "rgba(120,160,255,.2)";
+                ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 4);
+                ctx.strokeStyle = "rgba(170,200,255,.65)";
+                for (let i = 0; i < 3; i++) {
+                    const yy = py + 8 + i * 7;
+                    ctx.beginPath();
+                    ctx.moveTo(px + 6, yy);
+                    ctx.quadraticCurveTo(px + 12, yy - 3, px + 18, yy);
+                    ctx.quadraticCurveTo(px + 24, yy + 3, px + 26, yy);
+                    ctx.stroke();
+                }
+                return;
+            }
+
+            if (ch === "Q") {
+                ctx.fillStyle = "rgba(160,255,170,.22)";
+                ctx.fillRect(px + 4, py + 4, TILE - 8, TILE - 8);
+                ctx.fillStyle = "#a7ffc0";
+                ctx.beginPath();
+                ctx.arc(px + TILE * 0.5, py + TILE * 0.5, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#fff";
+                ctx.strokeRect(px + 14, py + 10, 4, 10);
+            }
+        }
+
+        function drawPlayer(x, y, alpha, gravity) {
+            const p = state.player;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(x + p.w / 2, y + p.h / 2);
+            if (gravity === -1) ctx.rotate(Math.PI);
+            ctx.fillStyle = "#f5f7ff";
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.fillStyle = "#1a2254";
+            ctx.fillRect(-p.w / 2 + 4, -p.h / 2 + 5, p.w - 8, p.h - 10);
+            ctx.fillStyle = "#8ee6f4";
+            ctx.fillRect(-5, -2, 4, 4);
+            ctx.fillRect(1, -2, 4, 4);
+            ctx.restore();
+        }
+
+        function drawDrones(time) {
+            for (const d of state.drones) {
+                const pulse = 0.65 + Math.sin(time * 0.006 + d.x * 0.01) * 0.25;
+                ctx.fillStyle = "rgba(255,95,115," + pulse.toFixed(3) + ")";
+                ctx.beginPath();
+                ctx.arc(d.x + d.w / 2, d.y + d.h / 2, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "rgba(255,255,255,.9)";
+                ctx.fillRect(d.x + 8, d.y + 8, 4, 4);
+            }
+        }
+
+        function drawDeathMarks() {
+            for (const m of state.deathMarks) {
+                const alpha = Math.min(1, m.ttl / 8);
+                ctx.strokeStyle = "rgba(255,70,110," + alpha.toFixed(3) + ")";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(m.x + 3, m.y + 3);
+                ctx.lineTo(m.x + 17, m.y + 17);
+                ctx.moveTo(m.x + 17, m.y + 3);
+                ctx.lineTo(m.x + 3, m.y + 17);
+                ctx.stroke();
+            }
+        }
+
+        function draw(time) {
+            ctx.save();
+            if (state.shake > 0) {
+                const sx = (Math.random() - 0.5) * state.shake;
+                const sy = (Math.random() - 0.5) * state.shake;
+                ctx.translate(sx, sy);
+            }
+
+            ctx.clearRect(-20, -20, canvas.width + 40, canvas.height + 40);
+            drawStars(time);
+
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) drawTile(x, y, state.tileMap[y][x]);
+            }
+
+            drawDeathMarks();
+            for (const t of state.trail) drawPlayer(t.x, t.y, t.a * 0.5, t.g);
+            drawDrones(time);
+            drawPlayer(state.player.x, state.player.y, 1, state.gravityDir);
+            ctx.restore();
+
+            if (state.showHelp) {
+                statusBanner.classList.remove("show");
+            } else if (state.paused) {
+                statusBanner.classList.add("show");
+                statusBanner.textContent = "PAUSED";
+            } else if (state.bannerTimer > 0) {
+                statusBanner.classList.add("show");
+                statusBanner.textContent = state.bannerText;
+            } else {
+                statusBanner.classList.remove("show");
+            }
+        }
+
+        let last = performance.now();
+        function tick(now) {
+            const dt = Math.min(0.033, (now - last) / 1000);
+            state.fps = dt > 0 ? 1 / dt : 0;
+            last = now;
+            updatePhysics(dt);
+            if (!state.paused && state.bannerTimer > 0 && !state.showHelp) state.bannerTimer -= dt;
+            state.shake = Math.max(0, state.shake - dt * 20);
+            draw(now);
+            updateHud();
+            requestAnimationFrame(tick);
+        }
+
+        function togglePause() {
+            state.paused = !state.paused;
+            showBanner(state.paused ? "Game dijeda." : "Lanjut bermain.", 0.7);
+            updateHud();
+        }
+
+        function toggleHelp() {
+            state.showHelp = !state.showHelp;
+            state.paused = state.showHelp || state.paused;
+            if (!state.showHelp && state.paused) {
+                state.paused = false;
+                showBanner("Lanjut bermain.", 0.7);
+            }
+            updateHud();
+        }
+
+        function onKeyDown(e) {
+            const key = e.key;
+            const k = key.toLowerCase();
+            if (key === "ArrowLeft" || k === "a") input.left = true;
+            if (key === "ArrowRight" || k === "d") input.right = true;
+            if (key === " " || key === "ArrowUp" || k === "w" || k === "x") {
+                e.preventDefault();
+                queueFlip();
+            }
+            if (key === "Shift" || k === "z") queueDash();
+            if (k === "p") togglePause();
+            if (k === "r") restartRun();
+            if (k === "m") {
+                state.muted = !state.muted;
+                updateHud();
+            }
+            if (k === "h") {
+                state.assist = !state.assist;
+                showBanner(state.assist ? "Assist ON" : "Assist OFF", 0.8);
+                updateHud();
+            }
+            if (k === "g") {
+                state.hardcore = !state.hardcore;
+                saveSettings();
+                showBanner(state.hardcore ? "Hardcore ON" : "Hardcore OFF", 0.8);
+                updateHud();
+            }
+            if (k === "f") {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                else document.exitFullscreen();
+            }
+            if (k === "?") toggleHelp();
+            if (k === "1") jumpToLevel(0);
+            if (k === "2") jumpToLevel(1);
+            if (k === "3") jumpToLevel(2);
+        }
+
+        function onKeyUp(e) {
+            const key = e.key;
+            const k = key.toLowerCase();
+            if (key === "ArrowLeft" || k === "a") input.left = false;
+            if (key === "ArrowRight" || k === "d") input.right = false;
+        }
+
+        window.addEventListener("keydown", onKeyDown);
+        window.addEventListener("keyup", onKeyUp);
+
+        function holdButton(button, key) {
+            const activate = (value) => {
+                input[key] = value;
+                button.style.transform = value ? "translateY(1px)" : "translateY(0)";
+            };
+            button.addEventListener("pointerdown", () => activate(true));
+            button.addEventListener("pointerup", () => activate(false));
+            button.addEventListener("pointerleave", () => activate(false));
+            button.addEventListener("pointercancel", () => activate(false));
+        }
+
+        holdButton(document.getElementById("leftBtn"), "left");
+        holdButton(document.getElementById("rightBtn"), "right");
+        document.getElementById("flipBtn").addEventListener("pointerdown", queueFlip);
+        document.getElementById("dashBtn").addEventListener("pointerdown", queueDash);
+
+        pauseBtn.addEventListener("click", togglePause);
+        restartBtn.addEventListener("click", restartRun);
+        muteBtn.addEventListener("click", () => {
+            state.muted = !state.muted;
+            updateHud();
+            showBanner(state.muted ? "SFX dimatikan." : "SFX dinyalakan.", 0.8);
+        });
+        assistBtn.addEventListener("click", () => {
+            state.assist = !state.assist;
+            showBanner(state.assist ? "Assist ON" : "Assist OFF", 0.8);
+            updateHud();
+        });
+        hardcoreBtn.addEventListener("click", () => {
+            state.hardcore = !state.hardcore;
+            saveSettings();
+            showBanner(state.hardcore ? "Hardcore ON" : "Hardcore OFF", 0.8);
+            updateHud();
+        });
+        shakeBtn.addEventListener("click", () => {
+            state.shakeEnabled = !state.shakeEnabled;
+            saveSettings();
+            updateHud();
+        });
+        continueBtn.addEventListener("click", continueFromUnlock);
+        fullBtn.addEventListener("click", () => {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
+        });
+        helpBtn.addEventListener("click", toggleHelp);
+        lv1Btn.addEventListener("click", () => jumpToLevel(0));
+        lv2Btn.addEventListener("click", () => jumpToLevel(1));
+        lv3Btn.addEventListener("click", () => jumpToLevel(2));
+
+        state.totalTrinkets = LEVELS.join("").split("T").length - 1;
+        loadLevel(0, true);
+        updateHud();
+        requestAnimationFrame(tick);
+    </script>
+
+    <script src="sounds.js"></script>
+    <script src="mobile-touch.js"></script>
+</body>
+</html>

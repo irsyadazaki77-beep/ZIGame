@@ -1,0 +1,1236 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Metro | ZI GAME</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #081022;
+            --bg2: #111c3b;
+            --surface: rgba(17, 28, 59, 0.68);
+            --border: rgba(150, 185, 255, 0.2);
+            --text: #ecf2ff;
+            --muted: rgba(220, 232, 255, 0.6);
+            --aqua: #38d9ff;
+            --blue: #74a8ff;
+            --lime: #a7f66b;
+            --orange: #ffbf47;
+            --rose: #ff6f91;
+            --violet: #7f7dff;
+            --train: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Outfit', sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(ellipse at 10% 0%, rgba(56, 217, 255, 0.15) 0%, transparent 45%),
+                radial-gradient(ellipse at 90% 100%, rgba(127, 125, 255, 0.18) 0%, transparent 50%),
+                linear-gradient(150deg, #050914, var(--bg) 35%, #0e1a37 60%, #081022);
+            overflow-x: hidden;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.2;
+            z-index: 0;
+            background-image:
+                linear-gradient(rgba(124, 168, 255, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(124, 168, 255, 0.06) 1px, transparent 1px);
+            background-size: 56px 56px;
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            width: min(1100px, 100% - 28px);
+            margin: 18px auto;
+            display: grid;
+            gap: 14px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            padding: 12px 14px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22);
+        }
+
+        .left-zone,
+        .right-zone {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .back-btn,
+        .btn {
+            text-decoration: none;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            border-radius: 11px;
+            padding: 10px 14px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .back-btn:hover,
+        .btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(167, 246, 107, 0.55);
+            background: rgba(167, 246, 107, 0.12);
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, var(--aqua), var(--blue));
+            color: #091126;
+            border: none;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
+
+        .btn.warn {
+            border-color: rgba(255, 191, 71, 0.5);
+            background: rgba(255, 191, 71, 0.14);
+            color: #ffd381;
+        }
+
+        .title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: clamp(28px, 4vw, 40px);
+            letter-spacing: 2px;
+            background: linear-gradient(130deg, var(--aqua), #d6f5ff, var(--violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-right: 8px;
+        }
+
+        .stat {
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 9px 12px;
+            border-radius: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .stat b {
+            color: var(--text);
+            margin-left: 4px;
+            font-size: 13px;
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 14px;
+        }
+
+        .canvas-shell {
+            position: relative;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(12, 24, 50, 0.92), rgba(8, 16, 34, 0.94));
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35), inset 0 0 60px rgba(0, 0, 0, 0.45);
+        }
+
+        #metroCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            touch-action: none;
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-align: center;
+            background: rgba(4, 9, 20, 0.74);
+            backdrop-filter: blur(8px);
+            transition: opacity 0.35s ease;
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .overlay h2 {
+            font-size: clamp(34px, 5vw, 54px);
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 3px;
+            background: linear-gradient(130deg, var(--aqua), var(--lime));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .overlay p {
+            width: min(580px, 90%);
+            color: var(--muted);
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .overlay .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .panel {
+            border: 1px solid var(--border);
+            background: var(--surface);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            padding: 14px;
+            display: grid;
+            gap: 12px;
+            align-content: start;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .panel h3 {
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 1.2px;
+            font-size: 24px;
+            color: #dff8ff;
+        }
+
+        .line-list {
+            display: grid;
+            gap: 8px;
+            max-height: 390px;
+            overflow: auto;
+            padding-right: 4px;
+        }
+
+        .line-item {
+            border-radius: 11px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 9px;
+            display: grid;
+            gap: 5px;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .line-item.active {
+            border-color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.13);
+        }
+
+        .line-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .swatch {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+        }
+
+        .legend {
+            border: 1px dashed rgba(172, 203, 255, 0.32);
+            border-radius: 11px;
+            padding: 10px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+
+        .legend b {
+            color: #e7f4ff;
+        }
+
+        .legend .shape {
+            display: inline-block;
+            width: 14px;
+            text-align: center;
+            margin-right: 4px;
+            color: #ffffff;
+        }
+
+        .ticker {
+            border: 1px solid rgba(167, 246, 107, 0.35);
+            background: rgba(167, 246, 107, 0.1);
+            color: #d9f7bf;
+            font-size: 12px;
+            border-radius: 10px;
+            padding: 8px 10px;
+            min-height: 34px;
+            display: flex;
+            align-items: center;
+        }
+
+        @media (max-width: 980px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                order: 2;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .left-zone,
+            .right-zone {
+                width: 100%;
+            }
+
+            .btn,
+            .back-btn {
+                flex: 1;
+                text-align: center;
+            }
+
+            .stat {
+                flex: 1;
+                min-width: 100px;
+            }
+
+            .line-list {
+                max-height: 240px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header class="topbar">
+            <div class="left-zone">
+                <a href="index.html" class="back-btn">Kembali</a>
+                <div class="title">Mini Metro</div>
+                <button class="btn primary" id="buildBtn">Bangun Jalur</button>
+                <button class="btn" id="finishBtn">Selesai Jalur</button>
+                <button class="btn" id="cancelBtn">Batal</button>
+            </div>
+            <div class="right-zone">
+                <button class="btn" id="addTrainBtn">Tambah Kereta</button>
+                <button class="btn" id="speedBtn">x1</button>
+                <button class="btn warn" id="pauseBtn">Pause</button>
+                <button class="btn" id="restartBtn">Restart</button>
+                <div class="stat">Skor<b id="scoreEl">0</b></div>
+                <div class="stat">Waktu<b id="timeEl">00:00</b></div>
+                <div class="stat">Jalur<b id="lineResEl">3</b></div>
+                <div class="stat">Kereta<b id="trainResEl">3</b></div>
+            </div>
+        </header>
+
+        <main class="main">
+            <section class="canvas-shell">
+                <canvas id="metroCanvas" width="860" height="620"></canvas>
+                <div class="overlay" id="startOverlay">
+                    <h2>Bangun Jaringan Kota</h2>
+                    <p>
+                        Hubungkan stasiun, antar penumpang ke bentuk tujuan mereka, dan hindari stasiun terlalu padat.
+                        Jika bar merah di stasiun penuh, permainan berakhir.
+                    </p>
+                    <div class="row">
+                        <button class="btn primary" id="startBtn">Mulai Main</button>
+                    </div>
+                </div>
+                <div class="overlay hidden" id="gameOverOverlay">
+                    <h2>Jaringan Kolaps</h2>
+                    <p id="gameOverText">Stasiun terlalu penuh.</p>
+                    <div class="row">
+                        <button class="btn primary" id="retryBtn">Main Lagi</button>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="panel">
+                <h3>Rute Aktif</h3>
+                <div class="ticker" id="tickerEl">Buat jalur pertama untuk memulai transportasi.</div>
+                <div class="line-list" id="lineList"></div>
+                <div class="legend">
+                    <b>Tujuan Penumpang:</b><br>
+                    <span class="shape">O</span> Lingkaran<br>
+                    <span class="shape">[]</span> Kotak<br>
+                    <span class="shape">/\</span> Segitiga<br>
+                    <span class="shape">&lt;&gt;</span> Belah Ketupat<br><br>
+                    <b>Tips:</b> pilih <b>Bangun Jalur</b>, klik beberapa stasiun, lalu <b>Selesai Jalur</b>.
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script>
+        (() => {
+            const canvas = document.getElementById('metroCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const ui = {
+                score: document.getElementById('scoreEl'),
+                time: document.getElementById('timeEl'),
+                lineRes: document.getElementById('lineResEl'),
+                trainRes: document.getElementById('trainResEl'),
+                lineList: document.getElementById('lineList'),
+                ticker: document.getElementById('tickerEl'),
+                startOverlay: document.getElementById('startOverlay'),
+                gameOverOverlay: document.getElementById('gameOverOverlay'),
+                gameOverText: document.getElementById('gameOverText'),
+                buildBtn: document.getElementById('buildBtn'),
+                finishBtn: document.getElementById('finishBtn'),
+                cancelBtn: document.getElementById('cancelBtn'),
+                addTrainBtn: document.getElementById('addTrainBtn'),
+                speedBtn: document.getElementById('speedBtn'),
+                pauseBtn: document.getElementById('pauseBtn'),
+                restartBtn: document.getElementById('restartBtn'),
+                startBtn: document.getElementById('startBtn'),
+                retryBtn: document.getElementById('retryBtn')
+            };
+
+            const stationTypes = ['circle', 'square', 'triangle', 'diamond'];
+            const linePalette = ['#38d9ff', '#ff6f91', '#ffd166', '#a7f66b', '#7f7dff', '#ffa94d', '#9be7ff'];
+
+            const game = {
+                running: false,
+                paused: false,
+                over: false,
+                speed: 1,
+                time: 0,
+                score: 0,
+                delivered: 0,
+                lineResource: 3,
+                trainResource: 3,
+                stations: [],
+                lines: [],
+                selectedLineId: null,
+                buildMode: false,
+                draftRoute: [],
+                draftMouse: null,
+                nextStationId: 1,
+                nextLineId: 1,
+                stationSpawnAt: 18,
+                upgradeAt: 25,
+                tickerUntil: 0,
+                panelRefreshTimer: 0
+            };
+
+            class Station {
+                constructor(x, y, type) {
+                    this.id = game.nextStationId++;
+                    this.x = x;
+                    this.y = y;
+                    this.type = type;
+                    this.queue = [];
+                    this.spawnTimer = rand(2.1, 4.5);
+                    this.overload = 0;
+                    this.pulse = Math.random() * Math.PI * 2;
+                }
+            }
+
+            class Line {
+                constructor(stationIds, color) {
+                    this.id = game.nextLineId++;
+                    this.stationIds = [...stationIds];
+                    this.color = color;
+                    this.trains = [];
+                    this.name = 'L-' + this.id;
+                }
+            }
+
+            class Train {
+                constructor(line, forward = true) {
+                    this.lineId = line.id;
+                    this.segment = 0;
+                    this.t = 0;
+                    this.dir = forward ? 1 : -1;
+                    this.speed = 84;
+                    this.capacity = 6;
+                    this.passengers = [];
+                    this.waitTimer = 0;
+                }
+            }
+
+            function rand(min, max) {
+                return min + Math.random() * (max - min);
+            }
+
+            function randInt(min, max) {
+                return Math.floor(rand(min, max + 1));
+            }
+
+            function formatTime(sec) {
+                const m = Math.floor(sec / 60).toString().padStart(2, '0');
+                const s = Math.floor(sec % 60).toString().padStart(2, '0');
+                return m + ':' + s;
+            }
+
+            function setTicker(text, duration = 3.3) {
+                ui.ticker.textContent = text;
+                game.tickerUntil = game.time + duration;
+            }
+
+            function getStationById(id) {
+                return game.stations.find(s => s.id === id) || null;
+            }
+
+            function getLineById(id) {
+                return game.lines.find(l => l.id === id) || null;
+            }
+
+            function stationTypeOnLine(line, type) {
+                for (const sid of line.stationIds) {
+                    const st = getStationById(sid);
+                    if (st && st.type === type) return true;
+                }
+                return false;
+            }
+
+            function initializeGame() {
+                game.running = false;
+                game.paused = false;
+                game.over = false;
+                game.speed = 1;
+                game.time = 0;
+                game.score = 0;
+                game.delivered = 0;
+                game.lineResource = 3;
+                game.trainResource = 3;
+                game.stations = [];
+                game.lines = [];
+                game.selectedLineId = null;
+                game.buildMode = false;
+                game.draftRoute = [];
+                game.draftMouse = null;
+                game.nextStationId = 1;
+                game.nextLineId = 1;
+                game.stationSpawnAt = 18;
+                game.upgradeAt = 25;
+                game.tickerUntil = 0;
+                game.panelRefreshTimer = 0;
+
+                const seedStations = 6;
+                for (let i = 0; i < seedStations; i++) {
+                    addRandomStation(i < 4 ? stationTypes[i] : stationTypes[randInt(0, stationTypes.length - 1)]);
+                }
+
+                ui.speedBtn.textContent = 'x1';
+                ui.pauseBtn.textContent = 'Pause';
+                ui.gameOverOverlay.classList.add('hidden');
+                ui.startOverlay.classList.remove('hidden');
+                renderLineList();
+                syncUI();
+            }
+
+            function addRandomStation(forceType = null) {
+                const margin = 54;
+                let x;
+                let y;
+                let attempts = 0;
+                while (attempts < 120) {
+                    x = rand(margin, canvas.width - margin);
+                    y = rand(margin, canvas.height - margin);
+                    let valid = true;
+                    for (const st of game.stations) {
+                        const d = Math.hypot(st.x - x, st.y - y);
+                        if (d < 95) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    if (valid) break;
+                    attempts++;
+                }
+                const type = forceType || stationTypes[randInt(0, stationTypes.length - 1)];
+                game.stations.push(new Station(x, y, type));
+            }
+
+            function spawnPassenger(station) {
+                if (station.queue.length >= 10) return;
+                const options = stationTypes.filter(t => t !== station.type);
+                const target = options[randInt(0, options.length - 1)];
+                station.queue.push({ target, wait: 0 });
+            }
+
+            function createLineFromDraft() {
+                if (!game.buildMode) return;
+                if (game.draftRoute.length < 2) {
+                    setTicker('Minimal 2 stasiun untuk membuat jalur.', 2.5);
+                    return;
+                }
+                if (game.lineResource <= 0) {
+                    setTicker('Resource jalur habis. Tunggu bonus mingguan.', 3);
+                    return;
+                }
+
+                const color = linePalette[(game.nextLineId - 1) % linePalette.length];
+                const line = new Line(game.draftRoute, color);
+                game.lines.push(line);
+                game.lineResource--;
+
+                if (game.trainResource > 0) {
+                    line.trains.push(new Train(line));
+                    game.trainResource--;
+                }
+
+                game.selectedLineId = line.id;
+                game.buildMode = false;
+                game.draftRoute = [];
+                game.draftMouse = null;
+                setTicker('Jalur ' + line.name + ' aktif.', 2.4);
+                renderLineList();
+                syncUI();
+                beep(760, 0.05, 'triangle', 0.045);
+                beep(920, 0.06, 'sine', 0.04);
+            }
+
+            function cancelDraft() {
+                game.buildMode = false;
+                game.draftRoute = [];
+                game.draftMouse = null;
+                setTicker('Pembangunan jalur dibatalkan.', 2.2);
+            }
+
+            function addTrainToSelected() {
+                const line = getLineById(game.selectedLineId);
+                if (!line) {
+                    setTicker('Pilih jalur pada panel kanan dulu.', 2.5);
+                    return;
+                }
+                if (game.trainResource <= 0) {
+                    setTicker('Tidak ada kereta cadangan.', 2.5);
+                    return;
+                }
+                if (line.stationIds.length < 2) {
+                    setTicker('Jalur terlalu pendek untuk kereta tambahan.', 2.2);
+                    return;
+                }
+                const forward = line.trains.length % 2 === 0;
+                line.trains.push(new Train(line, forward));
+                game.trainResource--;
+                setTicker('Kereta baru ditambahkan ke ' + line.name + '.', 2.2);
+                renderLineList();
+                syncUI();
+                beep(640, 0.05, 'triangle', 0.045);
+            }
+
+            function applyWeeklyUpgrade() {
+                const gainLine = Math.random() < 0.55;
+                if (gainLine) {
+                    game.lineResource += 1;
+                    setTicker('Bonus mingguan: +1 jalur tersedia.', 3.2);
+                } else {
+                    game.trainResource += 1;
+                    setTicker('Bonus mingguan: +1 kereta tersedia.', 3.2);
+                }
+                beep(880, 0.06, 'sine', 0.04);
+                beep(1120, 0.08, 'triangle', 0.03);
+            }
+
+            function updateStations(dt) {
+                for (const st of game.stations) {
+                    st.spawnTimer -= dt;
+                    if (st.spawnTimer <= 0) {
+                        spawnPassenger(st);
+                        st.spawnTimer = rand(2.1, 4.7) + Math.max(0, game.stations.length - 8) * 0.12;
+                    }
+
+                    for (const p of st.queue) {
+                        p.wait += dt;
+                    }
+
+                    const pressure = Math.max(0, st.queue.length - 6);
+                    if (pressure > 0) {
+                        st.overload += dt * (0.12 + pressure * 0.07);
+                    } else {
+                        st.overload -= dt * 0.22;
+                    }
+                    st.overload = Math.min(1, Math.max(0, st.overload));
+
+                    if (st.overload >= 1) {
+                        triggerGameOver('Stasiun terlalu penuh dan jaringan berhenti beroperasi.');
+                        return;
+                    }
+                }
+            }
+
+            function stationAtLineIndex(line, idx) {
+                const sid = line.stationIds[idx];
+                return getStationById(sid);
+            }
+
+            function trainCurrentSegment(line, train) {
+                let fromIndex = train.segment;
+                let toIndex = train.segment + train.dir;
+
+                if (toIndex < 0 || toIndex >= line.stationIds.length) {
+                    train.dir *= -1;
+                    toIndex = train.segment + train.dir;
+                }
+
+                return {
+                    fromIndex: train.segment,
+                    toIndex
+                };
+            }
+
+            function processStationStop(train, station, line) {
+                let deliveredNow = 0;
+                train.passengers = train.passengers.filter(p => {
+                    if (p.target === station.type) {
+                        deliveredNow++;
+                        return false;
+                    }
+                    return true;
+                });
+
+                if (deliveredNow > 0) {
+                    game.delivered += deliveredNow;
+                    game.score += deliveredNow * 12;
+                    beep(960, 0.04, 'sine', 0.035);
+                }
+
+                if (station.queue.length > 0 && train.passengers.length < train.capacity) {
+                    const remaining = [];
+                    for (const passenger of station.queue) {
+                        if (
+                            train.passengers.length < train.capacity &&
+                            stationTypeOnLine(line, passenger.target)
+                        ) {
+                            train.passengers.push({ target: passenger.target });
+                        } else {
+                            remaining.push(passenger);
+                        }
+                    }
+                    station.queue = remaining;
+                }
+
+                train.waitTimer = 0.4;
+            }
+
+            function updateTrains(dt) {
+                for (const line of game.lines) {
+                    if (line.stationIds.length < 2) continue;
+                    for (const train of line.trains) {
+                        if (train.waitTimer > 0) {
+                            train.waitTimer -= dt;
+                            continue;
+                        }
+
+                        const seg = trainCurrentSegment(line, train);
+                        const a = stationAtLineIndex(line, seg.fromIndex);
+                        const b = stationAtLineIndex(line, seg.toIndex);
+                        if (!a || !b) continue;
+                        const distance = Math.hypot(b.x - a.x, b.y - a.y);
+                        if (distance < 1) continue;
+
+                        train.t += (train.speed * dt) / distance;
+                        if (train.t >= 1) {
+                            train.segment = seg.toIndex;
+                            train.t = 0;
+                            processStationStop(train, b, line);
+                        }
+                    }
+                }
+            }
+
+            function updateWorld(dt) {
+                if (!game.running || game.paused || game.over) return;
+
+                const delta = dt * game.speed;
+                game.time += delta;
+
+                if (game.time >= game.stationSpawnAt && game.stations.length < 16) {
+                    addRandomStation();
+                    game.stationSpawnAt += rand(16, 25);
+                    setTicker('Kota berkembang. Stasiun baru muncul.', 2.6);
+                    beep(520, 0.04, 'triangle', 0.04);
+                }
+
+                if (game.time >= game.upgradeAt) {
+                    applyWeeklyUpgrade();
+                    game.upgradeAt += 28;
+                }
+
+                updateStations(delta);
+                updateTrains(delta);
+
+                game.panelRefreshTimer += delta;
+                if (game.panelRefreshTimer >= 0.35) {
+                    renderLineList();
+                    game.panelRefreshTimer = 0;
+                }
+
+                if (game.time > game.tickerUntil) {
+                    const avgWait = averageWaitTime();
+                    ui.ticker.textContent = 'Avg wait: ' + avgWait.toFixed(1) + 's | Penumpang di stasiun: ' + queuedPassengers();
+                }
+
+                syncUI();
+            }
+
+            function averageWaitTime() {
+                let sum = 0;
+                let count = 0;
+                for (const st of game.stations) {
+                    for (const p of st.queue) {
+                        sum += p.wait;
+                        count++;
+                    }
+                }
+                return count ? sum / count : 0;
+            }
+
+            function queuedPassengers() {
+                let n = 0;
+                for (const st of game.stations) n += st.queue.length;
+                return n;
+            }
+
+            function drawShape(type, x, y, r, fill = false) {
+                ctx.beginPath();
+                if (type === 'circle') {
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                } else if (type === 'square') {
+                    ctx.rect(x - r, y - r, r * 2, r * 2);
+                } else if (type === 'triangle') {
+                    ctx.moveTo(x, y - r - 1);
+                    ctx.lineTo(x - r, y + r);
+                    ctx.lineTo(x + r, y + r);
+                    ctx.closePath();
+                } else {
+                    ctx.moveTo(x, y - r - 2);
+                    ctx.lineTo(x - r - 1, y);
+                    ctx.lineTo(x, y + r + 2);
+                    ctx.lineTo(x + r + 1, y);
+                    ctx.closePath();
+                }
+
+                if (fill) ctx.fill();
+                else ctx.stroke();
+            }
+
+            function drawGrid() {
+                ctx.save();
+                ctx.globalAlpha = 0.06;
+                ctx.strokeStyle = '#8cb1ff';
+                ctx.lineWidth = 1;
+                const step = 62;
+                for (let x = 0; x <= canvas.width; x += step) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                for (let y = 0; y <= canvas.height; y += step) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            function drawLines() {
+                for (const line of game.lines) {
+                    if (line.stationIds.length < 2) continue;
+
+                    ctx.strokeStyle = line.color;
+                    ctx.lineWidth = 8;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.beginPath();
+
+                    const first = getStationById(line.stationIds[0]);
+                    ctx.moveTo(first.x, first.y);
+                    for (let i = 1; i < line.stationIds.length; i++) {
+                        const st = getStationById(line.stationIds[i]);
+                        if (!st) continue;
+                        ctx.lineTo(st.x, st.y);
+                    }
+                    ctx.stroke();
+
+                    if (game.selectedLineId === line.id) {
+                        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+                        ctx.lineWidth = 2.5;
+                        ctx.stroke();
+                    }
+
+                    for (const train of line.trains) {
+                        const seg = trainCurrentSegment(line, train);
+                        const a = stationAtLineIndex(line, seg.fromIndex);
+                        const b = stationAtLineIndex(line, seg.toIndex);
+                        if (!a || !b) continue;
+                        const tx = a.x + (b.x - a.x) * train.t;
+                        const ty = a.y + (b.y - a.y) * train.t;
+
+                        ctx.save();
+                        ctx.translate(tx, ty);
+                        ctx.rotate(Math.atan2(b.y - a.y, b.x - a.x));
+
+                        ctx.fillStyle = '#fff';
+                        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+                        ctx.lineWidth = 1.2;
+                        roundRect(-12, -7, 24, 14, 5);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        if (train.passengers.length > 0) {
+                            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                            ctx.font = '10px JetBrains Mono';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(train.passengers.length.toString(), 0, 3);
+                        }
+                        ctx.restore();
+                    }
+                }
+
+                if (game.buildMode && game.draftRoute.length > 0) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.82)';
+                    ctx.lineWidth = 4;
+                    ctx.setLineDash([8, 8]);
+                    ctx.beginPath();
+                    const first = getStationById(game.draftRoute[0]);
+                    ctx.moveTo(first.x, first.y);
+                    for (let i = 1; i < game.draftRoute.length; i++) {
+                        const st = getStationById(game.draftRoute[i]);
+                        ctx.lineTo(st.x, st.y);
+                    }
+                    if (game.draftMouse) {
+                        ctx.lineTo(game.draftMouse.x, game.draftMouse.y);
+                    }
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            function roundRect(x, y, w, h, r) {
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.arcTo(x + w, y, x + w, y + h, r);
+                ctx.arcTo(x + w, y + h, x, y + h, r);
+                ctx.arcTo(x, y + h, x, y, r);
+                ctx.arcTo(x, y, x + w, y, r);
+                ctx.closePath();
+            }
+
+            function drawStationQueue(station) {
+                const maxIcons = 8;
+                const q = station.queue.slice(0, maxIcons);
+                for (let i = 0; i < q.length; i++) {
+                    const px = station.x - 22 + (i % 4) * 14;
+                    const py = station.y + 18 + Math.floor(i / 4) * 12;
+                    const p = q[i];
+                    ctx.strokeStyle = '#f4f8ff';
+                    ctx.lineWidth = 1.1;
+                    drawShape(p.target, px, py, 4, false);
+                }
+
+                if (station.queue.length > maxIcons) {
+                    ctx.fillStyle = '#f8fbff';
+                    ctx.font = '10px JetBrains Mono';
+                    ctx.fillText('+' + (station.queue.length - maxIcons), station.x + 14, station.y + 29);
+                }
+            }
+
+            function drawStations() {
+                for (const st of game.stations) {
+                    const wave = (Math.sin(game.time * 2 + st.pulse) + 1) * 0.5;
+
+                    ctx.fillStyle = 'rgba(19,32,63,0.9)';
+                    ctx.strokeStyle = '#f0f7ff';
+                    ctx.lineWidth = 3;
+                    drawShape(st.type, st.x, st.y, 13 + wave * 0.8, true);
+                    drawShape(st.type, st.x, st.y, 13 + wave * 0.8, false);
+
+                    if (st.overload > 0) {
+                        const barW = 42;
+                        const bx = st.x - barW / 2;
+                        const by = st.y - 28;
+                        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+                        roundRect(bx, by, barW, 6, 3);
+                        ctx.fill();
+                        ctx.fillStyle = st.overload > 0.72 ? '#ff4d6d' : '#ffbf47';
+                        roundRect(bx, by, barW * st.overload, 6, 3);
+                        ctx.fill();
+                    }
+
+                    drawStationQueue(st);
+                }
+            }
+
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawGrid();
+                drawLines();
+                drawStations();
+            }
+
+            function triggerGameOver(reason) {
+                game.over = true;
+                game.running = false;
+                ui.gameOverText.textContent = reason + ' | Skor akhir: ' + game.score;
+                ui.gameOverOverlay.classList.remove('hidden');
+                beep(240, 0.2, 'sawtooth', 0.05);
+                beep(180, 0.25, 'square', 0.04);
+            }
+
+            function syncUI() {
+                ui.score.textContent = game.score;
+                ui.time.textContent = formatTime(game.time);
+                ui.lineRes.textContent = game.lineResource;
+                ui.trainRes.textContent = game.trainResource;
+            }
+
+            function renderLineList() {
+                ui.lineList.innerHTML = '';
+                if (game.lines.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'line-item';
+                    empty.textContent = 'Belum ada jalur aktif.';
+                    ui.lineList.appendChild(empty);
+                    return;
+                }
+
+                for (const line of game.lines) {
+                    const item = document.createElement('div');
+                    item.className = 'line-item' + (game.selectedLineId === line.id ? ' active' : '');
+
+                    const head = document.createElement('div');
+                    head.className = 'line-head';
+                    const left = document.createElement('div');
+                    left.textContent = line.name;
+                    const right = document.createElement('div');
+                    right.textContent = line.stationIds.length + ' stasiun';
+                    head.append(left, right);
+
+                    const body = document.createElement('div');
+                    body.className = 'line-head';
+                    const swatchWrap = document.createElement('div');
+                    swatchWrap.style.display = 'flex';
+                    swatchWrap.style.alignItems = 'center';
+                    swatchWrap.style.gap = '7px';
+                    const sw = document.createElement('span');
+                    sw.className = 'swatch';
+                    sw.style.background = line.color;
+                    const tx = document.createElement('span');
+                    tx.textContent = 'Kereta: ' + line.trains.length;
+                    swatchWrap.append(sw, tx);
+
+                    const cap = document.createElement('span');
+                    let onboard = 0;
+                    for (const tr of line.trains) onboard += tr.passengers.length;
+                    cap.textContent = 'Onboard: ' + onboard;
+
+                    body.append(swatchWrap, cap);
+                    item.append(head, body);
+
+                    item.addEventListener('click', () => {
+                        game.selectedLineId = line.id;
+                        renderLineList();
+                    });
+
+                    ui.lineList.appendChild(item);
+                }
+            }
+
+            function canvasPointFromEvent(ev) {
+                const rect = canvas.getBoundingClientRect();
+                const x = ((ev.clientX - rect.left) / rect.width) * canvas.width;
+                const y = ((ev.clientY - rect.top) / rect.height) * canvas.height;
+                return { x, y };
+            }
+
+            function hitStation(point) {
+                for (let i = game.stations.length - 1; i >= 0; i--) {
+                    const st = game.stations[i];
+                    const d = Math.hypot(st.x - point.x, st.y - point.y);
+                    if (d <= 20) return st;
+                }
+                return null;
+            }
+
+            function onCanvasTap(ev) {
+                if (!game.running || game.over) return;
+                const point = canvasPointFromEvent(ev);
+                if (game.buildMode) {
+                    const st = hitStation(point);
+                    if (!st) return;
+                    const last = game.draftRoute[game.draftRoute.length - 1];
+                    if (last === st.id) return;
+                    if (game.draftRoute.includes(st.id)) {
+                        if (game.draftRoute.length > 2 && game.draftRoute[0] === st.id) {
+                            createLineFromDraft();
+                        }
+                        return;
+                    }
+                    game.draftRoute.push(st.id);
+                    beep(520 + game.draftRoute.length * 40, 0.03, 'sine', 0.03);
+                } else {
+                    const st = hitStation(point);
+                    if (!st) return;
+                    for (const line of game.lines) {
+                        if (line.stationIds.includes(st.id)) {
+                            game.selectedLineId = line.id;
+                            renderLineList();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            canvas.addEventListener('pointerdown', ev => {
+                ev.preventDefault();
+                onCanvasTap(ev);
+            });
+
+            canvas.addEventListener('pointermove', ev => {
+                if (!game.buildMode) return;
+                game.draftMouse = canvasPointFromEvent(ev);
+            });
+
+            canvas.addEventListener('pointerleave', () => {
+                game.draftMouse = null;
+            });
+
+            document.addEventListener('keydown', ev => {
+                if (ev.key === 'Escape') {
+                    cancelDraft();
+                }
+                if (ev.key.toLowerCase() === 'b') {
+                    startBuildMode();
+                }
+                if (ev.key === 'Enter') {
+                    createLineFromDraft();
+                }
+                if (ev.key === ' ') {
+                    ev.preventDefault();
+                    togglePause();
+                }
+            });
+
+            function startBuildMode() {
+                if (!game.running || game.over) return;
+                if (game.lineResource <= 0) {
+                    setTicker('Tidak ada resource jalur.', 2.4);
+                    return;
+                }
+                game.buildMode = true;
+                game.draftRoute = [];
+                setTicker('Mode bangun aktif. Klik stasiun untuk membuat rute.', 2.8);
+            }
+
+            function setSpeed() {
+                if (game.speed === 1) game.speed = 1.5;
+                else if (game.speed === 1.5) game.speed = 2;
+                else game.speed = 1;
+                ui.speedBtn.textContent = 'x' + game.speed;
+            }
+
+            function togglePause() {
+                if (!game.running || game.over) return;
+                game.paused = !game.paused;
+                ui.pauseBtn.textContent = game.paused ? 'Resume' : 'Pause';
+                setTicker(game.paused ? 'Simulasi dijeda.' : 'Simulasi lanjut.', 1.7);
+            }
+
+            function startRun() {
+                game.running = true;
+                game.paused = false;
+                ui.pauseBtn.textContent = 'Pause';
+                ui.startOverlay.classList.add('hidden');
+                setTicker('Selamat bermain. Pastikan tidak ada stasiun overload!', 3.4);
+            }
+
+            ui.buildBtn.addEventListener('click', startBuildMode);
+            ui.finishBtn.addEventListener('click', createLineFromDraft);
+            ui.cancelBtn.addEventListener('click', cancelDraft);
+            ui.addTrainBtn.addEventListener('click', addTrainToSelected);
+            ui.speedBtn.addEventListener('click', setSpeed);
+            ui.pauseBtn.addEventListener('click', togglePause);
+            ui.restartBtn.addEventListener('click', initializeGame);
+            ui.startBtn.addEventListener('click', startRun);
+            ui.retryBtn.addEventListener('click', initializeGame);
+
+            let audioCtx = null;
+            function beep(freq, dur, type = 'sine', volume = 0.03) {
+                if (!audioCtx) {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctx) return;
+                    audioCtx = new Ctx();
+                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + dur);
+            }
+
+            let lastTs = performance.now();
+            function tick(ts) {
+                const dt = Math.min(0.033, (ts - lastTs) / 1000);
+                lastTs = ts;
+                updateWorld(dt);
+                render();
+                requestAnimationFrame(tick);
+            }
+
+            initializeGame();
+            requestAnimationFrame(tick);
+        })();
+    </script>
+    <script src="sounds.js"></script>`r`n
+    <script src="mobile-touch.js"></script>
+</body>
+
+</html>
+

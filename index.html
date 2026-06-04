@@ -1,0 +1,2734 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        var errInfo = message + ' at ' + source + ':' + lineno + ':' + colno;
+        fetch('http://localhost:9999/log?err=' + encodeURIComponent(errInfo)).catch(function(){});
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+        fetch('http://localhost:9999/log?err=' + encodeURIComponent('Unhandled Rejection: ' + event.reason)).catch(function(){});
+    });
+    fetch('http://localhost:9999/log?err=' + encodeURIComponent('LOAD_SUCCESS')).catch(function(){});
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description"
+        content="ZI GAME - Koleksi game premium terbaik dalam satu portal. Mainkan berbagai genre seperti arcade, action, puzzle, dan menangkan skor tertinggi.">
+    <meta name="keywords"
+        content="ZI GAME, portal game, mini games, web games, arcade, puzzle, action games, HTML5 games">
+    <meta name="author" content="ZI Pilot">
+    <title>ZI GAME | Portal Game Kita</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="index-portal.css">
+    <link rel="stylesheet" href="sidebar.css">
+    <link rel="stylesheet" href="zi-final-polish.css">
+</head>
+
+<body>
+
+    <!-- Cursor -->
+    <div id="cur-dot"></div>
+    <div id="cur-ring"></div>
+
+    <!-- Scroll progress -->
+    <div id="progress"></div>
+
+    <!-- Backgrounds -->
+    <div class="bg-grid"></div>
+    <div class="orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="orb orb-4"></div>
+    </div>
+
+    <div class="daylight-scene" aria-hidden="true">
+        <div class="day-sun"></div>
+        <div class="day-rays"></div>
+        <div class="day-cloud cloud-back"></div>
+        <div class="day-cloud cloud-mid"></div>
+        <div class="day-cloud cloud-front"></div>
+        <div class="day-flyer bird bird-a"></div>
+        <div class="day-flyer bird bird-b"></div>
+        <div class="day-flyer glider glider-a"></div>
+        <div class="day-flyer plane plane-a"></div>
+        <div class="day-flyer plane plane-b"></div>
+        <div class="day-landscape">
+            <div class="mountain-range mountain-far"></div>
+            <div class="mountain-range mountain-near"></div>
+            <div class="land-haze"></div>
+            <div class="grassland"></div>
+            <div class="paddy-path"></div>
+            <div class="tree-cluster tree-left"></div>
+            <div class="tree-cluster tree-right"></div>
+            <div class="field-hut"></div>
+            <div class="rice-fields">
+                <span class="rice-step step-1"></span>
+                <span class="rice-step step-2"></span>
+                <span class="rice-step step-3"></span>
+                <span class="rice-step step-4"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dark-cosmos" aria-hidden="true">
+        <div class="night-moon"></div>
+        <div class="aurora-ribbon aurora-a"></div>
+        <div class="aurora-ribbon aurora-b"></div>
+        <div class="nebula-band"></div>
+        <div class="constellation-layer"></div>
+        <div class="meteor-shower meteor-a"></div>
+        <div class="meteor-shower meteor-b"></div>
+        <div class="night-landscape">
+            <div class="night-mountain night-mountain-far"></div>
+            <div class="night-mountain night-mountain-mid"></div>
+            <div class="night-mountain night-mountain-near"></div>
+            <div class="night-mist"></div>
+            <div class="night-lake"></div>
+            <div class="night-hill"></div>
+            <div class="night-cabin"></div>
+            <div class="night-pines pines-left"></div>
+            <div class="night-pines pines-right"></div>
+        </div>
+        <div class="cosmic-vignette"></div>
+        <div class="night-horizon"></div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <!-- Planets -->
+    <div class="planet planet-saturn"></div>
+    <div class="planet planet-neptune"></div>
+    <div class="planet planet-mini"></div>
+    <div class="planet planet-mars"></div>
+
+    <!-- NAV -->
+    <nav>
+        <div class="nav-inner">
+            <div class="nav-logo">ZI <span>GAME</span></div>
+            <div class="nav-pills">
+                <button class="nav-pill active" data-filter="all">Semua</button>
+                <button class="nav-pill" data-filter="arcade">Arcade</button>
+                <button class="nav-pill" data-filter="puzzle">Puzzle</button>
+                <button class="nav-pill" data-filter="action">Action</button>
+                <button class="nav-pill" data-filter="strategy">Strategy</button>
+                <button class="nav-pill" data-filter="rhythm">Rhythm</button>
+                <button class="nav-pill" data-filter="platformer">Platformer</button>
+                <button class="nav-pill" data-filter="simulation">Simulation</button>
+            </div>
+            <div class="nav-right">
+                <span class="live-badge"><span class="live-dot"></span> 9,416 Online</span>
+                <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle tema terang/gelap"
+                    title="Toggle tema">&#9728;&#65039;</button>
+            </div>
+        </div>
+    </nav>
+
+    <button id="sideToggle" class="side-toggle" aria-label="Toggle sidebar">&#9776;</button>
+    <aside id="portalSidebar" class="portal-sidebar" aria-label="Sidebar navigasi">
+        <div class="side-top">
+            <span class="side-brand">ZI <span>GAME</span></span>
+            <button id="sideCollapseBtn" class="side-collapse" aria-label="Collapse sidebar">&#10005;</button>
+        </div>
+
+        <div class="side-profile">
+            <div class="side-avatar-wrap">
+                <span class="side-avatar">GP</span>
+                <span class="side-status-dot"></span>
+            </div>
+            <div class="side-profile-meta">
+                <span class="side-player" id="xpLabel">Neon Pilot</span>
+                <div class="side-level-row">
+                    <span class="side-lv" id="sideLevelText">LV 1</span>
+                    <div class="side-xp-bar">
+                        <div class="side-xp-fill" id="xpFill" style="width:45%"></div>
+                    </div>
+                </div>
+                <div class="side-profile-sub" style="display:flex; justify-content:space-between; font-size:10px; color:rgba(255,255,255,0.4); margin-top:2px; font-family:'JetBrains Mono', monospace;">
+                    <span id="xpText">0 / 120 XP</span>
+                    <span id="streakBadge">Streak 1 hari</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-nav-group side-search-group">
+            <p class="side-title">Cari cepat</p>
+            <div class="side-search-box">
+                <svg class="side-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input id="sideQuickSearch" class="side-input has-icon" type="text" placeholder="Cari menu sidebar...">
+                <kbd class="side-search-kbd">⌘K</kbd>
+            </div>
+        </div>
+
+        <div class="side-nav-group side-stats-grid" id="sideStatsGrid">
+            <p class="side-title">Statistik</p>
+            <div class="side-stats-wrap">
+                <div class="side-stat">
+                    <div class="side-stat-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg></div>
+                    <div class="side-stat-info"><span class="k">VISIBLE</span><span id="sideVisibleCount"
+                            class="v">0</span></div>
+                </div>
+                <div class="side-stat">
+                    <div class="side-stat-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+                            </polygon>
+                        </svg></div>
+                    <div class="side-stat-info"><span class="k">FAVORITES</span><span id="sideFavCount"
+                            class="v">0</span></div>
+                </div>
+                <div class="side-stat">
+                    <div class="side-stat-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg></div>
+                    <div class="side-stat-info"><span class="k">RECENT</span><span id="sideRecentCount"
+                            class="v">0</span></div>
+                </div>
+                <div class="side-stat">
+                    <div class="side-stat-icon clock-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 22h14"></path>
+                            <path d="M5 2h14"></path>
+                            <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22">
+                            </path>
+                            <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"></path>
+                        </svg></div>
+                    <div class="side-stat-info"><span class="k">CLOCK</span><span id="sideClock" class="v">00<span
+                                class="blink">:</span>00</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-nav-group" data-group="sections">
+            <p class="side-title">Sections <button class="side-title-btn" data-group-toggle="sections"
+                    type="button">-</button></p>
+            <a href="#homeSection" class="side-link" data-target="homeSection"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></span><span
+                    class="txt">Home</span></a>
+            <a href="profile.html" class="side-link"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span><span
+                    class="txt">Halaman Profil</span></a>
+            <a href="#profileSection" class="side-link" data-target="profileSection"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6"></path><path d="M18 20V10"></path><path d="M6 20v-3"></path><path d="M18 4v2"></path><path d="M6 10v2"></path><path d="M12 4v6"></path></svg></span><span
+                    class="txt">Dashboard</span></a>
+            <a href="settings.html" class="side-link"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.4 1.08V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 8.6 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1.08-.4H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 8.6a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-.6A1.65 1.65 0 0 0 10.4 2.92V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15.4 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.35.15.65.36.9.62.26.25.47.55.62.9H21a2 2 0 1 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15z"></path></svg></span><span
+                    class="txt">Pengaturan</span></a>
+            <a href="#librarySection" class="side-link" data-target="librarySection"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span><span
+                    class="txt">Library</span></a>
+            <a href="#recentSection" class="side-link" data-target="recentSection"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><span
+                    class="txt">Recent</span></a>
+        </div>
+
+        <div class="side-nav-group" data-group="quick">
+            <p class="side-title">Quick Actions <button class="side-title-btn" data-group-toggle="quick"
+                    type="button">-</button></p>
+            <a href="#" class="side-cta" data-action="random"><span class="ico"><svg viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <circle cx="15.5" cy="15.5" r="1.5"></circle>
+                        <circle cx="15.5" cy="8.5" r="1.5"></circle>
+                        <circle cx="8.5" cy="15.5" r="1.5"></circle>
+                        <circle cx="12" cy="12" r="1.5"></circle>
+                    </svg></span><span class="txt">Play Random Game</span></a>
+            <a href="#" class="side-link" data-action="command"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"></path></svg></span><span class="txt">Command
+                    Center</span></a>
+            <a href="#" class="side-link" data-action="top"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg></span><span class="txt">Back to
+                    Top</span></a>
+            <a href="#" class="side-link" data-action="random-fav"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg></span><span class="txt">Random
+                    Favorite</span></a>
+            <a href="#" class="side-link" data-action="focus-search"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span><span class="txt">Focus
+                    Search</span></a>
+        </div>
+
+        <div class="side-nav-group" data-group="categories">
+            <p class="side-title">Categories <button class="side-title-btn" data-group-toggle="categories"
+                    type="button">-</button></p>
+            <div class="side-cat-list" id="sideCategoryFilters">
+                <button class="side-cat-btn active" data-cat="all">🎮 All</button>
+                <button class="side-cat-btn" data-cat="arcade">👾 Arcade</button>
+                <button class="side-cat-btn" data-cat="puzzle">🧩 Puzzle</button>
+                <button class="side-cat-btn" data-cat="action">⚔️ Action</button>
+                <button class="side-cat-btn" data-cat="strategy">♟️ Strategy</button>
+                <button class="side-cat-btn" data-cat="rhythm">🎵 Rhythm</button>
+                <button class="side-cat-btn" data-cat="platformer">🏃 Platformer</button>
+                <button class="side-cat-btn" data-cat="simulation">🔧 Simulation</button>
+            </div>
+        </div>
+
+        <div class="side-nav-group" data-group="session">
+            <p class="side-title">Session <button class="side-title-btn" data-group-toggle="session"
+                    type="button">-</button></p>
+            <div class="side-session-info">
+                <div class="side-session-row"><span>⏱️ Session Time</span><span id="sideSessionTimer"
+                        class="side-session-val">00:00</span></div>
+                <div class="side-session-row"><span>🎯 Games Played</span><span id="sideGamesPlayed"
+                        class="side-session-val">0</span></div>
+                <div class="side-session-row"><span>⚡ XP Earned</span><span id="sideXPEarned"
+                        class="side-session-val">0</span></div>
+            </div>
+        </div>
+
+        <div class="side-nav-group" data-group="shortcuts">
+            <p class="side-title">Pintasan <button class="side-title-btn" data-group-toggle="shortcuts"
+                    type="button">-</button></p>
+            <div class="side-chip-list" id="sideFavShortcuts"></div>
+            <div class="side-chip-list" id="sideRecentShortcuts"></div>
+        </div>
+
+        <div class="side-nav-group" data-group="tools">
+            <p class="side-title">Tampilan <button class="side-title-btn" data-group-toggle="tools"
+                    type="button">-</button></p>
+            <div class="side-controls">
+                <label class="side-row">Tema
+                    <button id="sideThemeToggle" class="side-mini-btn" type="button"
+                        style="min-width:72px;font-size:12px">&#9728;&#65039; Light</button>
+                </label>
+                <label class="side-row">Accent
+                    <select id="sideAccent" class="side-input side-select">
+                        <option value="violet">Violet</option>
+                        <option value="teal">Teal</option>
+                        <option value="sunset">Sunset</option>
+                    </select>
+                </label>
+                <label class="side-row light-only-row">Weather Mood
+                    <select id="sideLightMood" class="side-input side-select">
+                        <option value="sunny">Sunny</option>
+                        <option value="breezy">Breezy</option>
+                        <option value="golden">Golden Hour</option>
+                    </select>
+                </label>
+                <label class="side-row">Opacity
+                    <input id="sideOpacity" class="side-range" type="range" min="0.7" max="1" step="0.05" value="1">
+                </label>
+                <div class="side-switches">
+                    <label class="side-toggle-label">Auto-hide scroll
+                        <input id="sideAutoHide" type="checkbox">
+                        <div class="side-toggle-switch"></div>
+                    </label>
+                    <label class="side-toggle-label">Pin sidebar
+                        <input id="sidePin" type="checkbox">
+                        <div class="side-toggle-switch"></div>
+                    </label>
+                    <label class="side-toggle-label">Compact mode
+                        <input id="sideCompact" type="checkbox">
+                        <div class="side-toggle-switch"></div>
+                    </label>
+                    <label class="side-toggle-label">Focus mode
+                        <input id="sideFocus" type="checkbox">
+                        <div class="side-toggle-switch"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-nav-group" data-group="notes">
+            <p class="side-title">Quick Notes <button class="side-title-btn" data-group-toggle="notes"
+                    type="button">-</button></p>
+            <textarea id="sideNotes" class="side-input side-notes" rows="3" placeholder="Catatan cepat..."></textarea>
+            <div class="side-tools-row">
+                <button id="sideClearNotes" class="side-mini-btn" type="button">Clear Notes</button>
+                <button id="sideCollapseAll" class="side-mini-btn" type="button">Collapse All</button>
+            </div>
+        </div>
+
+        <div class="side-nav-group" data-group="notif">
+            <p class="side-title">Activity Log <button class="side-title-btn" data-group-toggle="notif"
+                    type="button">-</button></p>
+            <div id="sideNotifList" class="side-notif-list"></div>
+            <div class="side-tools-row">
+                <button id="sideClearNotif" class="side-mini-btn" type="button">Clear Log</button>
+                <button id="sideResetPrefs" class="side-mini-btn" type="button">Reset Sidebar</button>
+            </div>
+        </div>
+
+        <div class="side-nav-group" data-group="keys">
+            <p class="side-title">Keyboard Shortcuts <button class="side-title-btn" data-group-toggle="keys"
+                    type="button">-</button></p>
+            <div class="side-keys-list">
+                <div class="side-key-row"><kbd>/</kbd><span>Search</span></div>
+                <div class="side-key-row"><kbd>R</kbd><span>Random Game</span></div>
+                <div class="side-key-row"><kbd>Ctrl+K</kbd><span>Command Center</span></div>
+                <div class="side-key-row"><kbd>Alt+S</kbd><span>Sidebar Search</span></div>
+                <div class="side-key-row"><kbd>Esc</kbd><span>Close Panels</span></div>
+            </div>
+        </div>
+
+        <div class="side-foot">ZI GAME &mdash; v2.0</div>
+    </aside>
+    <div id="sideOverlay" class="side-overlay"></div>
+
+    <div class="wrap">
+
+        <!-- HERO -->
+        <header class="hero" id="homeSection">
+            <h1 class="hero-title">
+                <span class="title-line1">ZI</span>
+                <span class="title-line2">GAME</span>
+            </h1>
+            <p class="hero-desc">Koleksi game premium dalam satu portal elegan. Buka, mainkan, dan taklukkan skormu.</p>
+            
+            <div class="hero-insights">
+                <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> <strong id="gameCount">0</strong> Games</span>
+                <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> <strong id="visibleCount">0</strong> Visible</span>
+                <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> <strong id="heroFavCount">0</strong> Favs</span>
+                <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Session: <strong id="heroSessionCount">00:00</strong></span>
+            </div>
+
+            <!-- Unified Console Panel -->
+            <div class="console-panel">
+                <div class="console-search-wrap">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="searchInput" class="search-bar" placeholder="Cari game favoritmu...">
+                    <button id="clearSearchBtn" class="search-clear" type="button" aria-label="Bersihkan pencarian">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="console-actions">
+                    <div class="console-sort-wrap">
+                        <span class="sort-icon">⇅</span>
+                        <select id="sortSelect" class="console-select" title="Urutan Game">
+                            <option value="featured">Pilihan Editor</option>
+                            <option value="popular">Paling Rame</option>
+                            <option value="az">Nama A-Z</option>
+                        </select>
+                    </div>
+
+                    <button id="favOnlyBtn" class="console-btn" title="Tampilkan Favorit Saja" aria-label="Favorit">
+                        <span class="fav-icon">⭐</span>
+                        <span id="favCountBadge" class="fav-badge">0</span>
+                    </button>
+
+                    <button id="randomBtn" class="console-btn" title="Mainkan Game Acak" aria-label="Game Acak">
+                        🎲
+                    </button>
+
+                    <button id="cmdBtn" class="console-btn" title="Buka Command Center" aria-label="Terminal">
+                        ⌨️
+                    </button>
+
+                    <div class="dropdown-wrap" id="prefsDropdownWrap">
+                        <button id="prefsToggleBtn" class="console-btn" title="Pengaturan Tampilan" aria-label="Pengaturan Tampilan" type="button">
+                            ⚙️
+                        </button>
+                        <div class="dropdown-menu" id="prefsDropdownMenu" aria-label="Menu Tampilan">
+                            <div class="dropdown-title">Tampilan & Motion</div>
+                            <button id="viewToggleBtn" class="dropdown-item" type="button">View: Grid</button>
+                            <button id="densityToggleBtn" class="dropdown-item" type="button">Density: Cozy</button>
+                            <button id="motionToggleBtn" class="dropdown-item" type="button">Motion: On</button>
+                            <div class="dropdown-divider"></div>
+                            <button id="resetFiltersBtn" class="dropdown-item danger" type="button">🔄 Reset Filter</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Minimal Recommended Search Tags -->
+            <div class="trending-chips" id="quickChips">
+                <span class="trending-label">Rekomendasi:</span>
+                <button data-query="Dash" class="trend-tag">Geometry Dash</button>
+                <button data-query="Pixel" class="trend-tag">Pixel Art</button>
+                <button data-query="Action" class="trend-tag">Action</button>
+                <button data-query="Classic" class="trend-tag">Klasik</button>
+                <button data-query="Puzzle" class="trend-tag">Tebak Kata</button>
+                <button data-query="Neon" class="trend-tag">Neon</button>
+            </div>
+        </header>
+
+        <!-- LIBRARY SECTION -->
+        <section class="library-section" id="librarySection">
+            <!-- Spotlight Panel -->
+            <div class="spotlight-panel" id="spotlightPanel">
+                <div>
+                    <div class="spotlight-kicker">SPOTLIGHT</div>
+                    <h3 id="spotlightTitle">Loading...</h3>
+                    <p id="spotlightDesc">Rekomendasi game terpopuler saat ini.</p>
+                </div>
+                <a href="#" id="spotlightPlay" class="spotlight-play">Main Sekarang <span class="arr">→</span></a>
+            </div>
+
+            <!-- GAME GRID -->
+            <div class="game-grid" id="gameContainer">
+
+            <!-- FEATURED: Hyper Light Drifter -->
+            <div class="game-card featured" data-category="action" data-title="hyper light drifter action rpg">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="featured-left">
+                        <div class="feat-meta-row">
+                            <span class="card-tag tag-action">Action RPG</span>
+                            <span class="feat-badge">⚡ Pilihan Editor</span>
+                        </div>
+                        <h2 class="card-title">Hyper Light Drifter</h2>
+                        <p class="card-desc">Action RPG neon-pixel paling intens di portal ZI GAME. Pilih kelas,
+                            hadapi gelombang musuh brutal, kalahkan boss kosmik, dan kumpulkan Bitcoin sampai
+                            kemenangan total.</p>
+                        <div class="card-foot">
+                            <span class="card-players"><span class="pdot"></span> 2,876 aktif</span>
+                            <a href="hyperlightdrifter.html" class="play-btn">Main Sekarang <span
+                                    class="arr">→</span></a>
+                        </div>
+                    </div>
+                    <div class="featured-right">
+                        <div class="feat-icon">⚔️</div>
+                        <div class="card-stars">★★★★★</div>
+                        <span class="feat-badge"
+                            style="background:linear-gradient(135deg,var(--c3),var(--c1));font-size:9px">TOP
+                            RATED</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Neon Dash -->
+            <div class="game-card" data-category="arcade" data-title="neon dash geometry dash">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🟥</div>
+                        <div class="card-meta"><span class="card-tag tag-arcade">Arcade</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Neon Dash</h2>
+                    <p class="card-desc">Lompati rintangan tajam dengan kecepatan tinggi sambil mengikuti irama neon.
+                    </p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 2,045 aktif</span>
+                        <a href="geometry.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tic Tac Toe -->
+            <div class="game-card" data-category="strategy" data-title="tic tac toe">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">❌</div>
+                        <div class="card-meta"><span class="card-tag tag-strategy">Strategy</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Tic Tac Toe</h2>
+                    <p class="card-desc">Adu taktik silang dan bulat. Klasik yang tak lekang oleh waktu.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 842 aktif</span>
+                        <a href="tictactoe.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Neon Pong -->
+            <div class="game-card" data-category="arcade" data-title="neon pong">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🏓</div>
+                        <div class="card-meta"><span class="card-tag tag-arcade">Arcade</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Neon Pong</h2>
+                    <p class="card-desc">Adu pantul bola dengan kecepatan kilat. Jangan sampai kebobolan!</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 619 aktif</span>
+                        <a href="pong.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memory Match -->
+            <div class="game-card" data-category="puzzle" data-title="memory match">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🧠</div>
+                        <div class="card-meta"><span class="card-tag tag-puzzle">Puzzle</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Memory Match</h2>
+                    <p class="card-desc">Fokus dan uji ingatanmu untuk menemukan pasangan kartu tersembunyi.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 473 aktif</span>
+                        <a href="memory.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Space Shooter -->
+            <div class="game-card" data-category="action" data-title="space shooter">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🚀</div>
+                        <div class="card-meta"><span class="card-tag tag-action">Action</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Space Shooter</h2>
+                    <p class="card-desc">Kendalikan pesawatmu dan selamatkan galaksi dari serangan alien.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 1,087 aktif</span>
+                        <a href="spaceshooter.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dino Run -->
+            <div class="game-card" data-category="arcade" data-title="dino run">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🦖</div>
+                        <div class="card-meta"><span class="card-tag tag-arcade">Arcade</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Dino Run</h2>
+                    <p class="card-desc">Lompati kaktus dan hindari rintangan dalam lari tanpa akhir.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 931 aktif</span>
+                        <a href="dinorun.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tetris -->
+            <div class="game-card" data-category="puzzle" data-title="tetris drop">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🧱</div>
+                        <div class="card-meta"><span class="card-tag tag-puzzle">Puzzle</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Tetris Drop</h2>
+                    <p class="card-desc">Susun balok yang jatuh dengan rapi untuk menghancurkan baris demi baris.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 755 aktif</span>
+                        <a href="tetris.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2048 -->
+            <div class="game-card" data-category="puzzle" data-title="2048 puzzle">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🔢</div>
+                        <div class="card-meta"><span class="card-tag tag-puzzle">Puzzle</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">2048 Puzzle</h2>
+                    <p class="card-desc">Geser dan gabungkan angka yang sama hingga mencapai kotak legendaris 2048.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 528 aktif</span>
+                        <a href="2048.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flappy Bird -->
+            <div class="game-card" data-category="arcade" data-title="flappy bird">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🐦</div>
+                        <div class="card-meta"><span class="card-tag tag-arcade">Arcade</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Flappy Bird</h2>
+                    <p class="card-desc">Ketuk layar agar burung tetap terbang melewati celah pipa yang sempit.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 1,342 aktif</span>
+                        <a href="flappy.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pac Maze -->
+            <div class="game-card" data-category="arcade" data-title="pac-maze">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🟡</div>
+                        <div class="card-meta"><span class="card-tag tag-arcade">Arcade</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Pac-Maze</h2>
+                    <p class="card-desc">Makan semua titik di labirin sambil menghindari kejaran hantu yang gesit.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 687 aktif</span>
+                        <a href="pacmaze.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Minesweeper -->
+            <div class="game-card" data-category="strategy" data-title="minesweeper">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">💣</div>
+                        <div class="card-meta"><span class="card-tag tag-strategy">Strategy</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Minesweeper</h2>
+                    <p class="card-desc">Gunakan logika untuk membersihkan area tanpa meledakkan ranjau tersembunyi.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 394 aktif</span>
+                        <a href="minesweeper.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ludo -->
+            <div class="game-card" data-category="strategy" data-title="ludo king">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🎲</div>
+                        <div class="card-meta"><span class="card-tag tag-strategy">Strategy</span><span
+                                class="card-stars">★★★☆☆</span></div>
+                    </div>
+                    <h2 class="card-title">Ludo King</h2>
+                    <p class="card-desc">Lempar dadu dan adu keberuntungan untuk memindahkan bidak ke garis finis.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 503 aktif</span>
+                        <a href="ludo.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hangman -->
+            <div class="game-card" data-category="puzzle" data-title="hangman">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🪢</div>
+                        <div class="card-meta"><span class="card-tag tag-puzzle">Puzzle</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Hangman</h2>
+                    <p class="card-desc">Tebak kata huruf demi huruf sebelum orang malang itu digantung!</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 388 aktif</span>
+                        <a href="hangman.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Word Guess -->
+            <div class="game-card" data-category="puzzle" data-title="word guess">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">📝</div>
+                        <div class="card-meta"><span class="card-tag tag-puzzle">Puzzle</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Word Guess</h2>
+                    <p class="card-desc">Tebak kata rahasia 5 huruf dalam 6 percobaan. Terinspirasi dari Wordle.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 1,294 aktif</span>
+                        <a href="wordle.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RPS -->
+            <div class="game-card" data-category="arcade" data-title="rock paper scissors">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">✌️</div>
+                        <div class="card-meta"><span class="card-tag tag-arcade">Arcade</span><span
+                                class="card-stars">★★★☆☆</span></div>
+                    </div>
+                    <h2 class="card-title">RPS Showdown</h2>
+                    <p class="card-desc">Batu, Gunting, Kertas klasik melawan kecerdasan AI yang tak terduga.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 245 aktif</span>
+                        <a href="rps.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Neon Breakout -->
+            <div class="game-card" data-category="action" data-title="breakout neon breakout">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🧱</div>
+                        <div class="card-meta"><span class="card-tag tag-action">Action</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Neon Breakout</h2>
+                    <p class="card-desc">Hancurkan balok-balok neon menggunakan bola dan papan pemantul jitu.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 732 aktif</span>
+                        <a href="breakout.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simon Says -->
+            <div class="game-card" data-category="puzzle" data-title="simon says">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🔴</div>
+                        <div class="card-meta"><span class="card-tag tag-puzzle">Puzzle</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Simon Says</h2>
+                    <p class="card-desc">Ikuti pola warna dan suara yang memanjang setiap putarannya!</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 411 aktif</span>
+                        <a href="simon.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Whack-A-Mole -->
+            <div class="game-card" data-category="action" data-title="whack a mole">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🔨</div>
+                        <div class="card-meta"><span class="card-tag tag-action">Action</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Whack-A-Mole</h2>
+                    <p class="card-desc">Pukul para tikus tanah nakal yang muncul dari lubangnya secepat mungkin.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 820 aktif</span>
+                        <a href="whackamole.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Math Quiz -->
+            <div class="game-card" data-category="puzzle" data-title="math quiz">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">➕</div>
+                        <div class="card-meta"><span class="card-tag tag-puzzle">Puzzle</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Math Quiz</h2>
+                    <p class="card-desc">Latih kecepatan otakmu dalam menjawab soal aritmatika menantang.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 315 aktif</span>
+                        <a href="mathquiz.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Color Match -->
+            <div class="game-card" data-category="arcade" data-title="color match">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🎨</div>
+                        <div class="card-meta"><span class="card-tag tag-arcade">Arcade</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Color Match</h2>
+                    <p class="card-desc">Tantang refleks pikiranmu dengan mencocokkan teks warna yang benar.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 502 aktif</span>
+                        <a href="colormatch.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Snake Xenzia -->
+            <div class="game-card" data-category="arcade" data-title="snake xenzia classic arcade">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🐍</div>
+                        <div class="card-meta"><span class="card-tag tag-arcade">Arcade</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Snake Xenzia</h2>
+                    <p class="card-desc">Versi ular klasik yang cepat, responsif, dan cocok jadi comfort game utama di
+                        portal ini.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 12,402 aktif</span>
+                        <a href="snake.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== NEW INDIE GAMES ========== -->
+
+            <!-- Hyper Light Drifter -->
+            <div class="game-card" data-category="action" data-title="hyper light drifter action rpg">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">⚔️</div>
+                        <div class="card-meta"><span class="card-tag tag-action">Action RPG</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Hyper Light Drifter</h2>
+                    <p class="card-desc">Visual neon-pixel art yang memukau dengan palet warna ungu dan pink. Jelajahi
+                        dunia misterius penuh bahaya.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 1,876 aktif</span>
+                        <a href="hyperlightdrifter.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sayonara Wild Hearts -->
+            <div class="game-card" data-category="rhythm" data-title="sayonara wild hearts rhythm action">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">💜</div>
+                        <div class="card-meta"><span class="card-tag tag-rhythm">Rhythm</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Sayonara Wild Hearts</h2>
+                    <p class="card-desc">Video game album pop futuristik — penuh estetika sintetis dan musik yang elegan
+                        memukau hati.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 2,341 aktif</span>
+                        <a href="sayonarawildhearts.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Baba Is You -->
+            <div class="game-card" data-category="puzzle" data-title="baba is you puzzle">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🐑</div>
+                        <div class="card-meta"><span class="card-tag tag-puzzle">Puzzle</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Baba Is You</h2>
+                    <p class="card-desc">Game puzzle paling inovatif — ubah aturan permainan dengan menggeser blok kata.
+                        Kreatif tanpa batas!</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 1,532 aktif</span>
+                        <a href="babaisyou.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thumper -->
+            <div class="game-card" data-category="rhythm" data-title="thumper rhythm violence">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🪲</div>
+                        <div class="card-meta"><span class="card-tag tag-rhythm">Rhythm</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Thumper</h2>
+                    <p class="card-desc">Rhythm violence — intensitas tinggi dengan visual kromatik modern yang memukau
+                        dan mendebarkan.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 987 aktif</span>
+                        <a href="thumper.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Superhot MCD -->
+            <div class="game-card" data-category="action" data-title="superhot mcd shooter puzzle">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🔥</div>
+                        <div class="card-meta"><span class="card-tag tag-action">Action</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Superhot MCD</h2>
+                    <p class="card-desc">Waktu hanya bergerak saat Anda bergerak. Minimalis, elegan, dan sangat
+                        memuaskan setiap tembakan.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 2,105 aktif</span>
+                        <a href="superhot.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Katana ZERO -->
+            <div class="game-card" data-category="action" data-title="katana zero action platformer">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🗡️</div>
+                        <div class="card-meta"><span class="card-tag tag-action">Action</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Katana ZERO</h2>
+                    <p class="card-desc">Neo-noir action dengan mekanik manipulasi waktu yang sangat halus. Setiap
+                        tebasan penuh presisi.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 1,654 aktif</span>
+                        <a href="katanazero.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini Metro -->
+            <div class="game-card" data-category="strategy" data-title="mini metro motorways strategy">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🚇</div>
+                        <div class="card-meta"><span class="card-tag tag-strategy">Strategy</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Mini Metro</h2>
+                    <p class="card-desc">Minimalis dan estetik. Bangun jaringan transportasi yang efisien untuk kota
+                        yang terus berkembang.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 743 aktif</span>
+                        <a href="minimetro.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gris -->
+            <div class="game-card" data-category="platformer" data-title="gris platformer art">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🎨</div>
+                        <div class="card-meta"><span class="card-tag tag-platformer">Platformer</span><span
+                                class="card-stars">★★★★★</span></div>
+                    </div>
+                    <h2 class="card-title">Gris</h2>
+                    <p class="card-desc">Lebih ke karya seni daripada sekadar game. Visual cat air yang menawan
+                        meningkatkan kesan premium.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 1,289 aktif</span>
+                        <a href="gris.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Poly Bridge 3 -->
+            <div class="game-card" data-category="simulation" data-title="poly bridge 3 simulation">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🌉</div>
+                        <div class="card-meta"><span class="card-tag tag-simulation">Simulation</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">Poly Bridge 3</h2>
+                    <p class="card-desc">Bangun jembatan dengan grafis low-poly yang rapi. Simulasi fisika yang adiktif
+                        dan menantang.</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 856 aktif</span>
+                        <a href="polybridge3.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VVVVVV -->
+            <div class="game-card" data-category="platformer" data-title="vvvvvv gravity platformer">
+                <div class="card-glow-bar"></div>
+                <div class="card-body">
+                    <div class="card-top">
+                        <div class="card-icon">🔄</div>
+                        <div class="card-meta"><span class="card-tag tag-platformer">Platformer</span><span
+                                class="card-stars">★★★★☆</span></div>
+                    </div>
+                    <h2 class="card-title">VVVVVV</h2>
+                    <p class="card-desc">Game retro-modern yang fokus pada mekanik gravitasi. Sederhana tapi sangat
+                        sulit ditaklukkan!</p>
+                    <div class="card-foot">
+                        <span class="card-players"><span class="pdot"></span> 672 aktif</span>
+                        <a href="vvvvvv.html" class="play-btn">Main <span class="arr">→</span></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- No Result -->
+            <div class="no-result" id="noResult">
+                <div class="no-result-icon">🕹️</div>
+                <h3>Game Tidak Ditemukan</h3>
+                <p>Coba kata kunci lain atau reset filter.</p>
+                <button id="noResultResetBtn" class="no-result-reset" type="button">Reset Filter</button>
+            </div>
+
+        </div><!-- /game-grid -->
+    </section><!-- /library-section -->
+
+    <!-- PROFILE SECTION (PLAYER DASHBOARD) -->
+    <section class="profile-section" id="profileSection">
+        <div class="sec-head">
+            <h3 class="sec-title">Dashboard Pemain</h3>
+            <div class="sec-line"></div>
+        </div>
+
+        <div class="meta-panels">
+            <!-- Player Profile Meta Card -->
+            <div class="meta-card">
+                <div class="meta-head">
+                    <span class="meta-title">Status Profil</span>
+                    <span class="meta-pill" id="profileXpRank">Bronze</span>
+                </div>
+                <div class="xp-row">
+                    <span class="xp-level" id="profileLevelText">LV 1</span>
+                    <span class="xp-caption" id="profileXpLabel">Neon Pilot</span>
+                </div>
+                <div class="xp-track">
+                    <div class="xp-fill" id="profileXpFill" style="width: 45%"></div>
+                </div>
+                <div class="xp-foot">
+                    <span id="profileXpText">0 / 120 XP</span>
+                    <span id="streakBadgeMain">Streak 1 hari</span>
+                </div>
+            </div>
+
+            <!-- Daily Challenges Meta Card -->
+            <div class="meta-card">
+                <div class="meta-head">
+                    <span class="meta-title">Tantangan Harian</span>
+                    <span class="meta-pill" id="challengeState">0/3 selesai</span>
+                </div>
+                <ul class="challenge-list" id="challengeList">
+                    <!-- Items will be generated dynamically by JS -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Live Activity Feed -->
+        <div class="activity-wrap">
+            <div class="meta-head" style="margin-bottom: 14px;">
+                <span class="meta-title">Aktivitas Live</span>
+                <span class="live-badge"><span class="live-dot"></span> Real-time</span>
+            </div>
+            <div class="activity-track" id="activityFeed">
+                <!-- Activity items will be prepended by JS -->
+            </div>
+        </div>
+    </section>
+
+    <section class="recent-wrap" id="recentSection">
+            <div class="recent-head">
+                <h3 class="recent-title">Terakhir Dimainkan</h3>
+                <button id="clearRecentBtn" class="recent-clear">Hapus Riwayat</button>
+            </div>
+            <div class="recent-list" id="recentList"></div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            ZI GAME &mdash; dibuat dengan <span>♥</span> &middot; 2025 &middot; <span>semua gratis</span>
+        </footer>
+    </div><!-- /wrap -->
+
+    <button id="toTop" aria-label="Kembali ke atas">↑</button>
+
+    <div class="cmd-overlay" id="cmdOverlay" aria-hidden="true">
+        <div class="cmd-modal" role="dialog" aria-label="Command Center">
+            <input id="cmdInput" class="cmd-input" type="text"
+                placeholder="Ketik perintah... (contoh: random, favorit, reset)">
+            <div id="cmdList" class="cmd-list"></div>
+        </div>
+    </div>
+
+    <div class="toast-stack" id="toastStack"></div>
+
+    <div class="mobile-quickbar" aria-label="Aksi cepat mobile">
+        <button type="button" data-quick-action="search">Cari</button>
+        <button type="button" data-quick-action="random">Random</button>
+        <button type="button" data-quick-action="favorites">Favorit</button>
+        <button type="button" data-quick-action="top">Atas</button>
+    </div>
+
+    <script>
+        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+        const isNarrowScreen = window.matchMedia('(max-width: 768px)').matches;
+        const isAndroidLike = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const mobileOptimizedMode = isTouchDevice || isNarrowScreen || isAndroidLike;
+
+        /* ======== CURSOR ======== */
+        const dot = document.getElementById('cur-dot');
+        const ring = document.getElementById('cur-ring');
+        let mx = window.innerWidth / 2, my = window.innerHeight / 2, rx = mx, ry = my;
+        if (!mobileOptimizedMode) {
+            document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+            document.querySelectorAll('a,button,input,select').forEach(el => {
+                el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+                el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+            });
+            function animCursor() {
+                rx += (mx - rx) * .1; ry += (my - ry) * .1;
+                dot.style.transform = `translate3d(${mx - 3}px,${my - 3}px,0)`;
+                ring.style.transform = `translate3d(${rx - 19}px,${ry - 19}px,0)`;
+                requestAnimationFrame(animCursor);
+            }
+            animCursor();
+        } else {
+            if (dot) dot.style.display = 'none';
+            if (ring) ring.style.display = 'none';
+        }
+
+        /* ======== ORB PARALLAX ======== */
+        const orbs = document.querySelectorAll('.orb');
+        if (!mobileOptimizedMode) {
+            document.addEventListener('mousemove', e => {
+                let px = (e.clientX / window.innerWidth - .5) * 60;
+                let py = (e.clientY / window.innerHeight - .5) * 60;
+                orbs[0].style.transform = `translate3d(${px}px,${py}px,0)`;
+                orbs[1].style.transform = `translate3d(${-px * 1.4}px,${-py * 1.4}px,0)`;
+                orbs[2].style.transform = `translate3d(${px * .7}px,${-py * .7}px,0)`;
+                orbs[3].style.transform = `translate3d(${-px * .5}px,${py * .5}px,0)`;
+            });
+        }
+
+        /* ======== SCROLL PROGRESS ======== */
+        const prog = document.getElementById('progress');
+        window.addEventListener('scroll', () => {
+            const h = document.documentElement.scrollHeight - window.innerHeight;
+            prog.style.width = (window.scrollY / h * 100) + '%';
+        });
+
+        /* ======== STAR FIELD CANVAS ======== */
+        const cv = document.getElementById('canvas');
+        const ctx = cv.getContext('2d');
+        cv.width = window.innerWidth;
+        cv.height = window.innerHeight;
+        if (!mobileOptimizedMode) {
+            window.addEventListener('resize', () => {
+                cv.width = window.innerWidth;
+                cv.height = window.innerHeight;
+                initStars();
+            });
+        } else {
+            cv.style.display = 'none';
+        }
+
+        const COLS = ['#7c6aff', '#f06292', '#4dd0e1', '#ffd54f', '#90caf9'];
+
+        // Star field
+        let stars = [];
+        function initStars() {
+            stars = [];
+            const count = Math.floor((cv.width * cv.height) / 3500);
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * cv.width,
+                    y: Math.random() * cv.height,
+                    r: Math.random() * 1.8 + 0.2,
+                    baseAlpha: Math.random() * 0.6 + 0.2,
+                    twinkleSpeed: Math.random() * 0.02 + 0.005,
+                    twinkleOffset: Math.random() * Math.PI * 2,
+                    c: Math.random() > 0.85 ? COLS[Math.floor(Math.random() * COLS.length)] : '#ffffff'
+                });
+            }
+        }
+        if (!mobileOptimizedMode) initStars();
+
+        // Shooting stars
+        let shootingStars = [];
+        function maybeSpawnShootingStar() {
+            if (Math.random() < 0.005 && shootingStars.length < 2) {
+                shootingStars.push({
+                    x: Math.random() * cv.width * 0.7,
+                    y: Math.random() * cv.height * 0.4,
+                    vx: 4 + Math.random() * 4,
+                    vy: 2 + Math.random() * 2,
+                    life: 1,
+                    decay: 0.012 + Math.random() * 0.008,
+                    len: 40 + Math.random() * 60
+                });
+            }
+        }
+
+        let time = 0;
+        function drawCanvas() {
+            ctx.clearRect(0, 0, cv.width, cv.height);
+            time += 0.016;
+
+            // Draw stars with twinkle
+            for (const s of stars) {
+                const twinkle = Math.sin(time * s.twinkleSpeed * 60 + s.twinkleOffset);
+                const alpha = s.baseAlpha * (0.5 + 0.5 * twinkle);
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fillStyle = s.c;
+                ctx.globalAlpha = Math.max(0.05, alpha);
+                ctx.fill();
+
+                // Bright stars get a glow
+                if (s.r > 1.2 && alpha > 0.5) {
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
+                    ctx.fillStyle = s.c;
+                    ctx.globalAlpha = alpha * 0.12;
+                    ctx.fill();
+                }
+            }
+
+            // Shooting stars
+            maybeSpawnShootingStar();
+            for (let i = shootingStars.length - 1; i >= 0; i--) {
+                const ss = shootingStars[i];
+                ss.x += ss.vx;
+                ss.y += ss.vy;
+                ss.life -= ss.decay;
+
+                if (ss.life <= 0) {
+                    shootingStars.splice(i, 1);
+                    continue;
+                }
+
+                const grad = ctx.createLinearGradient(
+                    ss.x, ss.y,
+                    ss.x - ss.vx * (ss.len / ss.vx), ss.y - ss.vy * (ss.len / ss.vx)
+                );
+                grad.addColorStop(0, `rgba(255, 255, 255, ${ss.life})`);
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+                ctx.beginPath();
+                ctx.moveTo(ss.x, ss.y);
+                ctx.lineTo(ss.x - ss.vx * (ss.len / ss.vx), ss.y - ss.vy * (ss.len / ss.vx));
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 1.5;
+                ctx.globalAlpha = ss.life;
+                ctx.stroke();
+
+                // Bright head
+                ctx.beginPath();
+                ctx.arc(ss.x, ss.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = '#fff';
+                ctx.globalAlpha = ss.life;
+                ctx.fill();
+            }
+
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(drawCanvas);
+        }
+        if (!mobileOptimizedMode) drawCanvas();
+
+        /* ======== 3D CARD TILT ======== */
+        if (!mobileOptimizedMode) {
+            document.querySelectorAll('.game-card').forEach(card => {
+                card.addEventListener('mousemove', e => {
+                    const r = card.getBoundingClientRect();
+                    const x = (e.clientX - r.left) / r.width - .5;
+                    const y = (e.clientY - r.top) / r.height - .5;
+                    card.style.transition = 'transform .06s ease,box-shadow .3s,border-color .3s';
+                    card.style.transform = `perspective(900px) rotateX(${-y * 8}deg) rotateY(${x * 8}deg) scale3d(1.02,1.02,1.02)`;
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transition = 'transform .5s ease,box-shadow .3s,border-color .3s';
+                    card.style.transform = 'perspective(900px) rotateX(0) rotateY(0) scale3d(1,1,1)';
+                });
+            });
+        }
+
+        /* ======== SEARCH + FILTER + POWER TOOLS ======== */
+        const STORAGE_FAV = 'ziGame:favorites';
+        const STORAGE_RECENT = 'ziGame:recent';
+        const STORAGE_PROFILE = 'ziGame:profile';
+        const STORAGE_ACTIONS = 'ziGame:actions';
+        const STORAGE_ACHIEVEMENTS = 'ziGame:achievements';
+        const STORAGE_VIEWMODE = 'ziGame:viewmode';
+        const STORAGE_DENSITY = 'ziGame:density';
+        const STORAGE_MOTION = 'ziGame:motion';
+        const STORAGE_SIDEBAR = 'ziGame:sidebarCollapsed';
+        const STORAGE_SIDEBAR_HIDDEN = 'ziGame:sidebarHidden';
+        const STORAGE_SIDEBAR_NOTES = 'ziGame:sidebarNotes';
+        const STORAGE_SIDEBAR_PREFS = 'ziGame:sidebarPrefs';
+        const STORAGE_SIDEBAR_LOG = 'ziGame:sidebarLog';
+
+        const searchInput = document.getElementById('searchInput');
+        const sortSelect = document.getElementById('sortSelect');
+        const favOnlyBtn = document.getElementById('favOnlyBtn');
+        const randomBtn = document.getElementById('randomBtn');
+        const clearRecentBtn = document.getElementById('clearRecentBtn');
+        const recentList = document.getElementById('recentList');
+        const toTop = document.getElementById('toTop');
+        const viewToggleBtn = document.getElementById('viewToggleBtn');
+        const densityToggleBtn = document.getElementById('densityToggleBtn');
+        const motionToggleBtn = document.getElementById('motionToggleBtn');
+        const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const noResultResetBtn = document.getElementById('noResultResetBtn');
+        const quickChips = document.getElementById('quickChips');
+        const heroFavCount = document.getElementById('heroFavCount');
+        const heroSessionCount = document.getElementById('heroSessionCount');
+        const searchResultHint = document.getElementById('searchResultHint');
+        const spotlightTitle = document.getElementById('spotlightTitle');
+        const spotlightDesc = document.getElementById('spotlightDesc');
+        const spotlightPlay = document.getElementById('spotlightPlay');
+        const cmdBtn = document.getElementById('cmdBtn');
+        const cmdOverlay = document.getElementById('cmdOverlay');
+        const cmdInput = document.getElementById('cmdInput');
+        const cmdList = document.getElementById('cmdList');
+        const toastStack = document.getElementById('toastStack');
+        const activityFeed = document.getElementById('activityFeed');
+        const challengeList = document.getElementById('challengeList');
+        const challengeState = document.getElementById('challengeState');
+        const xpLevel = document.getElementById('sideLevelText');
+        const xpLabel = document.getElementById('xpLabel');
+        const xpFill = document.getElementById('xpFill');
+        const xpText = document.getElementById('xpText');
+        const xpRank = document.getElementById('profileXpRank');
+        const streakBadge = document.getElementById('streakBadge');
+
+        const profileLevelText = document.getElementById('profileLevelText');
+        const profileXpLabel = document.getElementById('profileXpLabel');
+        const profileXpFill = document.getElementById('profileXpFill');
+        const profileXpText = document.getElementById('profileXpText');
+        const streakBadgeMain = document.getElementById('streakBadgeMain');
+        const spotlightPanel = document.getElementById('spotlightPanel');
+        const sideToggle = document.getElementById('sideToggle');
+        const portalSidebar = document.getElementById('portalSidebar');
+        const sideOverlay = document.getElementById('sideOverlay');
+        const sideCollapseBtn = document.getElementById('sideCollapseBtn');
+        const sideLevelText = document.getElementById('sideLevelText');
+        const sideLinks = Array.from(document.querySelectorAll('.side-link'));
+        const sideQuickSearch = document.getElementById('sideQuickSearch');
+        const sideVisibleCount = document.getElementById('sideVisibleCount');
+        const sideFavCount = document.getElementById('sideFavCount');
+        const sideRecentCount = document.getElementById('sideRecentCount');
+        const sideClock = document.getElementById('sideClock');
+        const sideAccent = document.getElementById('sideAccent');
+        const sideLightMood = document.getElementById('sideLightMood');
+        const sideOpacity = document.getElementById('sideOpacity');
+        const sideAutoHide = document.getElementById('sideAutoHide');
+        const sidePin = document.getElementById('sidePin');
+        const sideCompact = document.getElementById('sideCompact');
+        const sideFocus = document.getElementById('sideFocus');
+        const sideNotes = document.getElementById('sideNotes');
+        const sideClearNotes = document.getElementById('sideClearNotes');
+        const sideFavShortcuts = document.getElementById('sideFavShortcuts');
+        const sideRecentShortcuts = document.getElementById('sideRecentShortcuts');
+        const sideNotifList = document.getElementById('sideNotifList');
+        const sideClearNotif = document.getElementById('sideClearNotif');
+        const sideResetPrefs = document.getElementById('sideResetPrefs');
+        const sideCollapseAll = document.getElementById('sideCollapseAll');
+        const sideGroupToggleBtns = Array.from(document.querySelectorAll('[data-group-toggle]'));
+        const sideGroups = Array.from(document.querySelectorAll('.side-nav-group[data-group]'));
+
+        /* ======== THEME TOGGLE ======== */
+        const STORAGE_THEME = 'ziGame:theme';
+        const STORAGE_LIGHT_MOOD = 'ziGame:lightMood';
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const sideThemeToggle = document.getElementById('sideThemeToggle');
+
+        let isLightMode = localStorage.getItem(STORAGE_THEME) === 'light';
+        let lightMood = localStorage.getItem(STORAGE_LIGHT_MOOD) || 'sunny';
+        if (!['sunny', 'breezy', 'golden'].includes(lightMood)) lightMood = 'sunny';
+
+        function applyLightMood(save) {
+            document.body.dataset.lightMood = lightMood;
+            if (sideLightMood) sideLightMood.value = lightMood;
+            if (save) localStorage.setItem(STORAGE_LIGHT_MOOD, lightMood);
+        }
+
+        function applyTheme(save) {
+            document.body.classList.toggle('light-mode', isLightMode);
+            const icon = isLightMode ? '&#127769; Dark' : '&#9728;&#65039; Light';
+            const navIcon = isLightMode ? '&#127769;' : '&#9728;&#65039;';
+            if (themeToggleBtn) themeToggleBtn.innerHTML = navIcon;
+            if (sideThemeToggle) sideThemeToggle.innerHTML = icon;
+            if (save) localStorage.setItem(STORAGE_THEME, isLightMode ? 'light' : 'dark');
+        }
+
+        applyLightMood(false);
+        applyTheme(false);
+
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', () => {
+                isLightMode = !isLightMode;
+                applyTheme(true);
+            });
+        }
+
+        if (sideThemeToggle) {
+            sideThemeToggle.addEventListener('click', () => {
+                isLightMode = !isLightMode;
+                applyTheme(true);
+            });
+        }
+
+        if (sideLightMood) {
+            sideLightMood.addEventListener('change', () => {
+                lightMood = sideLightMood.value;
+                applyLightMood(true);
+                addSideLog('Light mood: ' + lightMood);
+            });
+        }
+
+        const gameContainer = document.getElementById('gameContainer');
+        const allCards = Array.from(document.querySelectorAll('.game-card'));
+        const noResult = document.getElementById('noResult');
+        const visibleCount = document.getElementById('visibleCount');
+        const gameCount = document.getElementById('gameCount');
+        const sideSections = ['homeSection', 'profileSection', 'librarySection', 'recentSection']
+            .map(id => document.getElementById(id))
+            .filter(Boolean);
+
+        function safeParseJSON(raw, fallback) {
+            try {
+                const parsed = JSON.parse(raw);
+                return parsed == null ? fallback : parsed;
+            } catch {
+                return fallback;
+            }
+        }
+
+        const favorites = new Set(safeParseJSON(localStorage.getItem(STORAGE_FAV) || '[]', []));
+        const achievements = new Set(safeParseJSON(localStorage.getItem(STORAGE_ACHIEVEMENTS) || '[]', []));
+        const dayKey = new Date().toISOString().slice(0, 10);
+        let currentFilter = 'all';
+        let showFavOnly = false;
+        let commandOpen = false;
+        let listView = localStorage.getItem(STORAGE_VIEWMODE) === 'list';
+        let compactDensity = localStorage.getItem(STORAGE_DENSITY) === 'compact';
+        let reducedMotion = localStorage.getItem(STORAGE_MOTION) === 'reduced';
+        let sidebarCollapsed = localStorage.getItem(STORAGE_SIDEBAR) === '1';
+        let sidebarOpen = false;
+        let lastScrollY = window.scrollY;
+
+        const sidePrefs = {
+            accent: 'violet',
+            opacity: 1,
+            autoHide: false,
+            pinned: false,
+            compact: false,
+            focus: false,
+            groupCollapsed: {}
+        };
+
+        const savedSidePrefs = safeParseJSON(localStorage.getItem(STORAGE_SIDEBAR_PREFS) || '{}', {});
+        Object.assign(sidePrefs, savedSidePrefs);
+        let sideLog = safeParseJSON(localStorage.getItem(STORAGE_SIDEBAR_LOG) || '[]', []);
+
+        sidePrefs.accent = ['violet', 'teal', 'sunset'].includes(sidePrefs.accent) ? sidePrefs.accent : 'violet';
+        sidePrefs.opacity = Number(sidePrefs.opacity);
+        if (!Number.isFinite(sidePrefs.opacity)) sidePrefs.opacity = 1;
+        sidePrefs.opacity = Math.max(0.7, Math.min(1, sidePrefs.opacity));
+        sidePrefs.autoHide = sidePrefs.autoHide === true || sidePrefs.autoHide === 'true';
+        sidePrefs.pinned = sidePrefs.pinned === true || sidePrefs.pinned === 'true';
+        sidePrefs.compact = sidePrefs.compact === true || sidePrefs.compact === 'true';
+        sidePrefs.focus = sidePrefs.focus === true || sidePrefs.focus === 'true';
+        if (!sidePrefs.groupCollapsed || typeof sidePrefs.groupCollapsed !== 'object' || Array.isArray(sidePrefs.groupCollapsed)) {
+            sidePrefs.groupCollapsed = {};
+        }
+        if (!Array.isArray(sideLog)) sideLog = [];
+
+        const profile = safeParseJSON(localStorage.getItem(STORAGE_PROFILE) || '{"xp":0,"level":1,"streak":1,"lastVisit":""}', { xp: 0, level: 1, streak: 1, lastVisit: '' });
+        const actionLog = safeParseJSON(localStorage.getItem(STORAGE_ACTIONS) || '{}', {});
+        if (!actionLog[dayKey]) {
+            actionLog[dayKey] = { favorites: 0, random: 0, played: 0, commands: 0 };
+        }
+
+        const todayActions = actionLog[dayKey];
+        const LEVEL_TITLES = ['Rookie Explorer', 'Neon Runner', 'Galaxy Raider', 'Arcade Overlord', 'Portal Legend'];
+
+        const challengeTemplates = [
+            { id: 'favorites', text: 'Tambah 3 game ke favorit', target: 3, xp: 60 },
+            { id: 'played', text: 'Mainkan 2 game hari ini', target: 2, xp: 80 },
+            { id: 'random', text: 'Gunakan Random Game 1x', target: 1, xp: 40 }
+        ];
+
+        function cardId(card) {
+            const href = card.querySelector('.play-btn')?.getAttribute('href') || '';
+            return href || card.dataset.title;
+        }
+
+        function cardTitle(card) {
+            return card.querySelector('.card-title')?.textContent?.trim() || 'Unknown Game';
+        }
+
+        function cardPlayers(card) {
+            const raw = card.querySelector('.card-players')?.textContent || '0';
+            const m = raw.replace(/\./g, '').match(/\d[\d,]*/);
+            if (!m) return 0;
+            return parseInt(m[0].replace(/,/g, ''), 10) || 0;
+        }
+
+        function saveFavorites() {
+            localStorage.setItem(STORAGE_FAV, JSON.stringify(Array.from(favorites)));
+        }
+
+        function saveActions() {
+            actionLog[dayKey] = todayActions;
+            localStorage.setItem(STORAGE_ACTIONS, JSON.stringify(actionLog));
+        }
+
+        function saveProfile() {
+            localStorage.setItem(STORAGE_PROFILE, JSON.stringify(profile));
+        }
+
+        function saveAchievements() {
+            localStorage.setItem(STORAGE_ACHIEVEMENTS, JSON.stringify(Array.from(achievements)));
+        }
+
+        function showToast(text) {
+            if (!toastStack) return;
+            const el = document.createElement('div');
+            el.className = 'toast';
+            el.textContent = text;
+            toastStack.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(10px)';
+                setTimeout(() => el.remove(), 220);
+            }, 2200);
+        }
+
+        function unlockAchievement(id, text) {
+            if (achievements.has(id)) return;
+            achievements.add(id);
+            saveAchievements();
+            showToast('Achievement unlocked: ' + text);
+            addXP(35, 'Achievement bonus');
+        }
+
+        function xpNeeded(level) {
+            return 120 + (level - 1) * 45;
+        }
+
+        function addXP(amount, reason) {
+            profile.xp += amount;
+            while (profile.xp >= xpNeeded(profile.level)) {
+                profile.xp -= xpNeeded(profile.level);
+                profile.level += 1;
+                showToast('Level up! Sekarang LV ' + profile.level);
+            }
+            saveProfile();
+            renderProfile();
+            if (reason) showToast('+' + amount + ' XP - ' + reason);
+        }
+
+        function renderProfile() {
+            const need = xpNeeded(profile.level);
+            const pct = Math.max(0, Math.min(100, (profile.xp / need) * 100));
+            const title = LEVEL_TITLES[Math.min(profile.level - 1, LEVEL_TITLES.length - 1)];
+            if (xpLevel) xpLevel.textContent = 'LV ' + profile.level;
+            if (sideLevelText) sideLevelText.textContent = 'LV ' + profile.level;
+            if (xpLabel) xpLabel.textContent = title;
+            if (xpFill) xpFill.style.width = pct + '%';
+            if (xpText) xpText.textContent = profile.xp + ' / ' + need + ' XP';
+            if (streakBadge) streakBadge.textContent = 'Streak ' + profile.streak + ' hari';
+
+            // Sync with Player Dashboard
+            if (profileLevelText) profileLevelText.textContent = 'LV ' + profile.level;
+            if (profileXpLabel) profileXpLabel.textContent = title;
+            if (profileXpFill) profileXpFill.style.width = pct + '%';
+            if (profileXpText) profileXpText.textContent = profile.xp + ' / ' + need + ' XP';
+            if (xpRank) xpRank.textContent = profile.level >= 8 ? 'Diamond' : profile.level >= 5 ? 'Gold' : profile.level >= 3 ? 'Silver' : 'Bronze';
+            if (streakBadgeMain) streakBadgeMain.textContent = 'Streak ' + profile.streak + ' hari';
+        }
+
+        function syncStreak() {
+            const now = new Date();
+            const today = now.toISOString().slice(0, 10);
+            if (!profile.lastVisit) {
+                profile.lastVisit = today;
+                profile.streak = 1;
+                saveProfile();
+                return;
+            }
+            const prev = new Date(profile.lastVisit + 'T00:00:00');
+            const diffDays = Math.floor((new Date(today + 'T00:00:00') - prev) / 86400000);
+            if (diffDays === 1) {
+                profile.streak += 1;
+                showToast('Streak naik! ' + profile.streak + ' hari berturut-turut');
+                addXP(20, 'Daily login streak');
+            } else if (diffDays > 1) {
+                profile.streak = 1;
+            }
+            profile.lastVisit = today;
+            saveProfile();
+        }
+
+        function challengeProgress(id) {
+            if (id === 'favorites') return todayActions.favorites;
+            if (id === 'played') return todayActions.played;
+            if (id === 'random') return todayActions.random;
+            return 0;
+        }
+
+        function renderChallenges() {
+            let done = 0;
+            if (challengeList) {
+                challengeList.innerHTML = challengeTemplates.map(ch => {
+                    const progress = Math.min(ch.target, challengeProgress(ch.id));
+                    const complete = progress >= ch.target;
+                    if (complete) done += 1;
+                    return `<li class="challenge-item ${complete ? 'done' : ''}"><span>${ch.text}</span><span class="challenge-progress">${progress}/${ch.target}</span></li>`;
+                }).join('');
+            } else {
+                challengeTemplates.forEach(ch => {
+                    const progress = Math.min(ch.target, challengeProgress(ch.id));
+                    if (progress >= ch.target) done += 1;
+                });
+            }
+            if (challengeState) challengeState.textContent = done + '/3 selesai';
+
+            if (done === 3 && !todayActions.claimed) {
+                todayActions.claimed = true;
+                saveActions();
+                showToast('Semua challenge selesai! Bonus +120 XP');
+                addXP(120, 'Daily challenge complete');
+                unlockAchievement('daily-master', 'Daily Master');
+            }
+        }
+
+        function pushActivity() {
+            if (!activityFeed) return;
+            const players = ['Raka', 'Naya', 'Vino', 'Kiko', 'Salsa', 'Gio', 'Nino', 'Riri'];
+            const game = cardTitle(allCards[Math.floor(Math.random() * allCards.length)]);
+            const name = players[Math.floor(Math.random() * players.length)];
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `<strong>${name}</strong> baru saja main ${game}`;
+            activityFeed.prepend(item);
+            while (activityFeed.children.length > 8) {
+                activityFeed.lastElementChild.remove();
+            }
+        }
+
+        function setViewMode(list) {
+            listView = list;
+            gameContainer.classList.toggle('list-view', listView);
+            if (viewToggleBtn) viewToggleBtn.textContent = listView ? 'View: List' : 'View: Grid';
+            localStorage.setItem(STORAGE_VIEWMODE, listView ? 'list' : 'grid');
+        }
+
+        function setDensity(compact) {
+            compactDensity = compact;
+            document.body.classList.toggle('compact-density', compactDensity);
+            if (densityToggleBtn) densityToggleBtn.textContent = compactDensity ? 'Density: Compact' : 'Density: Cozy';
+            localStorage.setItem(STORAGE_DENSITY, compactDensity ? 'compact' : 'cozy');
+        }
+
+        function setMotion(reduced) {
+            reducedMotion = reduced;
+            document.body.classList.toggle('reduce-motion-ui', reducedMotion);
+            if (motionToggleBtn) motionToggleBtn.textContent = reducedMotion ? 'Motion: Calm' : 'Motion: On';
+            localStorage.setItem(STORAGE_MOTION, reducedMotion ? 'reduced' : 'full');
+        }
+
+        function resetPortalFilters() {
+            currentFilter = 'all';
+            showFavOnly = false;
+            if (searchInput) searchInput.value = '';
+            if (sortSelect) sortSelect.value = 'featured';
+            document.querySelectorAll('.filter-btn, .nav-pill').forEach(b => {
+                b.classList.toggle('active', b.dataset.filter === 'all');
+            });
+            document.querySelectorAll('.side-cat-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.cat === 'all');
+            });
+            updateFavOnlyLabel();
+            sortCards();
+            updateCards();
+            addSideLog('Filters reset');
+        }
+
+        function applyCardEnhancements() {
+            allCards.forEach((card, index) => {
+                if (!card.querySelector('.card-quick-meta')) {
+                    const players = cardPlayers(card);
+                    const difficulty = players > 2000 ? 'Hot' : players > 1000 ? 'Medium' : 'Chill';
+                    const minutes = 3 + (index % 5) * 2;
+                    const meta = document.createElement('div');
+                    meta.className = 'card-quick-meta';
+                    meta.innerHTML = `<span>${difficulty}</span><span>${minutes} min</span>`;
+                    const desc = card.querySelector('.card-desc');
+                    if (desc) desc.insertAdjacentElement('afterend', meta);
+                }
+                card.style.setProperty('--card-order', index);
+                card.addEventListener('mousemove', e => {
+                    const r = card.getBoundingClientRect();
+                    card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+                    card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+                });
+            });
+            // Interactive Spotlight Panel Neon Glow
+            if (spotlightPanel) {
+                spotlightPanel.addEventListener('mousemove', e => {
+                    const r = spotlightPanel.getBoundingClientRect();
+                    spotlightPanel.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+                });
+            }
+        }
+
+        function updateSpotlight() {
+            const visible = allCards.filter(card => !card.classList.contains('hidden'));
+            if (!visible.length || !spotlightTitle || !spotlightDesc || !spotlightPlay) return;
+            const pick = visible.reduce((best, card) => cardPlayers(card) > cardPlayers(best) ? card : best, visible[0]);
+            spotlightTitle.textContent = cardTitle(pick);
+            spotlightDesc.textContent = pick.querySelector('.card-desc')?.textContent?.trim() || 'Rekomendasi dari koleksi yang sedang tampil.';
+            spotlightPlay.href = pick.querySelector('.play-btn')?.getAttribute('href') || '#';
+        }
+
+        function updateFavOnlyLabel() {
+            const totalFav = favorites.size;
+            if (favOnlyBtn) {
+                const badge = document.getElementById('favCountBadge');
+                if (badge) badge.textContent = totalFav;
+                favOnlyBtn.classList.toggle('active', showFavOnly);
+            }
+        }
+
+        function syncFavoriteButtons() {
+            allCards.forEach(card => {
+                const btn = card.querySelector('.fav-btn');
+                if (!btn) return;
+                const active = favorites.has(cardId(card));
+                btn.classList.toggle('active', active);
+                btn.textContent = active ? '♥' : '♡';
+                btn.setAttribute('aria-label', active ? 'Hapus dari favorit' : 'Tambah ke favorit');
+                btn.title = active ? 'Hapus dari favorit' : 'Tambah ke favorit';
+            });
+            updateFavOnlyLabel();
+            if (heroFavCount) heroFavCount.textContent = favorites.size;
+            renderFavoriteShortcuts();
+            updateSidebarStats();
+        }
+
+        function injectFavoriteButtons() {
+            allCards.forEach(card => {
+                const btn = document.createElement('button');
+                btn.className = 'fav-btn';
+                btn.type = 'button';
+                btn.textContent = '♡';
+                card.appendChild(btn);
+                btn.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = cardId(card);
+                    if (favorites.has(id)) favorites.delete(id);
+                    else {
+                        favorites.add(id);
+                        todayActions.favorites += 1;
+                        saveActions();
+                        addXP(12, 'Add favorite');
+                    }
+                    saveFavorites();
+                    syncFavoriteButtons();
+                    renderChallenges();
+                    updateCards();
+
+                    if (favorites.size >= 1) unlockAchievement('first-favorite', 'First Pick');
+                    if (favorites.size >= 5) unlockAchievement('collector-5', 'Collector x5');
+                });
+                btn.addEventListener('mouseenter', () => ring.classList.add('hover'));
+                btn.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+            });
+            syncFavoriteButtons();
+        }
+
+        function sortCards() {
+            const mode = sortSelect ? sortSelect.value : 'featured';
+            const sorted = [...allCards];
+            sorted.sort((a, b) => {
+                if (mode === 'popular') return cardPlayers(b) - cardPlayers(a);
+                if (mode === 'az') return cardTitle(a).localeCompare(cardTitle(b), 'id');
+                if (a.classList.contains('featured') !== b.classList.contains('featured')) {
+                    return a.classList.contains('featured') ? -1 : 1;
+                }
+                const aTitle = cardTitle(a).toLowerCase();
+                const bTitle = cardTitle(b).toLowerCase();
+                return aTitle.localeCompare(bTitle, 'id');
+            });
+            const frag = document.createDocumentFragment();
+            sorted.forEach(c => frag.appendChild(c));
+            gameContainer.insertBefore(frag, noResult);
+        }
+
+        function getRecentItems() {
+            return JSON.parse(localStorage.getItem(STORAGE_RECENT) || '[]');
+        }
+
+        function saveRecent(item) {
+            const old = getRecentItems().filter(x => x.href !== item.href);
+            old.unshift(item);
+            localStorage.setItem(STORAGE_RECENT, JSON.stringify(old.slice(0, 6)));
+            renderRecent();
+        }
+
+        function renderRecent() {
+            const recents = getRecentItems();
+            if (!recents.length) {
+                recentList.innerHTML = '<p class="recent-empty">Belum ada game yang dimainkan. Klik tombol Main untuk mengisi riwayat.</p>';
+                if (sideRecentShortcuts) sideRecentShortcuts.innerHTML = '<span class="side-chip">No recent</span>';
+                updateSidebarStats();
+                return;
+            }
+            recentList.innerHTML = recents.map(item => (
+                `<a class="recent-item" href="${item.href}">${item.title}</a>`
+            )).join('');
+            recentList.querySelectorAll('a').forEach(el => {
+                el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+                el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+            });
+            renderRecentShortcuts();
+            updateSidebarStats();
+        }
+
+        function saveSidePrefs() {
+            localStorage.setItem(STORAGE_SIDEBAR_PREFS, JSON.stringify(sidePrefs));
+        }
+
+        function saveSideLog() {
+            localStorage.setItem(STORAGE_SIDEBAR_LOG, JSON.stringify(sideLog.slice(0, 20)));
+        }
+
+        function addSideLog(text) {
+            sideLog.unshift({ text, ts: Date.now() });
+            if (sideLog.length > 20) sideLog = sideLog.slice(0, 20);
+            saveSideLog();
+            renderSideLog();
+        }
+
+        function renderSideLog() {
+            if (!sideNotifList) return;
+            if (!sideLog.length) {
+                sideNotifList.innerHTML = '<div class="side-notif-item">No activity yet</div>';
+                return;
+            }
+            sideNotifList.innerHTML = sideLog.slice(0, 8).map(item => {
+                const d = new Date(item.ts);
+                const hh = String(d.getHours()).padStart(2, '0');
+                const mm = String(d.getMinutes()).padStart(2, '0');
+                return `<div class="side-notif-item">[${hh}:${mm}] ${item.text}</div>`;
+            }).join('');
+        }
+
+        function updateSidebarStats() {
+            if (sideVisibleCount) {
+                sideVisibleCount.textContent = allCards.filter(card => !card.classList.contains('hidden')).length;
+            }
+            if (sideFavCount) sideFavCount.textContent = favorites.size;
+            if (sideRecentCount) sideRecentCount.textContent = getRecentItems().length;
+        }
+
+        function renderFavoriteShortcuts() {
+            if (!sideFavShortcuts) return;
+            const favCards = allCards.filter(card => favorites.has(cardId(card))).slice(0, 4);
+            if (!favCards.length) {
+                sideFavShortcuts.innerHTML = '<span class="side-chip">No favorites</span>';
+                return;
+            }
+            sideFavShortcuts.innerHTML = favCards.map(card => {
+                const href = card.querySelector('.play-btn')?.getAttribute('href') || '#';
+                return `<a class="side-chip" href="${href}">${cardTitle(card)}</a>`;
+            }).join('');
+        }
+
+        function renderRecentShortcuts() {
+            if (!sideRecentShortcuts) return;
+            const recents = getRecentItems().slice(0, 4);
+            if (!recents.length) {
+                sideRecentShortcuts.innerHTML = '<span class="side-chip">No recent</span>';
+                return;
+            }
+            sideRecentShortcuts.innerHTML = recents.map(item => `<a class="side-chip" href="${item.href}">${item.title}</a>`).join('');
+        }
+
+        function renderSideClock() {
+            if (!sideClock) return;
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            sideClock.textContent = hh + ':' + mm;
+        }
+
+        function applyGroupCollapsed() {
+            sideGroups.forEach(group => {
+                const key = group.dataset.group;
+                const collapsed = !!sidePrefs.groupCollapsed[key];
+                group.classList.toggle('collapsed', collapsed);
+                const btn = group.querySelector('[data-group-toggle]');
+                if (btn) btn.textContent = collapsed ? '+' : '-';
+            });
+        }
+
+        function applySidePrefs() {
+            document.body.dataset.sideAccent = sidePrefs.accent || 'violet';
+            document.body.classList.toggle('sidebar-compact', !!sidePrefs.compact);
+            document.body.classList.toggle('side-focus', !!sidePrefs.focus);
+            document.documentElement.style.setProperty('--side-opacity', String(sidePrefs.opacity || 1));
+            if (sideAccent) sideAccent.value = sidePrefs.accent || 'violet';
+            if (sideOpacity) sideOpacity.value = String(sidePrefs.opacity || 1);
+            if (sideAutoHide) sideAutoHide.checked = !!sidePrefs.autoHide;
+            if (sidePin) sidePin.checked = !!sidePrefs.pinned;
+            if (sideCompact) sideCompact.checked = !!sidePrefs.compact;
+            if (sideFocus) sideFocus.checked = !!sidePrefs.focus;
+            if (sideNotes) sideNotes.value = localStorage.getItem(STORAGE_SIDEBAR_NOTES) || '';
+            applyGroupCollapsed();
+        }
+
+        function filterSideLinks() {
+            if (!sideQuickSearch) return;
+            const q = sideQuickSearch.value.toLowerCase().trim();
+            sideLinks.forEach(link => {
+                const txt = link.textContent.toLowerCase();
+                link.classList.toggle('hidden', q && !txt.includes(q));
+            });
+        }
+
+        function playRandomFavorite() {
+            const favCards = allCards.filter(card => favorites.has(cardId(card)));
+            if (!favCards.length) {
+                showToast('Belum ada favorit untuk random');
+                return;
+            }
+            const pick = favCards[Math.floor(Math.random() * favCards.length)];
+            const href = pick.querySelector('.play-btn')?.getAttribute('href');
+            addSideLog('Random favorite: ' + cardTitle(pick));
+            if (href) window.location.href = href;
+        }
+
+        function updateCards() {
+            const q = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            let vis = 0;
+            allCards.forEach(card => {
+                const title = card.dataset.title || cardTitle(card).toLowerCase();
+                const cat = card.dataset.category || '';
+                const favMatch = !showFavOnly || favorites.has(cardId(card));
+                const match = (!q || title.includes(q)) && (currentFilter === 'all' || cat === currentFilter) && favMatch;
+                card.classList.toggle('hidden', !match);
+                if (match) vis++;
+            });
+            noResult.classList.toggle('show', vis === 0);
+            if (visibleCount) visibleCount.textContent = vis + ' game' + (vis !== 1 ? 's' : '');
+            if (clearSearchBtn) clearSearchBtn.classList.toggle('show', !!q);
+            if (searchResultHint) {
+                const filterText = currentFilter === 'all' ? 'Semua genre' : currentFilter.charAt(0).toUpperCase() + currentFilter.slice(1);
+                searchResultHint.textContent = q ? `Hasil untuk "${q}" - ${filterText}` : filterText;
+            }
+            updateSpotlight();
+            updateSidebarStats();
+        }
+
+        function playRandomVisibleGame() {
+            const visible = allCards.filter(card => !card.classList.contains('hidden'));
+            if (!visible.length) return;
+            const selected = visible[Math.floor(Math.random() * visible.length)];
+            const href = selected.querySelector('.play-btn')?.getAttribute('href');
+            todayActions.random += 1;
+            saveActions();
+            renderChallenges();
+            addXP(10, 'Random jump');
+            unlockAchievement('random-first', 'Chaos Player');
+            addSideLog('Random game: ' + cardTitle(selected));
+            if (href) window.location.href = href;
+        }
+
+        function attachPlayTracking() {
+            allCards.forEach(card => {
+                const playLink = card.querySelector('.play-btn');
+                if (!playLink) return;
+                playLink.addEventListener('click', () => {
+                    todayActions.played += 1;
+                    saveActions();
+                    renderChallenges();
+                    addXP(18, 'Play game');
+                    if (todayActions.played >= 5) unlockAchievement('five-plays', 'Arcade Warmup');
+                    saveRecent({
+                        title: cardTitle(card),
+                        href: playLink.getAttribute('href')
+                    });
+                });
+            });
+        }
+
+        if (searchInput) searchInput.addEventListener('input', updateCards);
+        if (sortSelect) {
+            sortSelect.addEventListener('change', () => {
+                sortCards();
+                updateCards();
+                addXP(4, 'Sort update');
+            });
+        }
+
+        if (favOnlyBtn) {
+            favOnlyBtn.addEventListener('click', () => {
+                showFavOnly = !showFavOnly;
+                updateFavOnlyLabel();
+                updateCards();
+            });
+        }
+
+        if (randomBtn) randomBtn.addEventListener('click', playRandomVisibleGame);
+        if (viewToggleBtn) {
+            viewToggleBtn.addEventListener('click', () => {
+                setViewMode(!listView);
+                addXP(3, 'Switch view');
+            });
+        }
+
+        if (densityToggleBtn) {
+            densityToggleBtn.addEventListener('click', () => {
+                setDensity(!compactDensity);
+                addSideLog('Density: ' + (compactDensity ? 'compact' : 'cozy'));
+            });
+        }
+
+        if (motionToggleBtn) {
+            motionToggleBtn.addEventListener('click', () => {
+                setMotion(!reducedMotion);
+                addSideLog('Motion: ' + (reducedMotion ? 'calm' : 'full'));
+            });
+        }
+
+        if (resetFiltersBtn) resetFiltersBtn.addEventListener('click', resetPortalFilters);
+        if (noResultResetBtn) noResultResetBtn.addEventListener('click', resetPortalFilters);
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.focus();
+                }
+                updateCards();
+            });
+        }
+        if (quickChips) {
+            quickChips.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (searchInput) {
+                        searchInput.value = btn.dataset.query || '';
+                        searchInput.focus();
+                    }
+                    updateCards();
+                });
+            });
+        }
+
+        document.querySelectorAll('[data-quick-action]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.quickAction;
+                if (action === 'search') {
+                    if (searchInput) {
+                        searchInput.focus();
+                        searchInput.select();
+                    }
+                } else if (action === 'random') {
+                    playRandomVisibleGame();
+                } else if (action === 'favorites') {
+                    if (favOnlyBtn) {
+                        favOnlyBtn.click();
+                    } else {
+                        showFavOnly = !showFavOnly;
+                        updateFavOnlyLabel();
+                        updateCards();
+                    }
+                } else if (action === 'top') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        });
+
+        function openCommandCenter() {
+            if (!cmdOverlay || !cmdInput || !cmdList) return;
+            commandOpen = true;
+            cmdOverlay.classList.add('open');
+            cmdOverlay.setAttribute('aria-hidden', 'false');
+            cmdInput.value = '';
+            renderCommandList();
+            cmdInput.focus();
+            todayActions.commands += 1;
+            saveActions();
+            unlockAchievement('command-open', 'Command Pilot');
+            addSideLog('Command Center opened');
+        }
+
+        function closeCommandCenter() {
+            if (!cmdOverlay) return;
+            commandOpen = false;
+            cmdOverlay.classList.remove('open');
+            cmdOverlay.setAttribute('aria-hidden', 'true');
+        }
+
+        const commandItems = [
+            { key: 'random', title: 'Mainkan game random', hint: 'Teleport cepat', run: () => playRandomVisibleGame() },
+            { key: 'favorites', title: 'Toggle favorit saja', hint: 'Filter favorit', run: () => {
+                if (favOnlyBtn) {
+                    favOnlyBtn.click();
+                } else {
+                    showFavOnly = !showFavOnly;
+                    updateFavOnlyLabel();
+                    updateCards();
+                }
+            } },
+            { key: 'popular', title: 'Urutkan paling ramai', hint: 'Sort by players', run: () => {
+                if (sortSelect) sortSelect.value = 'popular';
+                sortCards();
+                updateCards();
+            } },
+            { key: 'az', title: 'Urutkan nama A-Z', hint: 'Sort alfabet', run: () => {
+                if (sortSelect) sortSelect.value = 'az';
+                sortCards();
+                updateCards();
+            } },
+            { key: 'reset', title: 'Reset semua filter', hint: 'Kembali default', run: () => resetPortalFilters() },
+            { key: 'view', title: 'Toggle view list/grid', hint: 'Ubah layout', run: () => setViewMode(!listView) },
+            { key: 'search', title: 'Fokus ke search', hint: 'Ketik nama game', run: () => {
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            } },
+            { key: 'top', title: 'Scroll ke atas', hint: 'Back to top', run: () => window.scrollTo({ top: 0, behavior: 'smooth' }) }
+        ];
+
+        function renderCommandList() {
+            if (!cmdInput || !cmdList) return;
+            const q = cmdInput.value.toLowerCase().trim();
+            const rows = commandItems.filter(item => !q || item.title.toLowerCase().includes(q) || item.key.includes(q));
+            cmdList.innerHTML = rows.map((item, idx) => `<button class="cmd-item ${idx === 0 ? 'active' : ''}" data-key="${item.key}"><span>${item.title}</span><small>${item.hint}</small></button>`).join('');
+            cmdList.querySelectorAll('.cmd-item').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const item = commandItems.find(x => x.key === btn.dataset.key);
+                    if (!item) return;
+                    item.run();
+                    closeCommandCenter();
+                });
+                btn.addEventListener('mouseenter', () => ring.classList.add('hover'));
+                btn.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+            });
+        }
+
+        if (cmdBtn) cmdBtn.addEventListener('click', openCommandCenter);
+        if (cmdOverlay) {
+            cmdOverlay.addEventListener('click', e => {
+                if (e.target === cmdOverlay) closeCommandCenter();
+            });
+        }
+        if (cmdInput) {
+            cmdInput.addEventListener('input', renderCommandList);
+            cmdInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const first = cmdList?.querySelector('.cmd-item');
+                    if (first) first.click();
+                }
+                if (e.key === 'Escape') closeCommandCenter();
+            });
+        }
+        clearRecentBtn.addEventListener('click', () => {
+            localStorage.removeItem(STORAGE_RECENT);
+            renderRecent();
+            addSideLog('Recent history cleared');
+        });
+
+        if (sideQuickSearch) {
+            sideQuickSearch.addEventListener('input', filterSideLinks);
+        }
+
+        sideGroupToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.dataset.groupToggle;
+                sidePrefs.groupCollapsed[key] = !sidePrefs.groupCollapsed[key];
+                saveSidePrefs();
+                applyGroupCollapsed();
+            });
+        });
+
+        if (sideAccent) {
+            sideAccent.addEventListener('change', () => {
+                sidePrefs.accent = sideAccent.value;
+                saveSidePrefs();
+                applySidePrefs();
+                addSideLog('Accent changed to ' + sideAccent.value);
+            });
+        }
+
+        if (sideOpacity) {
+            sideOpacity.addEventListener('input', () => {
+                sidePrefs.opacity = Number(sideOpacity.value);
+                saveSidePrefs();
+                applySidePrefs();
+            });
+        }
+
+        if (sideAutoHide) {
+            sideAutoHide.addEventListener('change', () => {
+                sidePrefs.autoHide = sideAutoHide.checked;
+                saveSidePrefs();
+                addSideLog('Auto-hide ' + (sidePrefs.autoHide ? 'enabled' : 'disabled'));
+            });
+        }
+
+        if (sidePin) {
+            sidePin.addEventListener('change', () => {
+                sidePrefs.pinned = sidePin.checked;
+                saveSidePrefs();
+                addSideLog('Pin mode ' + (sidePrefs.pinned ? 'enabled' : 'disabled'));
+            });
+        }
+
+        if (sideCompact) {
+            sideCompact.addEventListener('change', () => {
+                sidePrefs.compact = sideCompact.checked;
+                saveSidePrefs();
+                applySidePrefs();
+            });
+        }
+
+        if (sideFocus) {
+            sideFocus.addEventListener('change', () => {
+                sidePrefs.focus = sideFocus.checked;
+                saveSidePrefs();
+                applySidePrefs();
+            });
+        }
+
+        if (sideNotes) {
+            sideNotes.addEventListener('input', () => {
+                localStorage.setItem(STORAGE_SIDEBAR_NOTES, sideNotes.value);
+            });
+        }
+
+        if (sideClearNotes) {
+            sideClearNotes.addEventListener('click', () => {
+                if (sideNotes) sideNotes.value = '';
+                localStorage.removeItem(STORAGE_SIDEBAR_NOTES);
+                addSideLog('Sidebar notes cleared');
+            });
+        }
+
+        if (sideCollapseAll) {
+            sideCollapseAll.addEventListener('click', () => {
+                sideGroups.forEach(group => {
+                    const key = group.dataset.group;
+                    sidePrefs.groupCollapsed[key] = true;
+                });
+                saveSidePrefs();
+                applyGroupCollapsed();
+            });
+        }
+
+        if (sideClearNotif) {
+            sideClearNotif.addEventListener('click', () => {
+                sideLog = [];
+                saveSideLog();
+                renderSideLog();
+            });
+        }
+
+        if (sideResetPrefs) {
+            sideResetPrefs.addEventListener('click', () => {
+                sidePrefs.accent = 'violet';
+                sidePrefs.opacity = 1;
+                sidePrefs.autoHide = false;
+                sidePrefs.pinned = false;
+                sidePrefs.compact = false;
+                sidePrefs.focus = false;
+                sidePrefs.groupCollapsed = {};
+                lightMood = 'sunny';
+                applyLightMood(true);
+                saveSidePrefs();
+                applySidePrefs();
+                addSideLog('Sidebar preferences reset');
+            });
+        }
+
+        // Sync both filter button sets (nav + hero) + sidebar categories
+        document.querySelectorAll('.filter-btn, .nav-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const f = btn.dataset.filter;
+                document.querySelectorAll('.filter-btn, .nav-pill').forEach(b => {
+                    b.classList.toggle('active', b.dataset.filter === f);
+                });
+                document.querySelectorAll('.side-cat-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.cat === f);
+                });
+                currentFilter = f;
+                updateCards();
+            });
+        });
+
+        // Settings dropdown toggle
+        const prefsToggleBtn = document.getElementById('prefsToggleBtn');
+        const prefsDropdownMenu = document.getElementById('prefsDropdownMenu');
+        const prefsDropdownWrap = document.getElementById('prefsDropdownWrap');
+        
+        if (prefsToggleBtn && prefsDropdownMenu) {
+            prefsToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                prefsDropdownWrap.classList.toggle('open');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!prefsDropdownWrap.contains(e.target)) {
+                    prefsDropdownWrap.classList.remove('open');
+                }
+            });
+            
+            // Prevent closing when clicking inside the dropdown menu
+            prefsDropdownMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+
+        // Quick keyboard access for desktop users.
+        document.addEventListener('keydown', e => {
+            const activeTag = document.activeElement?.tagName?.toLowerCase();
+            const typing = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+            const hasModifier = e.ctrlKey || e.metaKey || e.altKey;
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                if (commandOpen) closeCommandCenter();
+                else openCommandCenter();
+            }
+            if (e.altKey && e.key.toLowerCase() === 's' && sideQuickSearch) {
+                e.preventDefault();
+                sideQuickSearch.focus();
+                sideQuickSearch.select();
+            }
+            if (e.key === 'Escape' && commandOpen) {
+                closeCommandCenter();
+            }
+            if (e.key === '/' && !typing && !hasModifier) {
+                e.preventDefault();
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            }
+            if (e.key.toLowerCase() === 'r' && !typing && !hasModifier) {
+                e.preventDefault();
+                playRandomVisibleGame();
+            }
+        });
+
+        window.addEventListener('scroll', () => {
+            toTop.classList.toggle('show', window.scrollY > 450);
+            if (sidebarOpen && sidePrefs.autoHide && !sidePrefs.pinned) {
+                const goingDown = window.scrollY > lastScrollY;
+                if (window.scrollY > 160 && goingDown) {
+                    closeSidebar();
+                }
+            }
+            lastScrollY = window.scrollY;
+        });
+
+        function setSidebarActiveByScroll() {
+            const checkpoint = window.scrollY + window.innerHeight * 0.25;
+            let activeId = 'homeSection';
+            sideSections.forEach(section => {
+                if (checkpoint >= section.offsetTop) activeId = section.id;
+            });
+            sideLinks.forEach(link => {
+                link.classList.toggle('active', link.dataset.target === activeId);
+            });
+        }
+
+        function closeSidebar() {
+            sidebarOpen = false;
+            portalSidebar.classList.remove('sidebar-open');
+            sideOverlay.classList.remove('show');
+            document.body.classList.remove('sidebar-open-state');
+            if (sideToggle) {
+                sideToggle.textContent = '\u2630';
+                sideToggle.setAttribute('aria-label', 'Buka sidebar');
+            }
+        }
+
+        function openSidebar() {
+            sidebarOpen = true;
+            portalSidebar.classList.add('sidebar-open');
+            sideOverlay.classList.add('show');
+            document.body.classList.add('sidebar-open-state');
+            if (sideToggle) {
+                sideToggle.textContent = '\u2715';
+                sideToggle.setAttribute('aria-label', 'Tutup sidebar');
+            }
+            updateSidebarStats();
+            renderSideClock();
+        }
+
+        function toggleSidebar() {
+            if (sidebarOpen) closeSidebar();
+            else openSidebar();
+        }
+
+        function applySidebarMode() {
+            // Keep sidebar state consistent on resize
+            if (!sidebarOpen) {
+                closeSidebar();
+            }
+        }
+
+        sideToggle.addEventListener('click', toggleSidebar);
+
+        if (sideCollapseBtn) {
+            sideCollapseBtn.addEventListener('click', closeSidebar);
+        }
+
+        sideOverlay.addEventListener('click', closeSidebar);
+        sideLinks.forEach(link => {
+            link.addEventListener('click', e => {
+                const action = link.dataset.action;
+                if (action === 'random') {
+                    e.preventDefault();
+                    playRandomVisibleGame();
+                } else if (action === 'command') {
+                    e.preventDefault();
+                    openCommandCenter();
+                } else if (action === 'top') {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if (action === 'random-fav') {
+                    e.preventDefault();
+                    playRandomFavorite();
+                } else if (action === 'focus-search') {
+                    e.preventDefault();
+                    searchInput.focus();
+                    searchInput.select();
+                }
+                if (window.innerWidth <= 768) closeSidebar();
+            });
+        });
+
+        // Close sidebar with Escape key
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && sidebarOpen) closeSidebar();
+        });
+
+        window.addEventListener('scroll', setSidebarActiveByScroll);
+        window.addEventListener('resize', () => {
+            applySidebarMode();
+            setSidebarActiveByScroll();
+        });
+
+        toTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        /* ======== COUNTER ANIMATION ======== */
+        function animCount(el, target, dur = 1400) {
+            let cur = 0;
+            const step = target / (dur / 16);
+            const t = setInterval(() => {
+                cur += step;
+                if (cur >= target) {
+                    el.textContent = target;
+                    clearInterval(t);
+                } else {
+                    el.textContent = Math.floor(cur);
+                }
+            }, 16);
+        }
+
+        injectFavoriteButtons();
+        syncStreak();
+        renderProfile();
+        attachPlayTracking();
+        applyCardEnhancements();
+        renderRecent();
+        sortCards();
+        setViewMode(listView);
+        setDensity(compactDensity);
+        setMotion(reducedMotion);
+        updateCards();
+        updateFavOnlyLabel();
+        renderChallenges();
+        for (let i = 0; i < 4; i++) pushActivity();
+        setInterval(pushActivity, 5500);
+        applySidePrefs();
+        renderSideLog();
+        renderFavoriteShortcuts();
+        renderRecentShortcuts();
+        renderSideClock();
+        setInterval(renderSideClock, 30000);
+        updateSidebarStats();
+        applySidebarMode();
+        setSidebarActiveByScroll();
+        const totalGames = allCards.length;
+        setTimeout(() => {
+            gameCount.textContent = '0';
+            animCount(gameCount, totalGames);
+        }, 700);
+
+        /* ======== SIDEBAR CATEGORY FILTERS ======== */
+        const sideCatBtns = document.querySelectorAll('.side-cat-btn');
+        sideCatBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                sideCatBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const cat = btn.dataset.cat;
+                currentFilter = cat;
+                // Sync with main filter buttons
+                document.querySelectorAll('.filter-btn, .nav-pill').forEach(b => {
+                    b.classList.toggle('active', b.dataset.filter === cat);
+                });
+                updateCards();
+                addSideLog('Filtered: ' + (cat === 'all' ? 'All games' : cat));
+            });
+        });
+
+        /* ======== SESSION TIMER & STATS ======== */
+        const sideSessionTimer = document.getElementById('sideSessionTimer');
+        const sideGamesPlayed = document.getElementById('sideGamesPlayed');
+        const sideXPEarned = document.getElementById('sideXPEarned');
+        const sessionStartTime = Date.now();
+        const sessionStartXP = profile.xp;
+
+        function updateSessionInfo() {
+            const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            const label = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+            if (sideSessionTimer) sideSessionTimer.textContent = String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+            if (heroSessionCount) heroSessionCount.textContent = label;
+            if (sideGamesPlayed) sideGamesPlayed.textContent = todayActions.played || 0;
+            if (sideXPEarned) sideXPEarned.textContent = '+' + (profile.xp - sessionStartXP);
+        }
+        setInterval(updateSessionInfo, 1000);
+        updateSessionInfo();
+
+        /* ======== FLOATING COSMIC SPARKLES ======== */
+        function spawnSparkle() {
+            const el = document.createElement('div');
+            const sparkleColor = COLS[Math.floor(Math.random() * COLS.length)];
+            const size = Math.random() * 3 + 1;
+            el.style.cssText = `
+        position:fixed; pointer-events:none; z-index:1;
+        width:${size}px; height:${size}px;
+        border-radius:50%; mix-blend-mode:screen;
+        left:${Math.random() * 100}vw; top:100vh;
+        background:${sparkleColor};
+        box-shadow:0 0 ${size * 3}px ${sparkleColor};
+        animation:floatUp ${Math.random() * 10 + 8}s linear forwards;
+    `;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 18000);
+        }
+        const sparkleStyle = document.createElement('style');
+        sparkleStyle.textContent = `@keyframes floatUp{from{transform:translateY(0) scale(0);opacity:0}10%{opacity:.7}90%{opacity:.3}to{transform:translateY(-110vh) scale(1.2);opacity:0}}`;
+        document.head.appendChild(sparkleStyle);
+        if (!mobileOptimizedMode) setInterval(spawnSparkle, 800);
+    </script>
+
+    <script src="mobile-touch.js"></script>
+    <script src="sounds.js"></script>
+
+    <!-- Music Player HTML (harus sebelum script logic-nya!) -->
+    <div id="music-player">
+        <div class="mp-icon" id="mp-icon"></div>
+        <div class="mp-controls">
+            <select id="bgm-select" class="mp-select">
+                <option value="">🎵 Music: Off</option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">Track 1: Cyberpunk Vibe
+                </option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3">Track 2: Arcade Wave
+                </option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3">Track 3: Chill Space
+                </option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3">Track 4: Action Beat
+                </option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3">Track 5: Neon Drive
+                </option>
+            </select>
+            <div class="mp-actions">
+                <button id="mp-play" class="mp-btn" title="Play/Pause">&#9658;</button>
+                <input type="range" id="mp-vol" class="mp-vol" min="0" max="1" step="0.05" value="0.3" title="Volume">
+            </div>
+        </div>
+        <audio id="bgm-audio" loop></audio>
+    </div>
+
+    <!-- Music Player Logic (setelah HTML-nya siap) -->
+    <script>
+        (function () {
+            const bgmAudio = document.getElementById('bgm-audio');
+            const bgmSelect = document.getElementById('bgm-select');
+            const mpPlay = document.getElementById('mp-play');
+            const mpVol = document.getElementById('mp-vol');
+            const mpIcon = document.getElementById('mp-icon');
+            let isPlaying = false;
+
+            function setPlayingUI(playing) {
+                isPlaying = playing;
+                mpPlay.innerHTML = playing ? '&#10074;&#10074;' : '&#9658;';
+                mpIcon.classList.toggle('playing', playing);
+            }
+
+            function togglePlay() {
+                // Jika belum pilih lagu, otomatis pilih Track 1
+                if (!bgmSelect.value) {
+                    bgmSelect.selectedIndex = 1;
+                    bgmAudio.src = bgmSelect.value;
+                    bgmAudio.volume = parseFloat(mpVol.value);
+                }
+
+                if (!bgmAudio.src) return;
+
+                if (isPlaying) {
+                    bgmAudio.pause();
+                    setPlayingUI(false);
+                } else {
+                    bgmAudio.volume = parseFloat(mpVol.value);
+                    bgmAudio.play().then(() => {
+                        setPlayingUI(true);
+                    }).catch(err => {
+                        console.warn('BGM play error:', err);
+                        setPlayingUI(false);
+                    });
+                }
+            }
+
+            bgmSelect.addEventListener('change', function () {
+                const track = this.value;
+                bgmAudio.pause();
+                setPlayingUI(false);
+                if (track) {
+                    bgmAudio.src = track;
+                    bgmAudio.volume = parseFloat(mpVol.value);
+                    bgmAudio.play().then(() => setPlayingUI(true)).catch(() => { });
+                } else {
+                    bgmAudio.src = '';
+                }
+            });
+
+            mpPlay.addEventListener('click', togglePlay);
+
+            mpVol.addEventListener('input', function () {
+                bgmAudio.volume = parseFloat(this.value);
+            });
+
+            bgmAudio.addEventListener('ended', function () {
+                // loop sudah di-handle oleh atribut loop, ini backup
+                setPlayingUI(false);
+                setPlayingUI(true);
+            });
+        })();
+    </script>
+    <script src="zi-final-polish.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Profile | ZI GAME</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="portal-page.css">
+</head>
+
+<body data-page="profile">
+    <main class="page-shell">
+        <nav class="page-nav" aria-label="Navigasi halaman">
+            <a class="brand" href="index.html">ZI <span>GAME</span></a>
+            <div class="nav-actions">
+                <a class="nav-link" href="index.html">Home</a>
+                <a class="nav-link active" href="profile.html">Profile</a>
+                <a class="nav-link" href="settings.html">Pengaturan</a>
+            </div>
+        </nav>
+
+        <section class="page-hero">
+            <div class="hero-panel">
+                <p class="eyebrow">Player Profile</p>
+                <h1>Ruang kendali pemain.</h1>
+                <p class="lead">Lihat level, XP, favorite, riwayat terakhir, dan achievement yang sudah terbuka dari portal ZI GAME.</p>
+            </div>
+
+            <aside class="profile-card hero-panel">
+                <div class="avatar" aria-hidden="true">NP</div>
+                <h2 class="profile-name" id="profileName">Neon Pilot</h2>
+                <p class="muted"><span id="profileLevel">LV 1</span> - Streak <span id="profileStreak">1 hari</span></p>
+                <div class="xp-track"><div class="xp-fill" id="profileXpFill"></div></div>
+                <p class="muted" id="profileXp">0 / 120 XP</p>
+            </aside>
+        </section>
+
+        <section class="grid" aria-label="Ringkasan pemain">
+            <div class="card"><span class="stat-value" id="statFavorites">0</span><span class="stat-label">Favorite</span></div>
+            <div class="card"><span class="stat-value" id="statRecent">0</span><span class="stat-label">Recent</span></div>
+            <div class="card"><span class="stat-value" id="statAchievements">0</span><span class="stat-label">Achievement</span></div>
+            <div class="card"><span class="stat-value" id="statPlayed">0</span><span class="stat-label">Main hari ini</span></div>
+        </section>
+
+        <section class="section">
+            <div class="section-head">
+                <h2 class="section-title">Favorite Game</h2>
+                <a class="page-btn" href="index.html#librarySection">Tambah Favorite</a>
+            </div>
+            <div class="list" id="favoriteList"></div>
+        </section>
+
+        <section class="section">
+            <div class="section-head">
+                <h2 class="section-title">Terakhir Dimainkan</h2>
+                <a class="page-btn" href="index.html#recentSection">Lihat Portal</a>
+            </div>
+            <div class="list" id="recentListPage"></div>
+        </section>
+
+        <section class="section">
+            <div class="section-head">
+                <h2 class="section-title">Achievement</h2>
+                <a class="page-btn" href="settings.html">Atur Profil</a>
+            </div>
+            <div class="list" id="achievementListPage"></div>
+        </section>
+    </main>
+
+    <script src="portal-page.js"></script>
+</body>
+
+</html>

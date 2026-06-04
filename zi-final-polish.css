@@ -1,0 +1,490 @@
+:root {
+    --zi-surface: rgba(10, 14, 30, 0.45);
+    --zi-surface-strong: rgba(14, 20, 44, 0.65);
+    --zi-stroke: rgba(255, 255, 255, 0.08);
+    --zi-text-soft: rgba(230, 235, 255, 0.72);
+    --zi-green: #00f2fe;
+    --zi-amber: #ff9f43;
+    --zi-cyan: #00d2ff;
+    --zi-pink: #ff007f;
+    --zi-purple: #8b5cf6;
+    --zi-blur: blur(20px) saturate(1.6);
+    --zi-shadow-premium: 0 24px 64px rgba(0, 0, 0, 0.45), 0 8px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+html {
+    scroll-padding-top: 92px;
+    scroll-behavior: smooth;
+}
+
+body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+button,
+a,
+select,
+input,
+textarea {
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    outline: 2.5px solid var(--zi-cyan);
+    outline-offset: 3px;
+    box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+}
+
+/* ========== HERO SECTION REDESIGN ========== */
+.hero {
+    min-height: min(720px, calc(100vh - 84px));
+    padding-top: clamp(60px, 8vh, 120px);
+    padding-bottom: 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+}
+
+.hero-title {
+    animation: heroTitleEntrance 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes heroTitleEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.hero-desc {
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+    color: var(--zi-text-soft);
+    line-height: 1.6;
+    animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+    opacity: 0;
+}
+
+.hero-cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin: 28px auto 20px;
+    animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+    opacity: 0;
+}
+
+.hero-cta {
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    font-family: Outfit, sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-cta.primary {
+    color: #050814;
+    background: linear-gradient(135deg, var(--zi-green), var(--zi-cyan));
+    border-color: rgba(255, 255, 255, 0.28);
+    box-shadow: 0 12px 30px rgba(0, 242, 254, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.hero-cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.hero-cta:hover {
+    transform: translateY(-3px) scale(1.02);
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
+}
+
+.hero-cta:hover::before {
+    transform: translateX(100%);
+}
+
+.hero-cta.primary:hover {
+    background: linear-gradient(135deg, #33f6ff, #33e0ff);
+    box-shadow: 0 16px 36px rgba(0, 242, 254, 0.4);
+}
+
+.hero-insights {
+    animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards;
+    opacity: 0;
+}
+
+/* ========== STICKY CONSOLE PANEL ========== */
+.console-panel {
+    position: sticky;
+    top: 92px;
+    z-index: 30;
+    border-radius: 16px;
+    background: var(--zi-surface);
+    backdrop-filter: var(--zi-blur);
+    -webkit-backdrop-filter: var(--zi-blur);
+    border: 1px solid var(--zi-stroke);
+    padding: 10px 14px;
+    box-shadow: var(--zi-shadow-premium);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.console-panel.is-stuck {
+    top: 14px;
+    background: rgba(10, 14, 30, 0.82);
+    border-color: rgba(85, 216, 255, 0.24);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 20px rgba(85, 216, 255, 0.1);
+    transform: scale(0.995);
+}
+
+.console-search-wrap {
+    background: rgba(0, 0, 0, 0.24);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.console-search-wrap:focus-within {
+    border-color: rgba(85, 216, 255, 0.45);
+    background: rgba(0, 0, 0, 0.38);
+    box-shadow: 0 0 20px rgba(85, 216, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.search-bar:focus {
+    padding-left: 6px;
+}
+
+/* ========== NAV PILLS & CHIPS ========== */
+.nav-pill {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-pill::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--zi-green), var(--zi-cyan));
+    border-radius: 2px;
+    transform: translateX(-50%);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-pill:hover {
+    color: #fff;
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-pill:hover::after,
+.nav-pill.active::after {
+    width: 50%;
+}
+
+.nav-pill .cat-count {
+    transition: background 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nav-pill:hover .cat-count {
+    transform: scale(1.1) rotate(4deg);
+    background: rgba(0, 242, 254, 1);
+}
+
+/* ========== PREMIUM STAGGERED GAME CARD ========== */
+.game-card {
+    opacity: 0;
+    transform: translateY(24px) scale(0.975);
+    animation: cardEntrance 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: calc(var(--card-order, 0) * 0.035s + 0.08s);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), 
+                box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), 
+                border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
+}
+
+@keyframes cardEntrance {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.game-card:hover {
+    border-color: rgba(139, 92, 246, 0.36) !important;
+    background: rgba(14, 20, 52, 0.64) !important;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4), 0 0 24px rgba(139, 92, 246, 0.15);
+    transform: translateY(-5px) scale(1.015) !important;
+}
+
+.game-card .card-thumb {
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.game-card:hover .card-thumb {
+    transform: scale(1.035);
+}
+
+.game-card .play-btn {
+    transition: background 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.game-card:hover .play-btn {
+    transform: scale(1.055) translateX(3px);
+    box-shadow: 0 8px 20px rgba(0, 210, 255, 0.28);
+}
+
+/* Card Glow Bar Micro-animation */
+.card-glow-bar {
+    background: linear-gradient(90deg, var(--zi-purple), var(--zi-cyan), var(--zi-pink), var(--zi-purple));
+    background-size: 300% 100%;
+    animation: flowGlow 6s linear infinite;
+    opacity: 0.75;
+}
+
+@keyframes flowGlow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
+}
+
+/* ========== SMOOTH FILTER TRANSITION ========== */
+.card-animating-out {
+    pointer-events: none;
+    animation: cardFadeOut 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.card-animating-in {
+    animation: cardFadeIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes cardFadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.88) translateY(12px);
+    }
+}
+
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.88) translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ========== ULTRA SMOOTH CUSTOM CURSOR ========== */
+#cur-dot-new {
+    width: 6px;
+    height: 6px;
+    background: var(--zi-cyan);
+    border-radius: 50%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 9999;
+    box-shadow: 0 0 12px var(--zi-cyan), 0 0 24px rgba(0, 210, 255, 0.4);
+    will-change: transform;
+}
+
+#cur-ring-new {
+    width: 38px;
+    height: 38px;
+    border: 1.5px solid rgba(0, 210, 255, 0.45);
+    border-radius: 50%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 9998;
+    will-change: transform;
+    transform-origin: center center;
+    transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
+                height 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
+                border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
+                background 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#cur-ring-new.hover {
+    width: 48px;
+    height: 48px;
+    border-color: var(--zi-pink);
+    background: rgba(255, 0, 127, 0.08);
+}
+
+/* ========== MODAL BOUNCE IN TRANSITIONS ========== */
+.level-modal,
+.onboard-panel,
+.confirm-panel {
+    border-radius: 20px !important;
+    background: rgba(14, 20, 44, 0.72) !important;
+    border: 1px solid var(--zi-stroke) !important;
+    box-shadow: var(--zi-shadow-premium) !important;
+    backdrop-filter: var(--zi-blur) !important;
+    -webkit-backdrop-filter: var(--zi-blur) !important;
+    animation: modalBounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes modalBounceIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -40%) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.onboard-panel {
+    animation: onboardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes onboardSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ========== ACHIEVEMENT TILES ========== */
+.achievement-tile {
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.achievement-tile:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.achievement-tile.is-unlocked {
+    border-color: rgba(0, 242, 254, 0.38) !important;
+    background: linear-gradient(135deg, rgba(0, 242, 254, 0.08), rgba(139, 92, 246, 0.05)) !important;
+    box-shadow: 0 10px 20px rgba(0, 242, 254, 0.05) !important;
+}
+
+/* ========== VIEW TRANSITIONS (THEME RIPPLE REVEAL) ========== */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+    z-index: 1;
+}
+
+::view-transition-new(root) {
+    z-index: 9999;
+}
+
+.light-mode::view-transition-old(root) {
+    z-index: 9999;
+}
+
+.light-mode::view-transition-new(root) {
+    z-index: 1;
+}
+
+/* ========== CLEAN SPACING OVERRIDES ========== */
+.wrap {
+    padding: 0 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.library-section {
+    padding-top: 48px;
+    padding-bottom: 48px;
+}
+
+.profile-section {
+    padding-top: 48px;
+    padding-bottom: 48px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.recent-wrap {
+    padding-top: 36px;
+    padding-bottom: 48px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Light mode adjustments */
+body.light-mode {
+    --zi-surface: rgba(255, 255, 255, 0.58);
+    --zi-surface-strong: rgba(255, 255, 255, 0.8);
+    --zi-stroke: rgba(15, 23, 42, 0.08);
+    --zi-text-soft: rgba(15, 23, 42, 0.72);
+}
+
+body.light-mode .console-panel.is-stuck {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+body.light-mode .console-search-wrap {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(15, 23, 42, 0.06);
+}
+
+/* Stagger keyframes helper */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Whack A Mole | ZI GAME</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --cyan: #00ffe7; --pink: #ff2d78; --purple: #b537f2;
+            --gold: #ffe600; --bg: #02020f;
+        }
+        body {
+            background: var(--bg); color: #fff;
+            font-family: 'Outfit', sans-serif;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 100vh; overflow: hidden;
+            touch-action: manipulation;
+            padding: 60px 16px 16px;
+        }
+
+        .bg-layer { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(0,255,231,.022) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,231,.022) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .orb { position: absolute; border-radius: 50%; filter: blur(120px); }
+        .o1 { width:500px;height:500px;top:-20%;left:-10%;background:radial-gradient(circle,rgba(0,255,231,.08),transparent 70%); }
+        .o2 { width:450px;height:450px;bottom:-15%;right:-10%;background:radial-gradient(circle,rgba(255,45,120,.08),transparent 70%); }
+
+        .back-btn {
+            position: fixed; top:20px; left:20px; z-index:100;
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px;
+            color: rgba(255,255,255,.4);
+            border: 1px solid rgba(255,255,255,.1);
+            padding: 7px 14px; border-radius: 10px; transition: all .2s;
+        }
+        .back-btn:hover { color: var(--cyan); border-color: rgba(0,255,231,.3); }
+
+        /* Game wrapper */
+        .game-wrap {
+            position: relative; z-index: 1;
+            width: min(400px, 100%);
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+        }
+
+        /* Title */
+        .game-title {
+            font-family: 'Bebas Neue', cursive; font-size: clamp(28px,7vw,44px);
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* Stats bar */
+        .stats-row {
+            display: flex; gap: 12px; width: 100%; justify-content: center;
+        }
+        .stat-box {
+            flex: 1; text-align: center;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 14px; padding: 10px 6px;
+        }
+        .stat-lbl {
+            font-family: 'JetBrains Mono', monospace; font-size: 9px;
+            letter-spacing: 2px; color: rgba(255,255,255,.3);
+            margin-bottom: 2px; text-transform: uppercase;
+        }
+        .stat-val {
+            font-family: 'Bebas Neue', cursive; font-size: 28px; line-height: 1;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .stat-val.gold {
+            background: linear-gradient(135deg, var(--gold), #ff9a00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .stat-val.pink {
+            background: linear-gradient(135deg, var(--pink), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* Timer bar */
+        .timer-wrap {
+            width: 100%; height: 6px; background: rgba(255,255,255,.07);
+            border-radius: 3px; overflow: hidden;
+        }
+        .timer-fill {
+            height: 100%; border-radius: 3px;
+            background: linear-gradient(90deg, var(--cyan), var(--purple));
+            transition: width .3s linear, background .4s;
+            width: 100%;
+        }
+
+        /* Game grid */
+        .field {
+            width: 100%;
+            background: rgba(255,255,255,.025);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 24px; padding: 16px;
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        /* Hole */
+        .hole {
+            aspect-ratio: 1; border-radius: 50%;
+            position: relative; overflow: hidden;
+            background: radial-gradient(circle at 50% 70%, #060610, #0a0a18);
+            border: 2px solid rgba(0,255,231,.08);
+            box-shadow: inset 0 12px 24px rgba(0,0,0,.9), inset 0 -4px 8px rgba(0,255,231,.04);
+        }
+
+        /* Mole */
+        .mole {
+            position: absolute; bottom: -110%;
+            left: 7%; width: 86%; height: 95%;
+            border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: bottom .22s cubic-bezier(.34,1.56,.64,1);
+            display: flex; align-items: flex-start; justify-content: center;
+            padding-top: 6%;
+            font-size: clamp(20px,5.5vw,30px);
+            user-select: none;
+
+            /* Neon mole design */
+            background: linear-gradient(180deg, #1a0530, #0d0220);
+            border: 2px solid rgba(181,55,242,.4);
+            box-shadow:
+                inset 0 -8px 16px rgba(0,0,0,.6),
+                inset 0 4px 8px rgba(181,55,242,.15),
+                0 0 16px rgba(181,55,242,.2);
+        }
+        .mole.up { bottom: 5%; }
+        .mole.whacked { animation: whackPop .25s ease; }
+        @keyframes whackPop {
+            0%  { transform: scale(1); filter: brightness(1); }
+            40% { transform: scale(1.25); filter: brightness(2.5); }
+            100%{ transform: scale(.9); filter: brightness(1.5); }
+        }
+
+        /* Score popup */
+        .score-pop {
+            position: absolute; top: 20%; left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Bebas Neue', cursive; font-size: 22px;
+            color: var(--gold); text-shadow: 0 0 10px var(--gold);
+            pointer-events: none;
+            animation: popFloat .6s ease forwards;
+        }
+        @keyframes popFloat {
+            0%  { opacity:1; transform:translateX(-50%) translateY(0); }
+            100%{ opacity:0; transform:translateX(-50%) translateY(-40px); }
+        }
+
+        /* Start button */
+        .start-btn {
+            padding: 14px 44px; border-radius: 50px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: #000; font-family: 'Outfit', sans-serif;
+            font-weight: 700; font-size: 15px; letter-spacing: 1px;
+            border: none; cursor: pointer; transition: all .2s;
+        }
+        .start-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,255,231,.4); }
+
+        /* Overlay */
+        .overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(2,2,15,.92); backdrop-filter: blur(20px);
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center; gap: 18px;
+            text-align: center; padding: 20px;
+        }
+        .overlay.show { display: flex; }
+        .ov-icon { font-size: 64px; animation: popIn .5s cubic-bezier(.34,1.56,.64,1) both; }
+        .ov-title {
+            font-family: 'Bebas Neue', cursive; font-size: clamp(44px,10vw,72px);
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .ov-sub { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 2px; color: rgba(255,255,255,.4); }
+        .ov-btn {
+            margin-top: 4px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color: #000; border: none; padding: 13px 40px; border-radius: 50px;
+            font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px;
+            letter-spacing: 1px; cursor: pointer; transition: all .2s;
+        }
+        .ov-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,255,231,.4); }
+        @keyframes popIn { from{transform:scale(.4);opacity:0} to{transform:scale(1);opacity:1} }
+    </style>
+</head>
+<body>
+
+    <div class="bg-layer">
+        <div class="bg-grid"></div>
+        <div class="orb o1"></div>
+        <div class="orb o2"></div>
+    </div>
+
+    <a href="index.html" class="back-btn">← BACK</a>
+
+    <div class="overlay show" id="overlay">
+        <div class="ov-icon">🔨</div>
+        <div class="ov-title">WHACK-A-MOLE</div>
+        <div class="ov-sub">Pukul alien sebanyak mungkin dalam 30 detik!</div>
+        <button class="ov-btn" onclick="startGame()">MULAI MAIN</button>
+    </div>
+
+    <div class="game-wrap">
+        <div class="game-title">⚡ Whack-A-Mole</div>
+
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="stat-lbl">Score</div>
+                <div class="stat-val" id="scoreEl">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-lbl">Best</div>
+                <div class="stat-val gold" id="bestEl">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-lbl">Combo</div>
+                <div class="stat-val pink" id="comboEl">0x</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-lbl">Waktu</div>
+                <div class="stat-val" id="timeEl">30</div>
+            </div>
+        </div>
+
+        <div class="timer-wrap">
+            <div class="timer-fill" id="timerFill"></div>
+        </div>
+
+        <div class="field" id="field"></div>
+    </div>
+
+    <script>
+    const MOLE_FACES = ['👾', '👽', '🤖', '👻', '💀', '🎃'];
+    const NUM_HOLES = 9;
+    const GAME_TIME = 30;
+
+    let holes, moles, score, best, combo, timeLeft, timer, peepTimeout, running, lastHole;
+    let lastTime = 0;
+    best = parseInt(localStorage.getItem('wam_best') || '0');
+    document.getElementById('bestEl').textContent = best;
+
+    // Build grid
+    const field = document.getElementById('field');
+    moles = [];
+    for (let i = 0; i < NUM_HOLES; i++) {
+        const hole = document.createElement('div');
+        hole.className = 'hole';
+        const mole = document.createElement('div');
+        mole.className = 'mole';
+        mole.textContent = '👾';
+        mole.addEventListener('mousedown', e => { e.preventDefault(); whack(mole, i); });
+        mole.addEventListener('touchstart', e => { e.preventDefault(); whack(mole, i); }, { passive: false });
+        hole.appendChild(mole);
+        moles.push({ hole, mole, up: false, face: i });
+        field.appendChild(hole);
+    }
+
+    function startGame() {
+        document.getElementById('overlay').classList.remove('show');
+        score = 0; combo = 0; timeLeft = GAME_TIME; running = true;
+        updateUI();
+        clearTimeout(peepTimeout);
+        if (timer) cancelAnimationFrame(timer);
+        // Reset moles
+        moles.forEach(m => { m.mole.classList.remove('up'); m.up = false; });
+        // Timer
+        lastTime = performance.now();
+        function tick(timestamp) {
+            if (!running) return;
+            const dt = (timestamp - lastTime) / 1000;
+            if (dt >= 1) {
+                timeLeft--; lastTime += 1000;
+                document.getElementById('timeEl').textContent = timeLeft;
+                document.getElementById('timerFill').style.width = (timeLeft / GAME_TIME * 100) + '%';
+                if (timeLeft <= 8) document.getElementById('timerFill').style.background = 'linear-gradient(90deg,#ff2d78,#ff6b6b)';
+                if (timeLeft <= 0) { endGame(); return; }
+            }
+            timer = requestAnimationFrame(tick);
+        }
+        timer = requestAnimationFrame(tick);
+        peep();
+    }
+
+    function getDelay() {
+        // Gets faster as time runs out
+        const pct = timeLeft / GAME_TIME;
+        return Math.max(320, 800 * pct);
+    }
+
+    function peep() {
+        if (!running) return;
+        const idx = randomHole();
+        const m = moles[idx];
+        m.mole.textContent = MOLE_FACES[Math.floor(Math.random() * MOLE_FACES.length)];
+        m.mole.classList.add('up'); m.up = true;
+        const showTime = getDelay() + Math.random() * 300;
+        peepTimeout = setTimeout(() => {
+            m.mole.classList.remove('up'); m.up = false;
+            peepTimeout = setTimeout(peep, 100);
+        }, showTime);
+    }
+
+    function randomHole() {
+        const avail = moles.map((m, i) => !m.up ? i : -1).filter(i => i >= 0);
+        if (!avail.length) return Math.floor(Math.random() * NUM_HOLES);
+        let idx;
+        do { idx = avail[Math.floor(Math.random() * avail.length)]; } while (idx === lastHole && avail.length > 1);
+        lastHole = idx;
+        return idx;
+    }
+
+    function whack(mole, idx) {
+        const m = moles[idx];
+        if (!m.up || !running) return;
+        m.up = false;
+        mole.classList.remove('up');
+        mole.classList.remove('whacked');
+        void mole.offsetWidth;
+        mole.classList.add('whacked');
+        combo++;
+        const pts = 10 * Math.max(1, Math.floor(combo / 3));
+        score += pts;
+        if (score > best) { best = score; localStorage.setItem('wam_best', best); }
+        updateUI();
+        // Score popup
+        const pop = document.createElement('div');
+        pop.className = 'score-pop';
+        pop.textContent = '+' + pts;
+        m.hole.appendChild(pop);
+        setTimeout(() => pop.remove(), 650);
+        if (window.SFX) SFX.hit();
+    }
+
+    function updateUI() {
+        document.getElementById('scoreEl').textContent = score.toLocaleString();
+        document.getElementById('bestEl').textContent = best.toLocaleString();
+        document.getElementById('comboEl').textContent = combo + 'x';
+    }
+
+    function endGame() {
+        running = false;
+        clearTimeout(peepTimeout);
+        if (timer) cancelAnimationFrame(timer);
+        moles.forEach(m => { m.mole.classList.remove('up'); m.up = false; });
+        setTimeout(() => {
+            document.getElementById('ov-icon2') && (document.getElementById('ov-icon2').textContent = '🏆');
+            document.getElementById('overlay').querySelector('.ov-icon').textContent = score > 100 ? '🏆' : '⚡';
+            document.getElementById('overlay').querySelector('.ov-title').textContent = 'SELESAI!';
+            document.getElementById('overlay').querySelector('.ov-sub').textContent = `Skor: ${score} pts • Best: ${best}`;
+            document.getElementById('overlay').querySelector('.ov-btn').textContent = '↺ Main Lagi';
+            document.getElementById('overlay').classList.add('show');
+        }, 400);
+        if (window.SFX) SFX.win();
+    }
+    </script>
+    <script src="sounds.js"></script>
+    <script src="mobile-touch.js"></script>
+</body>
+</html>

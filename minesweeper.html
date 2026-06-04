@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Minesweeper | ZI GAME</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="game-shared.css">
+    <style>
+        .mine-board {
+            display: inline-grid;
+            gap: 3px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08)
+        }
+
+        .mine-cell {
+            width: clamp(30px, 8vw, 38px);
+            height: clamp(30px, 8vw, 38px);
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.08), rgba(123, 97, 255, 0.08));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(13px, 3.5vw, 16px);
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none
+        }
+
+        .mine-cell:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05)
+        }
+
+        .mine-cell.revealed {
+            background: rgba(255, 255, 255, 0.03);
+            cursor: default;
+            border-color: rgba(255, 255, 255, 0.04)
+        }
+
+        .mine-cell.revealed:hover {
+            transform: none
+        }
+
+        .mine-cell.mine-hit {
+            background: rgba(255, 60, 131, 0.3) !important;
+            border-color: rgba(255, 60, 131, 0.5)
+        }
+
+        .mine-cell.flagged {
+            background: rgba(255, 154, 60, 0.15);
+            border-color: rgba(255, 154, 60, 0.3)
+        }
+
+        .c1 {
+            color: #00f2fe
+        }
+
+        .c2 {
+            color: #00e676
+        }
+
+        .c3 {
+            color: #ff3c83
+        }
+
+        .c4 {
+            color: #7b61ff
+        }
+
+        .c5 {
+            color: #ff9a3c
+        }
+
+        .c6 {
+            color: #00b4d8
+        }
+
+        .c7 {
+            color: #fff
+        }
+
+        .c8 {
+            color: #888
+        }
+
+        .mine-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            justify-content: center;
+            flex-wrap: wrap
+        }
+
+        .mh-item {
+            padding: 8px 18px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .mh-item span {
+            color: var(--primary);
+            font-weight: 700
+        }
+
+        .diff-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            justify-content: center
+        }
+
+        .df-btn {
+            padding: 8px 18px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            color: #8a8a9a;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s
+        }
+
+        .df-btn:hover,
+        .df-btn.active {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: rgba(0, 242, 254, 0.4);
+            color: #00f2fe
+        }
+
+        .flag-toggle {
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            color: #8a8a9a;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 16px
+        }
+
+        .flag-toggle.active {
+            background: rgba(255, 154, 60, 0.15);
+            border-color: rgba(255, 154, 60, 0.4);
+            color: #ff9a3c
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-page-bg">
+        <div class="orb o1"></div>
+        <div class="orb o2"></div>
+    </div>
+    <div class="game-topbar">
+        <a href="index.html" class="back-btn">← Kembali</a>
+        <div class="game-page-title">💣 Minesweeper</div>
+        <div class="score-display">
+            <div class="score-box">⏱️ <span id="timer">0</span>s</div>
+        </div>
+    </div>
+    <div class="game-area" style="position:relative">
+        <div class="diff-row">
+            <button class="df-btn active" data-r="8" data-c="8" data-m="10">Mudah</button>
+            <button class="df-btn" data-r="12" data-c="12" data-m="25">Sedang</button>
+            <button class="df-btn" data-r="16" data-c="16" data-m="50">Sulit</button>
+        </div>
+        <div class="mine-header">
+            <div class="mh-item">💣 <span id="mineCount">10</span></div>
+            <div class="mh-item">🚩 <span id="flagCount">0</span></div>
+        </div>
+        <button class="flag-toggle" id="flagToggle" onclick="flagMode=!flagMode;this.classList.toggle('active')">🚩 Mode
+            Bendera</button>
+        <div class="mine-board" id="board"></div>
+        <div class="game-overlay" id="overlay">
+            <div class="overlay-icon" id="oIcon">💣</div>
+            <div class="overlay-title" id="oTitle">Boom!</div>
+            <div class="overlay-sub" id="oSub"></div>
+            <button class="ctrl-btn primary-btn" onclick="initGame()">Main Lagi</button>
+        </div>
+    </div>
+    <div class="game-controls"><button class="ctrl-btn primary-btn" onclick="initGame()">🔄 Reset</button></div>
+    <script>
+        const boardEl = document.getElementById('board'), overlay = document.getElementById('overlay');
+        let ROWS = 8, COLS = 8, MINES = 10, grid, revealed, flags, gameOver, firstClick, timerInt, seconds, flagMode = false;
+        let lastTime = 0;
+
+        document.querySelectorAll('.df-btn').forEach(b => {
+            b.addEventListener('click', () => {
+                document.querySelectorAll('.df-btn').forEach(x => x.classList.remove('active')); b.classList.add('active');
+                ROWS = +b.dataset.r; COLS = +b.dataset.c; MINES = +b.dataset.m; initGame()
+            })
+        });
+
+        function initGame() {
+            if (timerInt) cancelAnimationFrame(timerInt); seconds = 0; document.getElementById('timer').textContent = 0;
+            grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+            revealed = Array(ROWS).fill(null).map(() => Array(COLS).fill(false));
+            flags = Array(ROWS).fill(null).map(() => Array(COLS).fill(false));
+            gameOver = false; firstClick = true;
+            document.getElementById('mineCount').textContent = MINES;
+            document.getElementById('flagCount').textContent = 0;
+            overlay.classList.remove('active'); render();
+        }
+
+        function placeMines(sr, sc) {
+            let placed = 0;
+            while (placed < MINES) {
+                const r = Math.floor(Math.random() * ROWS), c = Math.floor(Math.random() * COLS);
+                if (grid[r][c] !== -1 && !(Math.abs(r - sr) <= 1 && Math.abs(c - sc) <= 1)) { grid[r][c] = -1; placed++ }
+            }
+            for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++) {
+                if (grid[r][c] === -1) continue; let cnt = 0;
+                for (let dr = -1; dr <= 1; dr++)for (let dc = -1; dc <= 1; dc++) { const nr = r + dr, nc = c + dc; if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && grid[nr][nc] === -1) cnt++ }
+                grid[r][c] = cnt;
+            }
+        }
+
+        function render() {
+            boardEl.style.gridTemplateColumns = `repeat(${COLS},1fr)`; boardEl.innerHTML = '';
+            for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++) {
+                const cell = document.createElement('div'); cell.className = 'mine-cell';
+                if (revealed[r][c]) {
+                    cell.classList.add('revealed');
+                    if (grid[r][c] === -1) { cell.textContent = '💣'; cell.classList.add('mine-hit') }
+                    else if (grid[r][c] > 0) { cell.textContent = grid[r][c]; cell.classList.add('c' + grid[r][c]) }
+                } else if (flags[r][c]) { cell.textContent = '🚩'; cell.classList.add('flagged') }
+                cell.addEventListener('click', () => { if (flagMode) toggleFlag(r, c); else reveal(r, c) });
+                cell.addEventListener('contextmenu', e => { e.preventDefault(); toggleFlag(r, c) });
+                boardEl.appendChild(cell);
+            }
+        }
+
+        function toggleFlag(r, c) {
+            if (gameOver || revealed[r][c]) return;
+            flags[r][c] = !flags[r][c];
+            document.getElementById('flagCount').textContent = flags.flat().filter(Boolean).length;
+            render();
+        }
+
+        function reveal(r, c) {
+            if (gameOver || revealed[r][c] || flags[r][c]) return;
+            if (firstClick) { 
+                firstClick = false; 
+                placeMines(r, c); 
+                lastTime = performance.now();
+                function tick(timestamp) {
+                    if (gameOver) return;
+                    const dt = (timestamp - lastTime) / 1000;
+                    if (dt >= 1) {
+                        seconds++; lastTime += 1000; document.getElementById('timer').textContent = seconds;
+                    }
+                    timerInt = requestAnimationFrame(tick);
+                }
+                timerInt = requestAnimationFrame(tick);
+            }
+            revealed[r][c] = true;
+            if (grid[r][c] === -1) {
+                gameOver = true; if (timerInt) cancelAnimationFrame(timerInt); revealAll();
+                document.getElementById('oIcon').textContent = '💥'; document.getElementById('oTitle').textContent = 'Boom!';
+                document.getElementById('oSub').textContent = `Waktu: ${seconds}s`; overlay.classList.add('active'); return
+            }
+            if (grid[r][c] === 0) { for (let dr = -1; dr <= 1; dr++)for (let dc = -1; dc <= 1; dc++) { const nr = r + dr, nc = c + dc; if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) reveal(nr, nc) } }
+            render(); checkWin();
+        }
+
+        function revealAll() { for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++)revealed[r][c] = true; render() }
+
+        function checkWin() {
+            let unrevealed = 0;
+            for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++)if (!revealed[r][c]) unrevealed++;
+            if (unrevealed === MINES) {
+                gameOver = true; if (timerInt) cancelAnimationFrame(timerInt);
+                document.getElementById('oIcon').textContent = '🎉'; document.getElementById('oTitle').textContent = 'Selamat!';
+                document.getElementById('oSub').textContent = `Selesai dalam ${seconds}s`; overlay.classList.add('active');
+                saveScore(Math.max(10, 500 - seconds * 5))
+            }
+        }
+
+        function saveScore(s) { try { const d = JSON.parse(localStorage.getItem('arcadeNexusStats') || '{"totalScore":0,"gamesPlayed":0,"streak":0,"highScores":{},"achievements":[]}'); d.totalScore += s; d.gamesPlayed++; const t = new Date().toDateString(); if (d.lastPlayed === new Date(Date.now() - 86400000).toDateString()) d.streak = (d.streak || 0) + 1; else if (d.lastPlayed !== t) d.streak = 1; d.lastPlayed = t; if (!d.highScores.minesweeper || s > d.highScores.minesweeper) d.highScores.minesweeper = s; localStorage.setItem('arcadeNexusStats', JSON.stringify(d)) } catch (e) { } }
+
+        initGame();
+    </script>
+<script src="sounds.js"></script>
+    <script src="mobile-touch.js"></script>
+</body>
+
+</html>
+
