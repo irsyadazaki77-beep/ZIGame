@@ -386,6 +386,15 @@
         volume.addEventListener('input', () => storageSet(storage.volume, volume.value));
     }
 
+    function placePortalMusicPlayer() {
+        const player = $('#music-player');
+        const hero = $('#homeSection');
+        if (!player || !hero || player.parentElement === hero) return;
+        // Keep the player close to the discovery controls so mobile can place
+        // it in normal flow instead of covering the library or quickbar.
+        hero.appendChild(player);
+    }
+
     function stickySearchState() {
         const panel = $('.console-panel');
         if (!panel) return;
@@ -529,74 +538,11 @@
     }
 
     function setupPremiumThemeToggle() {
-        const themeToggleBtn = document.getElementById('themeToggle');
-        const sideThemeToggle = document.getElementById('sideThemeToggle');
-
-        function toggleThemeWithReveal(e) {
-            // Check support for Document View Transition API
-            if (!document.startViewTransition) {
-                try {
-                    isLightMode = !isLightMode;
-                    if (typeof applyTheme === 'function') applyTheme(true);
-                } catch(err) {
-                    window.isLightMode = !window.isLightMode;
-                    if (typeof window.applyTheme === 'function') window.applyTheme(true);
-                }
-                return;
-            }
-
-            const x = e.clientX ?? window.innerWidth / 2;
-            const y = e.clientY ?? window.innerHeight / 2;
-            const endRadius = Math.hypot(
-                Math.max(x, window.innerWidth - x),
-                Math.max(y, window.innerHeight - y)
-            );
-
-            const transition = document.startViewTransition(() => {
-                try {
-                    isLightMode = !isLightMode;
-                    if (typeof applyTheme === 'function') applyTheme(true);
-                } catch(err) {
-                    window.isLightMode = !window.isLightMode;
-                    if (typeof window.applyTheme === 'function') window.applyTheme(true);
-                }
-            });
-
-            transition.ready.then(() => {
-                let lightVal = false;
-                try { lightVal = isLightMode; } catch(err) { lightVal = window.isLightMode; }
-
-                const clipPath = [
-                    `circle(0px at ${x}px ${y}px)`,
-                    `circle(${endRadius}px at ${x}px ${y}px)`
-                ];
-                
-                document.documentElement.animate(
-                    {
-                        clipPath: lightVal ? clipPath.reverse() : clipPath
-                    },
-                    {
-                        duration: 450,
-                        easing: 'cubic-bezier(0.86, 0, 0.07, 1)',
-                        pseudoElement: lightVal
-                            ? '::view-transition-old(root)'
-                            : '::view-transition-new(root)'
-                    }
-                );
-            });
-        }
-
-        if (themeToggleBtn) {
-            const newBtn = themeToggleBtn.cloneNode(true);
-            themeToggleBtn.parentNode.replaceChild(newBtn, themeToggleBtn);
-            newBtn.addEventListener('click', toggleThemeWithReveal);
-        }
-
-        if (sideThemeToggle) {
-            const newSideBtn = sideThemeToggle.cloneNode(true);
-            sideThemeToggle.parentNode.replaceChild(newSideBtn, sideThemeToggle);
-            newSideBtn.addEventListener('click', toggleThemeWithReveal);
-        }
+        // Theme state is owned by the inline portal controller. The previous
+        // enhancement replaced its buttons and could not access that script's
+        // lexical `isLightMode`, which made the second toggle ineffective.
+        // Leave the original listeners intact so both directions stay in sync
+        // with localStorage and the sidebar control.
     }
 
     function setupPremiumFiltering() {
@@ -763,6 +709,7 @@
         enhanceCommandCenter();
         addFooterStats();
         persistAudioVolume();
+        placePortalMusicPlayer();
         stickySearchState();
         improveAccessibility();
         watchLevelUp();

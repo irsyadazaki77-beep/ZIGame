@@ -11,6 +11,22 @@
     const touchDevice = coarsePointer || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const shouldOptimize = androidLike || touchDevice || narrowScreen;
 
+    // Load the shared presentation layer for every game page after its
+    // page-specific CSS. This lets the engines keep their own layout and
+    // identity while the controls, stage, overlays, and responsive behavior
+    // share one accessible visual system.
+    if (isGamePage) {
+        document.documentElement.classList.add('zi-modern-ui');
+        document.body.classList.add('zi-modern-game');
+        if (!document.querySelector('link[data-zi-modern-ui]')) {
+            const modernUi = document.createElement('link');
+            modernUi.rel = 'stylesheet';
+            modernUi.href = 'zi-modern-ui.css?v=1';
+            modernUi.dataset.ziModernUi = 'true';
+            document.head.appendChild(modernUi);
+        }
+    }
+
     // Shared runtime is loaded from one place for every game page. It provides
     // safe recent-history migration, metadata, reduced-motion support and PWA
     // registration without changing any individual game's engine.

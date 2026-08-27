@@ -1,10 +1,10 @@
-const CACHE_NAME = 'zi-game-v2';
+const CACHE_NAME = 'zi-game-v3';
 const APP_SHELL = [
     './', './index.html', './profile.html', './settings.html', './404.html',
     './index-portal.css', './sidebar.css', './zi-final-polish.css', './portal-page.css',
     './game-shared.css', './mobile-touch.js', './sounds.js', './site-runtime.js',
     './manifest.webmanifest', './favicon.svg', './styles.css', './app.js',
-    './polybridge3.css', './hyperlightdrifter.css', './zi-accessibility.css',
+    './polybridge3.css', './hyperlightdrifter.css', './zi-accessibility.css', './zi-modern-ui.css',
     './2048.html', './babaisyou.html', './breakout.html', './colormatch.html',
     './dinorun.html', './flappy.html', './geometry.html', './gris.html',
     './hangman.html', './hyperlightdrifter.html', './katanazero.html', './ludo.html',
