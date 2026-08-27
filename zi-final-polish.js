@@ -210,6 +210,9 @@
         $$('.nav-pill, .side-cat-btn').forEach(button => {
             const key = button.dataset.filter || button.dataset.cat;
             if (!key) return;
+            if (!button.dataset.filterLabel) {
+                button.dataset.filterLabel = button.textContent.trim().replace(/\d+$/, '').trim();
+            }
             let badge = $('.cat-count', button);
             if (!badge) {
                 badge = document.createElement('span');
@@ -217,6 +220,8 @@
                 button.appendChild(badge);
             }
             badge.textContent = counts[key] || 0;
+            button.setAttribute('aria-pressed', button.classList.contains('active') ? 'true' : 'false');
+            button.setAttribute('aria-label', `${button.dataset.filterLabel} (${badge.textContent} game)`);
         });
     }
 
@@ -238,6 +243,7 @@
             btn.addEventListener('click', () => {
                 const filter = btn.dataset.filter || btn.dataset.cat || 'all';
                 storageSet(storage.lastFilter, filter);
+                window.setTimeout(updateCategoryCounts, 0);
             });
         });
     }

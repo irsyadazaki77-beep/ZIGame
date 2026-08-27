@@ -154,6 +154,7 @@ body[data-page="portal"] .nav-pills::-webkit-scrollbar {
 body[data-page="portal"] .nav-pill {
     min-height: 38px;
     padding: 0 14px;
+    gap: 7px;
     border: 1px solid transparent;
     border-radius: 999px;
     background: transparent;
@@ -177,6 +178,20 @@ body[data-page="portal"] .nav-pill.active {
 
 body[data-page="portal"] .nav-pill::after {
     display: none;
+}
+
+body[data-page="portal"] .nav-pill .cat-count,
+body[data-page="portal"] .side-cat-btn .cat-count {
+    display: inline-grid;
+    min-width: 18px;
+    height: 18px;
+    place-items: center;
+    padding: 0 5px;
+    border: 1px solid rgba(103, 232, 249, .18);
+    border-radius: 999px;
+    background: rgba(103, 232, 249, .08);
+    color: var(--ui-cyan);
+    font: 700 10px/1 "JetBrains Mono", monospace;
 }
 
 body[data-page="portal"] .nav-right {
@@ -208,6 +223,46 @@ body[data-page="portal"] .side-toggle:hover {
 body[data-page="portal"] .wrap {
     max-width: 1480px;
     padding: 0 var(--ui-page-padding) 92px;
+}
+
+/* Keep the first viewport useful: legacy entrance animations should not hide
+   the primary discovery controls while the portal is still loading. */
+body[data-page="portal"] .hero-title {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+
+body[data-page="portal"] .hero-title .title-line1,
+body[data-page="portal"] .hero-title .title-line2 {
+    opacity: 1;
+    transform: none;
+    animation: shimmer 8s linear infinite;
+}
+
+body[data-page="portal"] .hero-desc {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+
+body[data-page="portal"] .hero-cta-row {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+
+body[data-page="portal"] .hero-insights,
+body[data-page="portal"] .console-panel {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+
+body[data-page="portal"] .game-card {
+    opacity: 1;
+    transform: none;
+    animation: none;
 }
 
 body[data-page="portal"] .hero {
@@ -863,6 +918,11 @@ body[data-page="portal"] #music-player .mp-btn {
 
 body[data-page="portal"] #music-player .mp-vol {
     accent-color: var(--ui-cyan);
+}
+
+/* The portal music player is the single audio control on this page. */
+body[data-page="portal"] #muteToggle {
+    display: none !important;
 }
 
 body[data-page="portal"] .mobile-quickbar {
