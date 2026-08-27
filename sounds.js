@@ -5,11 +5,31 @@
    ============================================ */
 
 const SoundEngine = (() => {
+    const MUSIC_VOLUME_KEY = 'ziGame:musicVolume';
+    const SFX_VOLUME_KEY = 'ziGame:sfxVolume';
+    const DEFAULT_MUSIC_VOLUME = 0.3;
+    const DEFAULT_SFX_VOLUME = 0.5;
+
+    function clampVolume(value, fallback) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? Math.max(0, Math.min(1, parsed)) : fallback;
+    }
+
+    function storedVolume(key, fallback) {
+        try { return clampVolume(window.localStorage.getItem(key), fallback); } catch (_) { return fallback; }
+    }
+
+    function persistVolume(key, value) {
+        try { window.localStorage.setItem(key, String(value)); } catch (_) { }
+    }
+
     let ctx = null;
     let masterGain = null;
     let musicGain = null;
     let sfxGain = null;
     let muted = false;
+    let musicVolume = storedVolume(MUSIC_VOLUME_KEY, DEFAULT_MUSIC_VOLUME);
+    let sfxVolume = storedVolume(SFX_VOLUME_KEY, DEFAULT_SFX_VOLUME);
     let musicPlaying = false;
     let musicNodes = [];
     let musicTimer = null;
@@ -25,11 +45,11 @@ const SoundEngine = (() => {
                 masterGain.connect(ctx.destination);
 
                 musicGain = ctx.createGain();
-                musicGain.gain.value = 1.0;
+                musicGain.gain.value = musicVolume;
                 musicGain.connect(masterGain);
 
                 sfxGain = ctx.createGain();
-                sfxGain.gain.value = 0.5;
+                sfxGain.gain.value = sfxVolume;
                 sfxGain.connect(masterGain);
             } else {
                 console.warn('Web Audio API is not supported in this browser.');
@@ -572,9 +592,28 @@ const SoundEngine = (() => {
 
     function setMusicVolume(value) {
         ensureCtx();
-        const next = Math.max(0, Math.min(1, Number(value) || 0));
+        const next = clampVolume(value, musicVolume);
+        musicVolume = next;
         if (musicGain) musicGain.gain.value = next;
+        persistVolume(MUSIC_VOLUME_KEY, next);
         return next;
+    }
+
+    function setSfxVolume(value) {
+        ensureCtx();
+        const next = clampVolume(value, sfxVolume);
+        sfxVolume = next;
+        if (sfxGain) sfxGain.gain.value = next;
+        persistVolume(SFX_VOLUME_KEY, next);
+        return next;
+    }
+
+    function getMusicVolume() {
+        return musicVolume;
+    }
+
+    function getSfxVolume() {
+        return sfxVolume;
     }
 
     function toggleMute() {
@@ -586,6 +625,7 @@ const SoundEngine = (() => {
             masterGain && (masterGain.gain.value = 1.0);
         }
         try { window.localStorage.setItem('arcadeNexusMuted', muted ? '1' : '0'); } catch (_) { }
+        window.dispatchEvent(new CustomEvent('zi:mutechange', { detail: { muted } }));
         return muted;
     }
 
@@ -605,6 +645,8 @@ const SoundEngine = (() => {
         btn.id = 'muteToggle';
         btn.innerHTML = muted ? '🔇' : '🔊';
         btn.title = 'Toggle Sound';
+        btn.setAttribute('aria-label', muted ? 'Nyalakan semua suara' : 'Matikan semua suara');
+        btn.setAttribute('aria-pressed', muted ? 'true' : 'false');
         btn.style.cssText = `
             position:fixed; bottom:20px; left:20px; z-index:9999;
             width:48px; height:48px; border-radius:50%;
@@ -619,6 +661,8 @@ const SoundEngine = (() => {
         btn.addEventListener('click', () => {
             const nowMuted = toggleMute();
             btn.innerHTML = nowMuted ? '🔇' : '🔊';
+            btn.setAttribute('aria-label', nowMuted ? 'Nyalakan semua suara' : 'Matikan semua suara');
+            btn.setAttribute('aria-pressed', nowMuted ? 'true' : 'false');
             
             // Sync dengan audio player baru di index.html
             const bgmAudioHTML = document.getElementById('bgm-audio');
@@ -631,6 +675,53 @@ const SoundEngine = (() => {
             }
         });
         document.body.appendChild(btn);
+    }
+
+    function createAudioControls() {
+        if (document.body?.dataset.page === 'portal' || document.getElementById('ziAudioDock')) return;
+        const dock = document.createElement('div');
+        dock.id = 'ziAudioDock';
+        dock.className = 'zi-audio-dock';
+        dock.innerHTML = `
+            <button id="ziAudioToggle" class="zi-audio-toggle" type="button" aria-expanded="false" aria-controls="ziAudioPanel">Audio</button>
+            <div id="ziAudioPanel" class="zi-audio-panel" role="group" aria-label="Pengaturan audio" hidden>
+                <label>Musik <output id="ziMusicValue">${Math.round(musicVolume * 100)}%</output>
+                    <input id="ziMusicVolume" type="range" min="0" max="1" step="0.05" value="${musicVolume}" aria-label="Volume musik">
+                </label>
+                <label>Efek suara <output id="ziSfxValue">${Math.round(sfxVolume * 100)}%</output>
+                    <input id="ziSfxVolume" type="range" min="0" max="1" step="0.05" value="${sfxVolume}" aria-label="Volume efek suara">
+                </label>
+            </div>
+        `;
+        document.body.appendChild(dock);
+
+        const toggle = document.getElementById('ziAudioToggle');
+        const panel = document.getElementById('ziAudioPanel');
+        const music = document.getElementById('ziMusicVolume');
+        const sfx = document.getElementById('ziSfxVolume');
+        const musicValue = document.getElementById('ziMusicValue');
+        const sfxValue = document.getElementById('ziSfxValue');
+        const setPanelState = open => {
+            panel.hidden = !open;
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+        toggle.addEventListener('click', () => setPanelState(panel.hidden));
+        music.addEventListener('input', () => {
+            const value = setMusicVolume(music.value);
+            musicValue.value = `${Math.round(value * 100)}%`;
+            musicValue.textContent = musicValue.value;
+        });
+        sfx.addEventListener('input', () => {
+            const value = setSfxVolume(sfx.value);
+            sfxValue.value = `${Math.round(value * 100)}%`;
+            sfxValue.textContent = sfxValue.value;
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && !panel.hidden) {
+                setPanelState(false);
+                toggle.focus();
+            }
+        });
     }
 
     function detectGame() {
@@ -691,6 +782,7 @@ const SoundEngine = (() => {
     // Auto-start on page load
     document.addEventListener('DOMContentLoaded', () => {
         createMuteButton();
+        createAudioControls();
         setupAutoSFX();
         
         // Sync state mute awal ke player baru
@@ -712,7 +804,7 @@ const SoundEngine = (() => {
         }
     });
 
-    return { init, startMusic, stopMusic, setMusicVolume, toggleMute, isMuted, SFX, detectGame };
+    return { init, startMusic, stopMusic, setMusicVolume, setSfxVolume, getMusicVolume, getSfxVolume, toggleMute, isMuted, SFX, detectGame };
 })();
 
 // Global shortcut

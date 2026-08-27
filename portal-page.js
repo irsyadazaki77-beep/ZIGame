@@ -29,6 +29,7 @@
         sidePrefs: 'ziGame:sidebarPrefs',
         notes: 'ziGame:sidebarNotes',
         volume: 'ziGame:musicVolume',
+        sfxVolume: 'ziGame:sfxVolume',
         lastFilter: 'ziGame:lastFilter',
         lastSort: 'ziGame:lastSort'
     };
@@ -90,6 +91,9 @@
         if (old) old.remove();
         const el = document.createElement('div');
         el.className = 'toast';
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
+        el.setAttribute('aria-atomic', 'true');
         el.textContent = message;
         document.body.appendChild(el);
         window.setTimeout(() => el.remove(), 2200);
@@ -199,6 +203,7 @@
             autoHide: $('#settingAutoHide'),
             compactSidebar: $('#settingCompactSidebar'),
             volume: $('#settingVolume'),
+            sfxVolume: $('#settingSfxVolume'),
             notes: $('#settingNotes')
         };
 
@@ -212,7 +217,19 @@
         if (controls.autoHide) controls.autoHide.checked = sidePrefs.autoHide === true || sidePrefs.autoHide === 'true';
         if (controls.compactSidebar) controls.compactSidebar.checked = sidePrefs.compact === true || sidePrefs.compact === 'true';
         if (controls.volume) controls.volume.value = storageGet(keys.volume) || '0.3';
+        if (controls.sfxVolume) controls.sfxVolume.value = storageGet(keys.sfxVolume) || '0.5';
         if (controls.notes) controls.notes.value = storageGet(keys.notes);
+
+        const volumeLabels = [
+            [controls.volume, $('#settingVolumeValue')],
+            [controls.sfxVolume, $('#settingSfxVolumeValue')]
+        ];
+        volumeLabels.forEach(([control, output]) => {
+            if (!control || !output) return;
+            const sync = () => { output.textContent = `${Math.round(Number(control.value) * 100)}%`; };
+            control.addEventListener('input', sync);
+            sync();
+        });
 
         $('#saveSettings')?.addEventListener('click', () => {
             const nextPrefs = readJSON(keys.sidePrefs, {});
@@ -222,6 +239,7 @@
             storageSet(keys.density, controls.density?.value || 'cozy');
             storageSet(keys.motion, controls.motion?.checked ? 'reduced' : 'full');
             storageSet(keys.volume, controls.volume?.value || '0.3');
+            storageSet(keys.sfxVolume, controls.sfxVolume?.value || '0.5');
             storageSet(keys.notes, controls.notes?.value || '');
             nextPrefs.accent = controls.accent?.value || 'violet';
             nextPrefs.focus = !!controls.focus?.checked;
@@ -238,11 +256,13 @@
         });
 
         $('#clearRecent')?.addEventListener('click', () => {
+            if (!window.confirm('Hapus seluruh riwayat game dari browser ini?')) return;
             storageRemove(keys.recent);
             toast('Riwayat dimainkan dihapus.');
         });
 
         $('#clearFavorites')?.addEventListener('click', () => {
+            if (!window.confirm('Hapus semua game favorit dari browser ini?')) return;
             storageRemove(keys.favorites);
             toast('Favorite dikosongkan.');
         });

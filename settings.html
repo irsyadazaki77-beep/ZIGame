@@ -108,20 +108,26 @@
                 </div>
                 <div class="field">
                     <label for="settingVolume">Default volume musik</label>
-                    <input id="settingVolume" class="input" type="range" min="0" max="1" step="0.05">
+                    <output id="settingVolumeValue" class="range-value" for="settingVolume">30%</output>
+                    <input id="settingVolume" class="input" type="range" min="0" max="1" step="0.05" aria-describedby="settingVolumeValue">
+                </div>
+                <div class="field">
+                    <label for="settingSfxVolume">Default volume efek suara</label>
+                    <output id="settingSfxVolumeValue" class="range-value" for="settingSfxVolume">50%</output>
+                    <input id="settingSfxVolume" class="input" type="range" min="0" max="1" step="0.05" aria-describedby="settingSfxVolumeValue">
                 </div>
             </div>
         </section>
 
-        <section class="section">
+        <section class="section danger-zone" aria-labelledby="dataPortalTitle">
             <div class="section-head">
-                <h2 class="section-title">Data Portal</h2>
+                <h2 class="section-title" id="dataPortalTitle">Data Portal &amp; tindakan berisiko</h2>
                 <a class="page-btn" href="profile.html">Buka Profile</a>
             </div>
             <div class="grid">
                 <button id="resetFilters" class="page-btn" type="button">Reset Filter</button>
-                <button id="clearRecent" class="page-btn" type="button">Hapus Recent</button>
-                <button id="clearFavorites" class="page-btn" type="button">Hapus Favorite</button>
+                <button id="clearRecent" class="page-btn danger" type="button">Hapus Recent</button>
+                <button id="clearFavorites" class="page-btn danger" type="button">Hapus Favorite</button>
                 <button id="resetProfile" class="page-btn danger" type="button">Reset Progress</button>
             </div>
         </section>

@@ -54,6 +54,136 @@
         back.setAttribute('aria-label', 'Kembali ke portal ZI GAME');
 
         const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+        function visibleElement(element) {
+            if (!element) return false;
+            const style = window.getComputedStyle(element);
+            return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0;
+        }
+
+        function findActionButton(pattern) {
+            return Array.from(document.querySelectorAll('button, a')).find(element => {
+                if (!visibleElement(element) || element === back) return false;
+                const hint = `${element.id} ${element.className} ${element.textContent}`.toLowerCase();
+                return pattern.test(hint);
+            });
+        }
+
+        const pauseButton = findActionButton(/pause|jeda|resume|lanjutkan/);
+        const restartButton = findActionButton(/restart|retry|mulai ulang|main lagi|coba lagi/);
+        const pauseFunction = ['togglePause', 'pauseGame', 'togglePauseSimulation'].find(name => typeof window[name] === 'function');
+        const restartFunction = ['restartGame', 'restartRun', 'startGame', 'newGame'].find(name => typeof window[name] === 'function');
+        const gameTitle = document.querySelector('h1, .game-page-title, .page-title')?.textContent?.trim()
+            || (document.title || 'Game').split('|')[0].trim();
+        const help = document.createElement('div');
+        help.className = 'zi-game-tools';
+        help.innerHTML = `
+            <button id="ziGameHelpToggle" class="zi-game-help-toggle" type="button" aria-expanded="false" aria-controls="ziGameHelp">Panduan</button>
+            <div id="ziGameHelp" class="zi-game-help" role="dialog" aria-modal="true" aria-labelledby="ziGameHelpTitle" aria-hidden="true" hidden>
+                <div class="zi-game-help-card">
+                    <p class="zi-game-help-kicker">ZI GAME / PLAY GUIDE</p>
+                    <h2 id="ziGameHelpTitle"></h2>
+                    <p class="zi-game-help-copy">Mulai dari tombol utama pada layar pembuka. Gunakan Arrow atau WASD bila tersedia, lalu tekan Space atau Enter untuk aksi utama.</p>
+                    <p class="zi-game-help-copy">Di ponsel, gunakan tombol virtual atau swipe. Tekan Escape atau P bila game ini menyediakan jeda.</p>
+                    <p class="zi-game-help-note"></p>
+                    <div class="zi-game-help-actions"></div>
+                    <button class="zi-game-help-close" type="button">Tutup panduan</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(help);
+        const helpToggle = help.querySelector('#ziGameHelpToggle');
+        const helpPanel = help.querySelector('#ziGameHelp');
+        const helpClose = help.querySelector('.zi-game-help-close');
+        const helpTitle = help.querySelector('#ziGameHelpTitle');
+        const helpNote = help.querySelector('.zi-game-help-note');
+        const helpActions = help.querySelector('.zi-game-help-actions');
+        const status = document.createElement('div');
+        status.id = 'ziGameStatus';
+        status.className = 'zi-game-status';
+        status.setAttribute('role', 'status');
+        status.setAttribute('aria-live', 'polite');
+        status.setAttribute('aria-atomic', 'true');
+        document.body.appendChild(status);
+        helpTitle.textContent = `${gameTitle} — Panduan cepat`;
+        const existingHint = document.querySelector('.overlay-note, .instructions, .instruction, .controls-note')?.textContent?.replace(/\s+/g, ' ').trim();
+        if (existingHint) helpNote.textContent = existingHint.slice(0, 220);
+        else helpNote.remove();
+        document.querySelectorAll('#score, #scoreValue, [data-score]').forEach(score => {
+            score.setAttribute('aria-live', 'polite');
+            score.setAttribute('aria-atomic', 'true');
+        });
+
+        const previousFocus = { element: null };
+        const helpFocusable = () => Array.from(helpPanel.querySelectorAll(focusableSelector))
+            .filter(item => visibleElement(item) && !item.hidden);
+        const announce = message => {
+            status.textContent = message;
+            window.setTimeout(() => {
+                if (status.textContent === message) status.textContent = '';
+            }, 2600);
+        };
+        const closeHelp = () => {
+            helpPanel.hidden = true;
+            helpPanel.setAttribute('aria-hidden', 'true');
+            helpToggle.setAttribute('aria-expanded', 'false');
+            if (previousFocus.element?.isConnected) window.requestAnimationFrame(() => previousFocus.element.focus());
+        };
+        const openHelp = () => {
+            previousFocus.element = document.activeElement !== document.body ? document.activeElement : null;
+            helpPanel.hidden = false;
+            helpPanel.setAttribute('aria-hidden', 'false');
+            helpToggle.setAttribute('aria-expanded', 'true');
+            window.requestAnimationFrame(() => helpClose.focus());
+        };
+        const addHelpAction = (label, callback) => {
+            const button = document.createElement('button');
+            button.className = 'zi-game-help-action';
+            button.type = 'button';
+            button.textContent = label;
+            button.addEventListener('click', () => {
+                callback();
+                closeHelp();
+                announce(`${label} dikirim.`);
+            });
+            helpActions.appendChild(button);
+        };
+        const invokeAction = action => {
+            if (action === 'pause' && pauseButton) pauseButton.click();
+            else if (action === 'pause' && pauseFunction) window[pauseFunction]();
+            else if (action === 'restart' && restartButton) restartButton.click();
+            else if (action === 'restart' && restartFunction) window[restartFunction]();
+        };
+        if (pauseButton || pauseFunction) addHelpAction('Jeda / lanjutkan', () => invokeAction('pause'));
+        if (restartButton || restartFunction) addHelpAction('Mulai ulang', () => invokeAction('restart'));
+        helpToggle.addEventListener('click', () => {
+            if (helpPanel.hidden) openHelp();
+            else closeHelp();
+        });
+        helpClose.addEventListener('click', closeHelp);
+        helpPanel.addEventListener('click', event => {
+            if (event.target === helpPanel) closeHelp();
+        });
+        helpPanel.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeHelp();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            const items = helpFocusable();
+            if (!items.length) return;
+            const first = items[0];
+            const last = items[items.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        });
+
         const labelPatterns = [
             [/mute|sound|volume/i, 'Suara'],
             [/pause|resume/i, 'Pause atau lanjutkan'],
@@ -120,7 +250,7 @@
             overlay.addEventListener('transitionend', syncVisibility);
             overlay.addEventListener('keydown', event => {
                 if (event.key !== 'Tab' || overlay.getAttribute('aria-hidden') === 'true') return;
-                const items = Array.from(overlay.querySelectorAll(focusableSelector)).filter(item => item.offsetParent !== null);
+                const items = Array.from(overlay.querySelectorAll(focusableSelector)).filter(visibleElement);
                 if (!items.length) return;
                 const first = items[0];
                 const last = items[items.length - 1];

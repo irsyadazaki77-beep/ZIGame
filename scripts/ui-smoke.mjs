@@ -35,8 +35,13 @@ assert(portal.includes('id="cmdBtn"'), 'portal: command center is missing');
 assert(portal.includes('class="mobile-quickbar"'), 'portal: mobile quickbar is missing');
 assert(portal.includes('zi-modern-ui.css'), 'portal: modern UI layer is missing');
 assert(portal.includes('id="music-player"'), 'portal: music player is missing');
+assert(portal.includes('id="portalLoading"'), 'portal: loading skeleton is missing');
+assert(portal.includes('aria-live="polite"'), 'portal: live status region is missing');
 assert(!portal.includes('soundhelix.com'), 'portal: external music URL should not be required');
 assert(read('sounds.js').includes('setMusicVolume'), 'audio: procedural music volume control is missing');
+assert(read('sounds.js').includes('setSfxVolume'), 'audio: separate SFX volume control is missing');
+assert(read('sounds.js').includes('ziAudioPanel'), 'audio: shared game audio panel is missing');
+assert(read('mobile-touch.js').includes('ziGameHelp'), 'game UX: shared play guide is missing');
 
 assert(routes.length === gamePages.length, `portal: expected ${gamePages.length} unique game routes, found ${routes.length}`);
 assert(thumbFiles.length === gamePages.length, `thumbnails: expected ${gamePages.length}, found ${thumbFiles.length}`);
@@ -60,6 +65,8 @@ assert(runtime.includes('setupConnectionStatus'), 'runtime: offline status is mi
 assert(manifest.includes('"shortcuts"'), 'manifest: PWA shortcuts are missing');
 assert(Array.isArray(manifestData?.shortcuts) && manifestData.shortcuts.length >= 2, 'manifest: shortcuts are invalid');
 assert(modernUi.includes('.zi-runtime-notice'), 'modern UI: runtime notice styling is missing');
+assert(modernUi.includes('.portal-loading'), 'modern UI: loading skeleton styling is missing');
+assert(modernUi.includes('.zi-game-help'), 'modern UI: shared game guide styling is missing');
 assert(modernUi.includes('zi-navigation-progress'), 'modern UI: navigation progress styling is missing');
 assert(modernUi.includes('content-visibility: auto'), 'modern UI: below-fold rendering optimization is missing');
 

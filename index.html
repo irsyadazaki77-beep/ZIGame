@@ -165,7 +165,7 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input id="sideQuickSearch" class="side-input has-icon" type="text" placeholder="Cari menu sidebar...">
+                <input id="sideQuickSearch" class="side-input has-icon" type="text" placeholder="Cari menu sidebar..." aria-label="Cari menu sidebar">
                 <kbd class="side-search-kbd">⌘K</kbd>
             </div>
         </div>
@@ -313,23 +313,23 @@
                     </select>
                 </label>
                 <label class="side-row">Opacity
-                    <input id="sideOpacity" class="side-range" type="range" min="0.7" max="1" step="0.05" value="1">
+                    <input id="sideOpacity" class="side-range" type="range" min="0.7" max="1" step="0.05" value="1" aria-label="Opasitas sidebar">
                 </label>
                 <div class="side-switches">
                     <label class="side-toggle-label">Auto-hide scroll
-                        <input id="sideAutoHide" type="checkbox">
+                        <input id="sideAutoHide" type="checkbox" aria-label="Sembunyikan sidebar saat scroll">
                         <div class="side-toggle-switch"></div>
                     </label>
                     <label class="side-toggle-label">Pin sidebar
-                        <input id="sidePin" type="checkbox">
+                        <input id="sidePin" type="checkbox" aria-label="Sematkan sidebar">
                         <div class="side-toggle-switch"></div>
                     </label>
                     <label class="side-toggle-label">Compact mode
-                        <input id="sideCompact" type="checkbox">
+                        <input id="sideCompact" type="checkbox" aria-label="Mode sidebar compact">
                         <div class="side-toggle-switch"></div>
                     </label>
                     <label class="side-toggle-label">Focus mode
-                        <input id="sideFocus" type="checkbox">
+                        <input id="sideFocus" type="checkbox" aria-label="Mode fokus sidebar">
                         <div class="side-toggle-switch"></div>
                     </label>
                 </div>
@@ -339,7 +339,7 @@
         <div class="side-nav-group" data-group="notes">
             <p class="side-title">Quick Notes <button class="side-title-btn" data-group-toggle="notes"
                     type="button">-</button></p>
-            <textarea id="sideNotes" class="side-input side-notes" rows="3" placeholder="Catatan cepat..."></textarea>
+            <textarea id="sideNotes" class="side-input side-notes" rows="3" placeholder="Catatan cepat..." aria-label="Catatan cepat sidebar"></textarea>
             <div class="side-tools-row">
                 <button id="sideClearNotes" class="side-mini-btn" type="button">Clear Notes</button>
                 <button id="sideCollapseAll" class="side-mini-btn" type="button">Collapse All</button>
@@ -372,6 +372,18 @@
     </aside>
     <div id="sideOverlay" class="side-overlay" aria-hidden="true"></div>
 
+    <div id="portalLoading" class="portal-loading" role="status" aria-live="polite" aria-label="Memuat katalog game">
+        <div class="portal-loading-card" aria-hidden="true">
+            <span class="portal-loading-kicker">ZI GAME / LOADING</span>
+            <span class="portal-skeleton portal-skeleton-title"></span>
+            <span class="portal-skeleton portal-skeleton-copy"></span>
+            <span class="portal-skeleton portal-skeleton-copy short"></span>
+            <div class="portal-skeleton-grid">
+                <span class="portal-skeleton"></span><span class="portal-skeleton"></span><span class="portal-skeleton"></span>
+            </div>
+        </div>
+    </div>
+
     <main class="wrap" id="main-content">
 
         <!-- HERO -->
@@ -396,7 +408,7 @@
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <input type="text" id="searchInput" class="search-bar" placeholder="Cari game favoritmu...">
+                    <input type="text" id="searchInput" class="search-bar" placeholder="Cari game favoritmu..." aria-label="Cari game">
                     <button id="clearSearchBtn" class="search-clear" type="button" aria-label="Bersihkan pencarian">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -408,7 +420,7 @@
                 <div class="console-actions">
                     <div class="console-sort-wrap">
                         <span class="sort-icon">⇅</span>
-                        <select id="sortSelect" class="console-select" title="Urutan Game">
+                        <select id="sortSelect" class="console-select" title="Urutan Game" aria-label="Urutkan game">
                             <option value="featured">Pilihan Editor</option>
                             <option value="popular">Paling Rame</option>
                             <option value="az">Nama A-Z</option>
@@ -1073,7 +1085,7 @@
             </div>
 
             <!-- No Result -->
-            <div class="no-result" id="noResult">
+            <div class="no-result" id="noResult" role="status" aria-live="polite" aria-atomic="true">
                 <div class="no-result-icon">🕹️</div>
                 <h3>Game Tidak Ditemukan</h3>
                 <p>Coba kata kunci lain atau reset filter.</p>
@@ -1150,9 +1162,9 @@
 
     <button id="toTop" aria-label="Kembali ke atas">↑</button>
 
-    <div class="cmd-overlay" id="cmdOverlay" aria-hidden="true">
-        <div class="cmd-modal" role="dialog" aria-label="Command Center">
-            <input id="cmdInput" class="cmd-input" type="text"
+    <div class="cmd-overlay" id="cmdOverlay" role="dialog" aria-modal="true" aria-label="Command Center" aria-hidden="true">
+        <div class="cmd-modal">
+            <input id="cmdInput" class="cmd-input" type="text" aria-label="Cari perintah"
                 placeholder="Ketik perintah... (contoh: random, favorit, reset)">
             <div id="cmdList" class="cmd-list"></div>
         </div>
@@ -1754,21 +1766,30 @@
         function setViewMode(list) {
             listView = list;
             gameContainer.classList.toggle('list-view', listView);
-            if (viewToggleBtn) viewToggleBtn.textContent = listView ? 'View: List' : 'View: Grid';
+            if (viewToggleBtn) {
+                viewToggleBtn.textContent = listView ? 'View: List' : 'View: Grid';
+                viewToggleBtn.setAttribute('aria-pressed', listView ? 'true' : 'false');
+            }
             safeStorageSet(STORAGE_VIEWMODE, listView ? 'list' : 'grid');
         }
 
         function setDensity(compact) {
             compactDensity = compact;
             document.body.classList.toggle('compact-density', compactDensity);
-            if (densityToggleBtn) densityToggleBtn.textContent = compactDensity ? 'Density: Compact' : 'Density: Cozy';
+            if (densityToggleBtn) {
+                densityToggleBtn.textContent = compactDensity ? 'Density: Compact' : 'Density: Cozy';
+                densityToggleBtn.setAttribute('aria-pressed', compactDensity ? 'true' : 'false');
+            }
             safeStorageSet(STORAGE_DENSITY, compactDensity ? 'compact' : 'cozy');
         }
 
         function setMotion(reduced) {
             reducedMotion = reduced;
             document.body.classList.toggle('reduce-motion-ui', reducedMotion);
-            if (motionToggleBtn) motionToggleBtn.textContent = reducedMotion ? 'Motion: Calm' : 'Motion: On';
+            if (motionToggleBtn) {
+                motionToggleBtn.textContent = reducedMotion ? 'Motion: Calm' : 'Motion: On';
+                motionToggleBtn.setAttribute('aria-pressed', reducedMotion ? 'true' : 'false');
+            }
             safeStorageSet(STORAGE_MOTION, reducedMotion ? 'reduced' : 'full');
         }
 
@@ -1832,6 +1853,8 @@
                 const badge = document.getElementById('favCountBadge');
                 if (badge) badge.textContent = totalFav;
                 favOnlyBtn.classList.toggle('active', showFavOnly);
+                favOnlyBtn.setAttribute('aria-pressed', showFavOnly ? 'true' : 'false');
+                favOnlyBtn.setAttribute('aria-label', showFavOnly ? 'Tampilkan semua game' : 'Tampilkan favorit saja');
             }
         }
 
@@ -2063,6 +2086,7 @@
                 if (match) vis++;
             });
             noResult.classList.toggle('show', vis === 0);
+            noResult.setAttribute('aria-hidden', vis === 0 ? 'false' : 'true');
             if (visibleCount) visibleCount.textContent = vis + ' game' + (vis !== 1 ? 's' : '');
             if (clearSearchBtn) clearSearchBtn.classList.toggle('show', !!q);
             if (searchResultHint) {
@@ -2770,9 +2794,16 @@
             let isPlaying = false;
             let usingProceduralMusic = false;
 
+            const savedMusicVolume = safeStorageGet('ziGame:musicVolume', '0.3');
+            const parsedMusicVolume = Number(savedMusicVolume);
+            mpVol.value = String(Number.isFinite(parsedMusicVolume)
+                ? Math.max(0, Math.min(1, parsedMusicVolume))
+                : 0.3);
+
             function setPlayingUI(playing) {
                 isPlaying = playing;
                 mpPlay.innerHTML = playing ? '&#10074;&#10074;' : '&#9658;';
+                mpPlay.setAttribute('aria-label', playing ? 'Jeda musik' : 'Putar musik');
                 mpIcon.classList.toggle('playing', playing);
             }
 
@@ -2835,6 +2866,7 @@
             mpVol.addEventListener('input', function () {
                 if (usingProceduralMusic && window.SoundEngine) window.SoundEngine.setMusicVolume(this.value);
                 else bgmAudio.volume = parseFloat(this.value);
+                safeStorageSet('ziGame:musicVolume', this.value);
             });
 
             bgmAudio.addEventListener('ended', function () {
@@ -2845,6 +2877,18 @@
         })();
     </script>
     <script src="zi-final-polish.js"></script>
+    <script>
+        (function () {
+            const loading = document.getElementById('portalLoading');
+            if (!loading) return;
+            const finish = () => window.setTimeout(() => {
+                loading.hidden = true;
+                loading.setAttribute('aria-hidden', 'true');
+            }, 120);
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', finish, { once: true });
+            else finish();
+        })();
+    </script>
 </body>
 
 </html>

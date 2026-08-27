@@ -502,6 +502,10 @@
         }
 
         updateMuteButton();
+        window.addEventListener('zi:mutechange', event => {
+            isMuted = !!event.detail?.muted;
+            updateMuteButton();
+        });
 
         // Prevent accidental restart
         function allowRestartDelay() {

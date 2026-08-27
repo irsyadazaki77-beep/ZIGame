@@ -385,7 +385,7 @@
             dashCd:0,
             flipCd:0,
             teleportCd:0,
-            muted:false,
+            muted:localStorage.getItem("arcadeNexusMuted") === "1",
             assist:false,
             hardcore:false,
             shakeEnabled:true,
@@ -403,6 +403,10 @@
 
         const settings = loadSettings();
         state.hardcore = settings.hardcore;
+        window.addEventListener("zi:mutechange", event => {
+            state.muted = !!event.detail?.muted;
+            updateHud();
+        });
         state.shakeEnabled = settings.shakeEnabled;
 
         function loadBestTime() {

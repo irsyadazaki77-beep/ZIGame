@@ -980,12 +980,18 @@
     }
 
     // ═══════════════════ MUTE (FEATURE 1) ═══════════════════
-    let isMuted = false;
+    let isMuted = localStorage.getItem('arcadeNexusMuted') === '1';
     function toggleMute() {
       isMuted = !isMuted;
+      localStorage.setItem('arcadeNexusMuted', isMuted ? '1' : '0');
       document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
       document.getElementById('muteBtn').classList.toggle('muted', isMuted);
     }
+    window.addEventListener('zi:mutechange', event => {
+      isMuted = !!event.detail?.muted;
+      document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+      document.getElementById('muteBtn').classList.toggle('muted', isMuted);
+    });
 
     // ═══════════════════ TURN LOG (FEATURE 3) ═══════════════════
     let logEntries = [];

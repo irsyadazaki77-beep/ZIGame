@@ -87,6 +87,65 @@
         }, 2200);
     }
 
+    const dialogFocusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    function prepareDialog(panel, initialSelector) {
+        if (!panel) return () => {};
+        const previous = document.activeElement && document.activeElement !== document.body
+            ? document.activeElement
+            : null;
+        const heading = $('h2, h3, [data-dialog-title]', panel);
+        if (heading) {
+            if (!heading.id) heading.id = `zi-dialog-title-${Math.random().toString(36).slice(2, 8)}`;
+            panel.setAttribute('aria-labelledby', heading.id);
+        }
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-modal', 'true');
+        let closed = false;
+        const focusItems = () => $$(dialogFocusableSelector, panel).filter(item => {
+            const style = window.getComputedStyle(item);
+            return !item.hidden
+                && style.display !== 'none'
+                && style.visibility !== 'hidden'
+                && item.getClientRects().length > 0;
+        });
+        const restoreFocus = () => {
+            if (previous?.isConnected && !panel.contains(previous)) {
+                window.requestAnimationFrame(() => previous.focus());
+            }
+        };
+        const close = () => {
+            if (closed) return;
+            closed = true;
+            panel.remove();
+            restoreFocus();
+        };
+        panel.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                close();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            const items = focusItems();
+            if (!items.length) return;
+            const first = items[0];
+            const last = items[items.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        });
+        window.requestAnimationFrame(() => {
+            const initial = initialSelector ? $(initialSelector, panel) : null;
+            (initial || focusItems()[0])?.focus();
+        });
+        return close;
+    }
+
     function cardTitle(card) {
         return $('.card-title', card)?.textContent?.trim() || card.dataset.title || 'Game';
     }
@@ -301,15 +360,15 @@
             </div>
         `;
         document.body.appendChild(panel);
+        const closeDialog = prepareDialog(panel, '[data-confirm="cancel"]');
         panel.addEventListener('click', event => {
             const action = event.target.closest('[data-confirm]')?.dataset.confirm;
-            if (action === 'cancel') panel.remove();
+            if (action === 'cancel') closeDialog();
             if (action === 'ok') {
-                panel.remove();
+                closeDialog();
                 onConfirm();
             }
         });
-        $('[data-confirm="cancel"]', panel)?.focus();
     }
 
     function addOnboarding() {
@@ -328,11 +387,12 @@
                 </div>
             `;
             document.body.appendChild(panel);
+            const closeDialog = prepareDialog(panel, '[data-onboard="ok"]');
             panel.addEventListener('click', event => {
                 const action = event.target.closest('[data-onboard]')?.dataset.onboard;
                 if (!action) return;
                 if (action === 'ok') storageSet(storage.onboarded, '1');
-                panel.remove();
+                closeDialog();
             });
         }, 900);
     }

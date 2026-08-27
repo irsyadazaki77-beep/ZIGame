@@ -68,11 +68,53 @@ test('portal command center and empty state remain keyboard reachable', async ({
     await expect(page.locator('#noResultResetBtn')).toBeVisible();
 });
 
+test('portal loading, offline feedback, and game audio controls are resilient', async ({ page }) => {
+    await page.goto('/index.html');
+    await expect(page.locator('#portalLoading')).toBeHidden();
+    await page.evaluate(() => {
+        Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
+        window.dispatchEvent(new Event('offline'));
+    });
+    await expect(page.locator('.zi-connection-status')).toContainText('offline');
+
+    await page.goto('/snake.html');
+    await expect(page.locator('#ziAudioToggle')).toBeVisible();
+    await page.locator('#ziAudioToggle').click();
+    await expect(page.locator('#ziAudioPanel')).toBeVisible();
+    await page.locator('#ziMusicVolume').evaluate(input => {
+        input.value = '0.65';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.locator('#ziSfxVolume').evaluate(input => {
+        input.value = '0.25';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect.poll(() => page.evaluate(() => ({
+        music: localStorage.getItem('ziGame:musicVolume'),
+        sfx: localStorage.getItem('ziGame:sfxVolume')
+    }))).toEqual({ music: '0.65', sfx: '0.25' });
+
+    await page.locator('#ziGameHelpToggle').click();
+    await expect(page.locator('#ziGameHelp')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('.zi-game-help-close')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#ziGameHelp')).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.locator('#ziGameHelpToggle')).toBeFocused();
+});
+
 test('settings persist theme, density, and motion preferences', async ({ page }) => {
     await page.goto('/settings.html');
     await page.locator('#settingTheme').selectOption('light');
     await page.locator('#settingDensity').selectOption('compact');
     await page.locator('label:has(#settingMotion)').click();
+    await page.locator('#settingVolume').evaluate(input => {
+        input.value = '0.7';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.locator('#settingSfxVolume').evaluate(input => {
+        input.value = '0.2';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
     await page.locator('#saveSettings').click();
     await expect(page.locator('#saveSettings')).toBeVisible();
 
@@ -80,6 +122,25 @@ test('settings persist theme, density, and motion preferences', async ({ page })
     await expect(page.locator('body')).toHaveClass(/light-mode/);
     await expect(page.locator('body')).toHaveClass(/compact-density/);
     await expect(page.locator('html')).toHaveClass(/zi-reduced-motion/);
+    await expect.poll(() => page.evaluate(() => ({
+        music: localStorage.getItem('ziGame:musicVolume'),
+        sfx: localStorage.getItem('ziGame:sfxVolume')
+    }))).toEqual({ music: '0.7', sfx: '0.2' });
+});
+
+test('risky settings actions ask for confirmation', async ({ page }) => {
+    await page.goto('/settings.html');
+    const messages = [];
+    page.on('dialog', async dialog => {
+        messages.push(dialog.message());
+        await dialog.dismiss();
+    });
+    await page.locator('#clearRecent').click();
+    await page.locator('#clearFavorites').click();
+    expect(messages).toEqual([
+        'Hapus seluruh riwayat game dari browser ini?',
+        'Hapus semua game favorit dari browser ini?'
+    ]);
 });
 
 test('portal and game shell do not overflow', async ({ page }, testInfo) => {
@@ -116,6 +177,9 @@ test('game start overlay is accessible and releases focus after start', async ({
 });
 
 test('all game pages boot with shared shell and no page errors', async ({ page }) => {
+    // Loading every game sequentially is intentionally broader than a single-page smoke test.
+    // Keep this budget stable when the desktop and mobile projects run in parallel.
+    test.setTimeout(60_000);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     for (const route of gameRoutes) {
