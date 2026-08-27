@@ -11,6 +11,16 @@
     const touchDevice = coarsePointer || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const shouldOptimize = androidLike || touchDevice || narrowScreen;
 
+    // Shared runtime is loaded from one place for every game page. It provides
+    // safe recent-history migration, metadata, reduced-motion support and PWA
+    // registration without changing any individual game's engine.
+    if (!isPortal && !document.querySelector('script[src="site-runtime.js"]')) {
+        const runtime = document.createElement('script');
+        runtime.src = 'site-runtime.js?v=2';
+        runtime.defer = true;
+        document.head.appendChild(runtime);
+    }
+
     if (!shouldOptimize) return;
 
     const keyData = {
@@ -43,7 +53,7 @@
 
         viewport.setAttribute(
             'content',
-            'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
+            'width=device-width, initial-scale=1.0, viewport-fit=cover'
         );
     }
 
@@ -56,6 +66,15 @@
 html {
     overscroll-behavior: none;
     -webkit-text-size-adjust: 100%;
+}
+
+html.zi-reduced-motion *,
+html.zi-reduced-motion *::before,
+html.zi-reduced-motion *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
 }
 
 body.zi-android-lite {

@@ -500,9 +500,10 @@
         }
 
         // ===== GAME STATE =====
-        let board, piece, px, py, nextPiece, holdPieceData, holdUsed;
-        let score, lines, level, combo, bestScore;
-        let running, frame, dropInterval, lastDrop, lockDelay, lockTimer, lockMoves;
+        let board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+        let piece = randomPiece(), px = 3, py = 0, nextPiece = randomPiece(), holdPieceData = null, holdUsed = false;
+        let score = 0, lines = 0, level = 1, combo = 0, bestScore = 0;
+        let running = false, frame = 0, dropInterval = 800, lastDrop = 0, lockDelay = 0, lockTimer = 0, lockMoves = 0;
         let animId, lastTs = 0;
 
         // ===== LINE CLEAR ANIMATION =====

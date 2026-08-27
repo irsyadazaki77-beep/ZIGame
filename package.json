@@ -1,0 +1,10 @@
+{
+  "name": "zi-game",
+  "private": true,
+  "version": "2.1.0",
+  "description": "ZI GAME — portal game HTML5 statis.",
+  "scripts": {
+    "check": "node scripts/validate.mjs",
+    "check:js": "node scripts/validate.mjs --js-only"
+  }
+}

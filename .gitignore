@@ -1,0 +1,10 @@
+# Local development output
+node_modules/
+*.log
+.DS_Store
+.env
+.env.*
+
+# Browser and editor state
+.vscode/
+.idea/

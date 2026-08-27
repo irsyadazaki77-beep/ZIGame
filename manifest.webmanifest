@@ -1,0 +1,19 @@
+{
+  "name": "ZI GAME",
+  "short_name": "ZI GAME",
+  "description": "Koleksi game HTML5 gratis dalam satu portal.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070914",
+  "theme_color": "#090d1d",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

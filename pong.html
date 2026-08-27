@@ -471,7 +471,10 @@
         }
 
         // ===== STATE =====
-        let player, ai, ball, pScore, aScore, running, trail, flashTimer, particles;
+        let player = { x: W / 2 - PW() / 2, y: H - PH() - 12, w: PW(), h: PH() };
+        let ai = { x: W / 2 - PW() / 2, y: 12, w: PW(), h: PH() };
+        let ball = { x: W / 2, y: H / 2, vx: 0, vy: 0, speed: 0 };
+        let pScore = 0, aScore = 0, running = false, trail = [], flashTimer = 0, particles = [];
         let animId;
 
         function startGame() {

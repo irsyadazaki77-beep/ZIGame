@@ -75,8 +75,7 @@
 const StatsManager = {
     KEY: 'arcadeNexusStats',
     getStats() {
-        const data = localStorage.getItem(this.KEY);
-        return data ? JSON.parse(data) : {
+        const fallback = {
             totalScore: 0,
             gamesPlayed: 0,
             streak: 0,
@@ -84,13 +83,28 @@ const StatsManager = {
             highScores: {},
             achievements: []
         };
+        try {
+            const data = localStorage.getItem(this.KEY);
+            const parsed = data ? JSON.parse(data) : fallback;
+            return {
+                ...fallback,
+                ...parsed,
+                totalScore: Number(parsed?.totalScore) || 0,
+                gamesPlayed: Number(parsed?.gamesPlayed) || 0,
+                highScores: parsed?.highScores && typeof parsed.highScores === 'object' ? parsed.highScores : {},
+                achievements: Array.isArray(parsed?.achievements) ? parsed.achievements : []
+            };
+        } catch (_) {
+            return fallback;
+        }
     },
     save(stats) {
-        localStorage.setItem(this.KEY, JSON.stringify(stats));
+        try { localStorage.setItem(this.KEY, JSON.stringify(stats)); } catch (_) { }
     },
     addScore(game, score) {
         const stats = this.getStats();
-        stats.totalScore += score;
+        const numericScore = Math.max(0, Number(score) || 0);
+        stats.totalScore += numericScore;
         stats.gamesPlayed++;
         const today = new Date().toDateString();
         if (stats.lastPlayed === today) {
@@ -101,8 +115,8 @@ const StatsManager = {
             stats.streak = 1;
         }
         stats.lastPlayed = today;
-        if (!stats.highScores[game] || score > stats.highScores[game]) {
-            stats.highScores[game] = score;
+        if (!stats.highScores[game] || numericScore > stats.highScores[game]) {
+            stats.highScores[game] = numericScore;
         }
         this.save(stats);
         this.updateUI();

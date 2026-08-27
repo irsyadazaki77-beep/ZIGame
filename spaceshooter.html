@@ -822,7 +822,8 @@
         }));
 
         // ===== GAME STATE =====
-        let ship, bullets, enemies, particles, explosions, score, lives, level, bestScore, frame, running, keys = {};
+        let ship = { x: W / 2, y: Math.max(40, H - 70) };
+        let bullets = [], enemies = [], particles = [], explosions = [], score = 0, lives = 3, level = 1, bestScore = 0, frame = 0, running = false, keys = {};
         let shieldActive = false, shieldTimer = 0;
         let bombCd = 0, shieldCd = 0, laserCd = 0;
         let laserActive = false, laserTimer = 0;

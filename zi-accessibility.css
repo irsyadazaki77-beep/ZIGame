@@ -1,0 +1,75 @@
+/* Shared accessibility and resilient layout rules. */
+.skip-link {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 10000;
+    transform: translateY(-150%);
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: #06101d;
+    background: #55d8ff;
+    font-weight: 800;
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+button,
+a,
+input,
+select,
+textarea {
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid #55d8ff;
+    outline-offset: 3px;
+}
+
+html.zi-reduced-motion *,
+html.zi-reduced-motion *::before,
+html.zi-reduced-motion *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+}
+
+@media (max-width: 700px) {
+    .page-shell {
+        width: min(100% - 22px, 1180px);
+    }
+
+    .page-hero,
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html:not(.zi-motion-full) *,
+    html:not(.zi-motion-full) *::before,
+    html:not(.zi-motion-full) *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
+}
+
+@media (forced-colors: active) {
+    button,
+    a,
+    input,
+    select,
+    textarea {
+        border: 1px solid ButtonText;
+    }
+}

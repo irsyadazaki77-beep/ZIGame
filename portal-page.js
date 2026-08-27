@@ -4,6 +4,18 @@
     const $ = (selector, root = document) => root.querySelector(selector);
     const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
+    function storageGet(key, fallback = '') {
+        try { return window.localStorage.getItem(key) ?? fallback; } catch (_) { return fallback; }
+    }
+
+    function storageSet(key, value) {
+        try { window.localStorage.setItem(key, value); } catch (_) { }
+    }
+
+    function storageRemove(key) {
+        try { window.localStorage.removeItem(key); } catch (_) { }
+    }
+
     const keys = {
         profile: 'ziGame:profile',
         recent: 'ziGame:recent',
@@ -57,7 +69,7 @@
 
     function readJSON(key, fallback) {
         try {
-            const value = JSON.parse(localStorage.getItem(key) || '');
+            const value = JSON.parse(storageGet(key));
             return value == null ? fallback : value;
         } catch (error) {
             return fallback;
@@ -65,7 +77,7 @@
     }
 
     function writeJSON(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
+        storageSet(key, JSON.stringify(value));
     }
 
     function setText(id, value) {
@@ -92,26 +104,36 @@
     }
 
     function favoriteCards() {
-        const fav = new Set(readJSON(keys.favorites, []));
+        const raw = readJSON(keys.favorites, []);
+        const fav = new Set(Array.isArray(raw) ? raw : []);
         return gameCatalog.filter(([href, title]) => fav.has(title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')) || fav.has(title.toLowerCase()) || fav.has(href));
     }
 
+    function recentItems() {
+        const raw = readJSON(keys.recent, []);
+        const clean = window.ZIGameRuntime?.cleanRecent
+            ? window.ZIGameRuntime.cleanRecent(raw)
+            : (Array.isArray(raw) ? raw.filter(item => item && typeof item.href === 'string' && typeof item.title === 'string').slice(0, 8) : []);
+        return clean.filter(item => gameCatalog.some(([href]) => href === item.href));
+    }
+
     function applyTheme() {
-        document.body.classList.toggle('light', localStorage.getItem(keys.theme) === 'light');
+        document.body.classList.toggle('light', storageGet(keys.theme) === 'light');
     }
 
     function initProfilePage() {
         if (!document.body.matches('[data-page="profile"]')) return;
         const profile = currentProfile();
         const actions = readJSON(keys.actions, {});
-        const recent = readJSON(keys.recent, []);
+        const recent = recentItems();
         const favs = favoriteCards();
         const achievements = readJSON(keys.achievements, []);
+        const arcadeStats = readJSON('arcadeNexusStats', {});
         const needed = xpNeeded(profile.level || 1);
         const xp = profile.xp || 0;
         const pct = Math.max(0, Math.min(100, (xp / needed) * 100));
 
-        setText('profileName', localStorage.getItem('ziGame:playerName') || 'Neon Pilot');
+        setText('profileName', storageGet('ziGame:playerName') || 'Neon Pilot');
         setText('profileLevel', `LV ${profile.level || 1}`);
         setText('profileXp', `${xp} / ${needed} XP`);
         setText('profileStreak', `${profile.streak || 1} hari`);
@@ -119,6 +141,8 @@
         setText('statRecent', recent.length);
         setText('statAchievements', achievements.length);
         setText('statPlayed', actions.played || 0);
+        setText('statTotalScore', Number(arcadeStats.totalScore) || 0);
+        setText('statGamesPlayed', Number(arcadeStats.gamesPlayed) || 0);
         const fill = $('#profileXpFill');
         if (fill) fill.style.width = `${pct}%`;
 
@@ -178,27 +202,27 @@
             notes: $('#settingNotes')
         };
 
-        if (controls.playerName) controls.playerName.value = localStorage.getItem('ziGame:playerName') || 'Neon Pilot';
-        if (controls.theme) controls.theme.value = localStorage.getItem(keys.theme) || 'dark';
-        if (controls.view) controls.view.value = localStorage.getItem(keys.view) || 'grid';
-        if (controls.density) controls.density.value = localStorage.getItem(keys.density) || 'cozy';
-        if (controls.motion) controls.motion.checked = localStorage.getItem(keys.motion) === 'reduced';
+        if (controls.playerName) controls.playerName.value = storageGet('ziGame:playerName') || 'Neon Pilot';
+        if (controls.theme) controls.theme.value = storageGet(keys.theme) || 'dark';
+        if (controls.view) controls.view.value = storageGet(keys.view) || 'grid';
+        if (controls.density) controls.density.value = storageGet(keys.density) || 'cozy';
+        if (controls.motion) controls.motion.checked = storageGet(keys.motion) === 'reduced';
         if (controls.accent) controls.accent.value = sidePrefs.accent || 'violet';
         if (controls.focus) controls.focus.checked = sidePrefs.focus === true || sidePrefs.focus === 'true';
         if (controls.autoHide) controls.autoHide.checked = sidePrefs.autoHide === true || sidePrefs.autoHide === 'true';
         if (controls.compactSidebar) controls.compactSidebar.checked = sidePrefs.compact === true || sidePrefs.compact === 'true';
-        if (controls.volume) controls.volume.value = localStorage.getItem(keys.volume) || '0.3';
-        if (controls.notes) controls.notes.value = localStorage.getItem(keys.notes) || '';
+        if (controls.volume) controls.volume.value = storageGet(keys.volume) || '0.3';
+        if (controls.notes) controls.notes.value = storageGet(keys.notes);
 
         $('#saveSettings')?.addEventListener('click', () => {
             const nextPrefs = readJSON(keys.sidePrefs, {});
-            localStorage.setItem('ziGame:playerName', controls.playerName?.value.trim() || 'Neon Pilot');
-            localStorage.setItem(keys.theme, controls.theme?.value || 'dark');
-            localStorage.setItem(keys.view, controls.view?.value || 'grid');
-            localStorage.setItem(keys.density, controls.density?.value || 'cozy');
-            localStorage.setItem(keys.motion, controls.motion?.checked ? 'reduced' : 'full');
-            localStorage.setItem(keys.volume, controls.volume?.value || '0.3');
-            localStorage.setItem(keys.notes, controls.notes?.value || '');
+            storageSet('ziGame:playerName', controls.playerName?.value.trim().slice(0, 28) || 'Neon Pilot');
+            storageSet(keys.theme, controls.theme?.value || 'dark');
+            storageSet(keys.view, controls.view?.value || 'grid');
+            storageSet(keys.density, controls.density?.value || 'cozy');
+            storageSet(keys.motion, controls.motion?.checked ? 'reduced' : 'full');
+            storageSet(keys.volume, controls.volume?.value || '0.3');
+            storageSet(keys.notes, controls.notes?.value || '');
             nextPrefs.accent = controls.accent?.value || 'violet';
             nextPrefs.focus = !!controls.focus?.checked;
             nextPrefs.autoHide = !!controls.autoHide?.checked;
@@ -209,29 +233,30 @@
         });
 
         $('#resetFilters')?.addEventListener('click', () => {
-            localStorage.removeItem(keys.lastFilter);
-            localStorage.removeItem(keys.lastSort);
+            storageRemove(keys.lastFilter); storageRemove(keys.lastSort);
             toast('Filter dan sort direset.');
         });
 
         $('#clearRecent')?.addEventListener('click', () => {
-            localStorage.removeItem(keys.recent);
+            storageRemove(keys.recent);
             toast('Riwayat dimainkan dihapus.');
         });
 
         $('#clearFavorites')?.addEventListener('click', () => {
-            localStorage.removeItem(keys.favorites);
+            storageRemove(keys.favorites);
             toast('Favorite dikosongkan.');
         });
 
         $('#resetProfile')?.addEventListener('click', () => {
+            if (!window.confirm('Reset semua XP, achievement, dan statistik profil?')) return;
             writeJSON(keys.profile, { xp: 0, level: 1, streak: 1, lastVisit: '' });
-            localStorage.removeItem(keys.actions);
+            storageRemove(keys.actions);
+            storageRemove('arcadeNexusStats');
             toast('Progress profil direset.');
         });
 
         controls.theme?.addEventListener('change', () => {
-            localStorage.setItem(keys.theme, controls.theme.value);
+            storageSet(keys.theme, controls.theme.value);
             applyTheme();
         });
     }

@@ -53,9 +53,17 @@
         });
     }
 
+    function storageGet(key, fallback = '') {
+        try { return window.localStorage.getItem(key) ?? fallback; } catch (_) { return fallback; }
+    }
+
+    function storageSet(key, value) {
+        try { window.localStorage.setItem(key, value); } catch (_) { }
+    }
+
     function readJSON(key, fallback) {
         try {
-            const parsed = JSON.parse(localStorage.getItem(key) || '');
+            const parsed = JSON.parse(storageGet(key, ''));
             return parsed == null ? fallback : parsed;
         } catch (error) {
             return fallback;
@@ -63,7 +71,7 @@
     }
 
     function writeJSON(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
+        storageSet(key, JSON.stringify(value));
     }
 
     function toast(message) {
@@ -100,7 +108,8 @@
     }
 
     function favorites() {
-        return new Set(readJSON(storage.favorites, []));
+        const value = readJSON(storage.favorites, []);
+        return new Set(Array.isArray(value) ? value : []);
     }
 
     function normalizeButtons() {
@@ -138,7 +147,7 @@
                 $('#randomBtn')?.click();
             }
             if (action === 'continue') {
-                const recent = readJSON(storage.recent, []);
+                const recent = window.ZIGameRuntime?.getRecent?.() || readJSON(storage.recent, []);
                 if (recent[0]?.href) {
                     window.location.href = recent[0].href;
                 } else {
@@ -212,15 +221,15 @@
     }
 
     function restoreLastControls() {
-        const lastSort = localStorage.getItem(storage.lastSort);
+        const lastSort = storageGet(storage.lastSort);
         const sortSelect = $('#sortSelect');
         if (sortSelect && lastSort && Array.from(sortSelect.options).some(option => option.value === lastSort)) {
             sortSelect.value = lastSort;
             sortSelect.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        sortSelect?.addEventListener('change', () => localStorage.setItem(storage.lastSort, sortSelect.value));
+        sortSelect?.addEventListener('change', () => storageSet(storage.lastSort, sortSelect.value));
 
-        const lastFilter = localStorage.getItem(storage.lastFilter);
+        const lastFilter = storageGet(storage.lastFilter);
         if (lastFilter) {
             const nav = $$('.nav-pill').find(button => button.dataset.filter === lastFilter);
             if (nav) window.setTimeout(() => nav.click(), 0);
@@ -228,7 +237,7 @@
         $$('.nav-pill, .side-cat-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const filter = btn.dataset.filter || btn.dataset.cat || 'all';
-                localStorage.setItem(storage.lastFilter, filter);
+                storageSet(storage.lastFilter, filter);
             });
         });
     }
@@ -279,9 +288,9 @@
     }
 
     function addOnboarding() {
-        if (localStorage.getItem(storage.onboarded) === '1') return;
+        if (storageGet(storage.onboarded) === '1') return;
         window.setTimeout(() => {
-            if (localStorage.getItem(storage.onboarded) === '1') return;
+            if (storageGet(storage.onboarded) === '1') return;
             const panel = document.createElement('div');
             panel.className = 'onboard-panel';
             panel.setAttribute('role', 'dialog');
@@ -297,7 +306,7 @@
             panel.addEventListener('click', event => {
                 const action = event.target.closest('[data-onboard]')?.dataset.onboard;
                 if (!action) return;
-                if (action === 'ok') localStorage.setItem(storage.onboarded, '1');
+                if (action === 'ok') storageSet(storage.onboarded, '1');
                 panel.remove();
             });
         }, 900);
@@ -369,12 +378,12 @@
         const volume = $('#mp-vol');
         const audio = $('#bgm-audio');
         if (!volume) return;
-        const saved = localStorage.getItem(storage.volume);
+        const saved = storageGet(storage.volume);
         if (saved != null) {
             volume.value = saved;
             if (audio) audio.volume = Number(saved);
         }
-        volume.addEventListener('input', () => localStorage.setItem(storage.volume, volume.value));
+        volume.addEventListener('input', () => storageSet(storage.volume, volume.value));
     }
 
     function stickySearchState() {
@@ -636,7 +645,8 @@
             const sideVisibleCount = document.getElementById('sideVisibleCount');
             const sideFavCount = document.getElementById('sideFavCount');
             const sideRecentCount = document.getElementById('sideRecentCount');
-            const recents = readJSON(storage.recent, []);
+            const raw = readJSON(storage.recent, []);
+            const recents = window.ZIGameRuntime?.cleanRecent?.(raw) || (Array.isArray(raw) ? raw : []);
 
             if (sideVisibleCount) {
                 sideVisibleCount.textContent = allCards.filter(card => !card.classList.contains('hidden')).length;

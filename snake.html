@@ -740,8 +740,10 @@
         /* ======================================================
            GAME STATE
         ====================================================== */
-        let snake, food, specialFood, dx, dy, ndx, ndy;
-        let score, bestScore = 0;
+        let snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+        let food = { x: Math.max(0, Math.min(COLS - 1, 15)), y: 10 };
+        let specialFood = null, dx = 1, dy = 0, ndx = 1, ndy = 0;
+        let score = 0, bestScore = 0;
         let running = false, gameLoop;
         let lastTime = 0;
         let level = 1, eatCount = 0;

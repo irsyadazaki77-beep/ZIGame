@@ -2,16 +2,6 @@
 <html lang="id">
 
 <head>
-    <script>
-    window.onerror = function(message, source, lineno, colno, error) {
-        var errInfo = message + ' at ' + source + ':' + lineno + ':' + colno;
-        fetch('http://localhost:9999/log?err=' + encodeURIComponent(errInfo)).catch(function(){});
-    };
-    window.addEventListener('unhandledrejection', function(event) {
-        fetch('http://localhost:9999/log?err=' + encodeURIComponent('Unhandled Rejection: ' + event.reason)).catch(function(){});
-    });
-    fetch('http://localhost:9999/log?err=' + encodeURIComponent('LOAD_SUCCESS')).catch(function(){});
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description"
@@ -19,6 +9,15 @@
     <meta name="keywords"
         content="ZI GAME, portal game, mini games, web games, arcade, puzzle, action games, HTML5 games">
     <meta name="author" content="ZI Pilot">
+    <meta name="theme-color" content="#090d1d">
+    <meta name="robots" content="index,follow">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="ZI GAME | Portal Game Kita">
+    <meta property="og:description" content="Koleksi game HTML5 gratis: arcade, action, puzzle, strategy, dan lebih banyak lagi.">
+    <meta property="og:url" content="https://irsyadazaki77-beep.github.io/ZIGame/">
+    <link rel="canonical" href="https://irsyadazaki77-beep.github.io/ZIGame/">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="manifest.webmanifest">
     <title>ZI GAME | Portal Game Kita</title>
 
     <link
@@ -27,19 +26,21 @@
     <link rel="stylesheet" href="index-portal.css">
     <link rel="stylesheet" href="sidebar.css">
     <link rel="stylesheet" href="zi-final-polish.css">
+    <link rel="stylesheet" href="zi-accessibility.css">
 </head>
 
 <body>
 
     <!-- Cursor -->
-    <div id="cur-dot"></div>
-    <div id="cur-ring"></div>
+    <a class="skip-link" href="#homeSection">Lewati ke konten utama</a>
+    <div id="cur-dot" aria-hidden="true"></div>
+    <div id="cur-ring" aria-hidden="true"></div>
 
     <!-- Scroll progress -->
-    <div id="progress"></div>
+    <div id="progress" aria-hidden="true"></div>
 
     <!-- Backgrounds -->
-    <div class="bg-grid"></div>
+    <div class="bg-grid" aria-hidden="true"></div>
     <div class="orbs">
         <div class="orb orb-1"></div>
         <div class="orb orb-2"></div>
@@ -99,7 +100,7 @@
         <div class="night-horizon"></div>
     </div>
 
-    <canvas id="canvas"></canvas>
+    <canvas id="canvas" aria-hidden="true"></canvas>
 
     <!-- Planets -->
     <div class="planet planet-saturn"></div>
@@ -108,7 +109,7 @@
     <div class="planet planet-mars"></div>
 
     <!-- NAV -->
-    <nav>
+    <nav aria-label="Navigasi utama">
         <div class="nav-inner">
             <div class="nav-logo">ZI <span>GAME</span></div>
             <div class="nav-pills">
@@ -122,7 +123,7 @@
                 <button class="nav-pill" data-filter="simulation">Simulation</button>
             </div>
             <div class="nav-right">
-                <span class="live-badge"><span class="live-dot"></span> 9,416 Online</span>
+                <span class="live-badge"><span class="live-dot"></span> Portal aktif</span>
                 <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle tema terang/gelap"
                     title="Toggle tema">&#9728;&#65039;</button>
             </div>
@@ -216,7 +217,7 @@
         </div>
 
         <div class="side-nav-group" data-group="sections">
-            <p class="side-title">Sections <button class="side-title-btn" data-group-toggle="sections"
+            <p class="side-title">Bagian <button class="side-title-btn" data-group-toggle="sections"
                     type="button">-</button></p>
             <a href="#homeSection" class="side-link" data-target="homeSection"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></span><span
                     class="txt">Home</span></a>
@@ -233,7 +234,7 @@
         </div>
 
         <div class="side-nav-group" data-group="quick">
-            <p class="side-title">Quick Actions <button class="side-title-btn" data-group-toggle="quick"
+            <p class="side-title">Aksi cepat <button class="side-title-btn" data-group-toggle="quick"
                     type="button">-</button></p>
             <a href="#" class="side-cta" data-action="random"><span class="ico"><svg viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -371,7 +372,7 @@
     </aside>
     <div id="sideOverlay" class="side-overlay"></div>
 
-    <div class="wrap">
+    <main class="wrap" id="main-content">
 
         <!-- HERO -->
         <header class="hero" id="homeSection">
@@ -383,8 +384,8 @@
             
             <div class="hero-insights">
                 <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> <strong id="gameCount">0</strong> Games</span>
-                <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> <strong id="visibleCount">0</strong> Visible</span>
-                <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> <strong id="heroFavCount">0</strong> Favs</span>
+                <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> <strong id="visibleCount" aria-live="polite">0</strong> Visible</span>
+                <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> <strong id="heroFavCount" aria-live="polite">0</strong> Favs</span>
                 <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Session: <strong id="heroSessionCount">00:00</strong></span>
             </div>
 
@@ -1125,7 +1126,7 @@
         <div class="activity-wrap">
             <div class="meta-head" style="margin-bottom: 14px;">
                 <span class="meta-title">Aktivitas Live</span>
-                <span class="live-badge"><span class="live-dot"></span> Real-time</span>
+                <span class="live-badge"><span class="live-dot"></span> Aktivitas contoh</span>
             </div>
             <div class="activity-track" id="activityFeed">
                 <!-- Activity items will be prepended by JS -->
@@ -1143,9 +1144,9 @@
 
         <!-- FOOTER -->
         <footer class="footer">
-            ZI GAME &mdash; dibuat dengan <span>♥</span> &middot; 2025 &middot; <span>semua gratis</span>
+            ZI GAME &mdash; dibuat dengan <span>♥</span> &middot; 2026 &middot; <span>semua gratis</span>
         </footer>
-    </div><!-- /wrap -->
+    </main><!-- /wrap -->
 
     <button id="toTop" aria-label="Kembali ke atas">↑</button>
 
@@ -1157,7 +1158,7 @@
         </div>
     </div>
 
-    <div class="toast-stack" id="toastStack"></div>
+    <div class="toast-stack" id="toastStack" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <div class="mobile-quickbar" aria-label="Aksi cepat mobile">
         <button type="button" data-quick-action="search">Cari</button>
@@ -1167,6 +1168,16 @@
     </div>
 
     <script>
+        function safeStorageGet(key, fallback = '') {
+            try { return localStorage.getItem(key) ?? fallback; } catch (_) { return fallback; }
+        }
+        function safeStorageSet(key, value) {
+            try { localStorage.setItem(key, value); } catch (_) { }
+        }
+        function safeStorageRemove(key) {
+            try { localStorage.removeItem(key); } catch (_) { }
+        }
+
         const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
         const isNarrowScreen = window.matchMedia('(max-width: 768px)').matches;
         const isAndroidLike = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -1440,14 +1451,14 @@
         const themeToggleBtn = document.getElementById('themeToggle');
         const sideThemeToggle = document.getElementById('sideThemeToggle');
 
-        let isLightMode = localStorage.getItem(STORAGE_THEME) === 'light';
-        let lightMood = localStorage.getItem(STORAGE_LIGHT_MOOD) || 'sunny';
+        let isLightMode = safeStorageGet(STORAGE_THEME) === 'light';
+        let lightMood = safeStorageGet(STORAGE_LIGHT_MOOD) || 'sunny';
         if (!['sunny', 'breezy', 'golden'].includes(lightMood)) lightMood = 'sunny';
 
         function applyLightMood(save) {
             document.body.dataset.lightMood = lightMood;
             if (sideLightMood) sideLightMood.value = lightMood;
-            if (save) localStorage.setItem(STORAGE_LIGHT_MOOD, lightMood);
+            if (save) safeStorageSet(STORAGE_LIGHT_MOOD, lightMood);
         }
 
         function applyTheme(save) {
@@ -1456,7 +1467,7 @@
             const navIcon = isLightMode ? '&#127769;' : '&#9728;&#65039;';
             if (themeToggleBtn) themeToggleBtn.innerHTML = navIcon;
             if (sideThemeToggle) sideThemeToggle.innerHTML = icon;
-            if (save) localStorage.setItem(STORAGE_THEME, isLightMode ? 'light' : 'dark');
+            if (save) safeStorageSet(STORAGE_THEME, isLightMode ? 'light' : 'dark');
         }
 
         applyLightMood(false);
@@ -1502,16 +1513,38 @@
             }
         }
 
-        const favorites = new Set(safeParseJSON(localStorage.getItem(STORAGE_FAV) || '[]', []));
-        const achievements = new Set(safeParseJSON(localStorage.getItem(STORAGE_ACHIEVEMENTS) || '[]', []));
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[char]));
+        }
+
+        const knownGameHrefs = new Set(allCards.map(card => card.querySelector('.play-btn')?.getAttribute('href')).filter(Boolean));
+
+        function cleanRecentItems(value) {
+            if (!Array.isArray(value)) return [];
+            const seen = new Set();
+            return value.filter(item => {
+                if (!item || typeof item !== 'object' || !knownGameHrefs.has(item.href) || typeof item.title !== 'string') return false;
+                if (seen.has(item.href)) return false;
+                seen.add(item.href);
+                return true;
+            }).map(item => ({
+                href: item.href,
+                title: item.title.trim().slice(0, 80),
+                at: Number.isFinite(Number(item.at)) ? Number(item.at) : Date.now()
+            })).filter(item => item.title).slice(0, 6);
+        }
+        const favorites = new Set(safeParseJSON(safeStorageGet(STORAGE_FAV, '[]'), []));
+        const achievements = new Set(safeParseJSON(safeStorageGet(STORAGE_ACHIEVEMENTS, '[]'), []));
         const dayKey = new Date().toISOString().slice(0, 10);
         let currentFilter = 'all';
         let showFavOnly = false;
         let commandOpen = false;
-        let listView = localStorage.getItem(STORAGE_VIEWMODE) === 'list';
-        let compactDensity = localStorage.getItem(STORAGE_DENSITY) === 'compact';
-        let reducedMotion = localStorage.getItem(STORAGE_MOTION) === 'reduced';
-        let sidebarCollapsed = localStorage.getItem(STORAGE_SIDEBAR) === '1';
+        let listView = safeStorageGet(STORAGE_VIEWMODE) === 'list';
+        let compactDensity = safeStorageGet(STORAGE_DENSITY) === 'compact';
+        let reducedMotion = safeStorageGet(STORAGE_MOTION) === 'reduced';
+        let sidebarCollapsed = safeStorageGet(STORAGE_SIDEBAR) === '1';
         let sidebarOpen = false;
         let lastScrollY = window.scrollY;
 
@@ -1525,9 +1558,9 @@
             groupCollapsed: {}
         };
 
-        const savedSidePrefs = safeParseJSON(localStorage.getItem(STORAGE_SIDEBAR_PREFS) || '{}', {});
+        const savedSidePrefs = safeParseJSON(safeStorageGet(STORAGE_SIDEBAR_PREFS, '{}'), {});
         Object.assign(sidePrefs, savedSidePrefs);
-        let sideLog = safeParseJSON(localStorage.getItem(STORAGE_SIDEBAR_LOG) || '[]', []);
+        let sideLog = safeParseJSON(safeStorageGet(STORAGE_SIDEBAR_LOG, '[]'), []);
 
         sidePrefs.accent = ['violet', 'teal', 'sunset'].includes(sidePrefs.accent) ? sidePrefs.accent : 'violet';
         sidePrefs.opacity = Number(sidePrefs.opacity);
@@ -1542,8 +1575,8 @@
         }
         if (!Array.isArray(sideLog)) sideLog = [];
 
-        const profile = safeParseJSON(localStorage.getItem(STORAGE_PROFILE) || '{"xp":0,"level":1,"streak":1,"lastVisit":""}', { xp: 0, level: 1, streak: 1, lastVisit: '' });
-        const actionLog = safeParseJSON(localStorage.getItem(STORAGE_ACTIONS) || '{}', {});
+        const profile = safeParseJSON(safeStorageGet(STORAGE_PROFILE, '{"xp":0,"level":1,"streak":1,"lastVisit":""}'), { xp: 0, level: 1, streak: 1, lastVisit: '' });
+        const actionLog = safeParseJSON(safeStorageGet(STORAGE_ACTIONS, '{}'), {});
         if (!actionLog[dayKey]) {
             actionLog[dayKey] = { favorites: 0, random: 0, played: 0, commands: 0 };
         }
@@ -1574,20 +1607,20 @@
         }
 
         function saveFavorites() {
-            localStorage.setItem(STORAGE_FAV, JSON.stringify(Array.from(favorites)));
+            safeStorageSet(STORAGE_FAV, JSON.stringify(Array.from(favorites)));
         }
 
         function saveActions() {
             actionLog[dayKey] = todayActions;
-            localStorage.setItem(STORAGE_ACTIONS, JSON.stringify(actionLog));
+            safeStorageSet(STORAGE_ACTIONS, JSON.stringify(actionLog));
         }
 
         function saveProfile() {
-            localStorage.setItem(STORAGE_PROFILE, JSON.stringify(profile));
+            safeStorageSet(STORAGE_PROFILE, JSON.stringify(profile));
         }
 
         function saveAchievements() {
-            localStorage.setItem(STORAGE_ACHIEVEMENTS, JSON.stringify(Array.from(achievements)));
+            safeStorageSet(STORAGE_ACHIEVEMENTS, JSON.stringify(Array.from(achievements)));
         }
 
         function showToast(text) {
@@ -1720,21 +1753,21 @@
             listView = list;
             gameContainer.classList.toggle('list-view', listView);
             if (viewToggleBtn) viewToggleBtn.textContent = listView ? 'View: List' : 'View: Grid';
-            localStorage.setItem(STORAGE_VIEWMODE, listView ? 'list' : 'grid');
+            safeStorageSet(STORAGE_VIEWMODE, listView ? 'list' : 'grid');
         }
 
         function setDensity(compact) {
             compactDensity = compact;
             document.body.classList.toggle('compact-density', compactDensity);
             if (densityToggleBtn) densityToggleBtn.textContent = compactDensity ? 'Density: Compact' : 'Density: Cozy';
-            localStorage.setItem(STORAGE_DENSITY, compactDensity ? 'compact' : 'cozy');
+            safeStorageSet(STORAGE_DENSITY, compactDensity ? 'compact' : 'cozy');
         }
 
         function setMotion(reduced) {
             reducedMotion = reduced;
             document.body.classList.toggle('reduce-motion-ui', reducedMotion);
             if (motionToggleBtn) motionToggleBtn.textContent = reducedMotion ? 'Motion: Calm' : 'Motion: On';
-            localStorage.setItem(STORAGE_MOTION, reducedMotion ? 'reduced' : 'full');
+            safeStorageSet(STORAGE_MOTION, reducedMotion ? 'reduced' : 'full');
         }
 
         function resetPortalFilters() {
@@ -1867,13 +1900,19 @@
         }
 
         function getRecentItems() {
-            return JSON.parse(localStorage.getItem(STORAGE_RECENT) || '[]');
+            const parsed = safeParseJSON(safeStorageGet(STORAGE_RECENT, '[]'), []);
+            const clean = cleanRecentItems(parsed);
+            if (JSON.stringify(parsed) !== JSON.stringify(clean)) {
+                safeStorageSet(STORAGE_RECENT, JSON.stringify(clean));
+            }
+            return clean;
         }
 
         function saveRecent(item) {
+            if (!item || !knownGameHrefs.has(item.href)) return;
             const old = getRecentItems().filter(x => x.href !== item.href);
             old.unshift(item);
-            localStorage.setItem(STORAGE_RECENT, JSON.stringify(old.slice(0, 6)));
+            safeStorageSet(STORAGE_RECENT, JSON.stringify(cleanRecentItems(old)));
             renderRecent();
         }
 
@@ -1881,12 +1920,12 @@
             const recents = getRecentItems();
             if (!recents.length) {
                 recentList.innerHTML = '<p class="recent-empty">Belum ada game yang dimainkan. Klik tombol Main untuk mengisi riwayat.</p>';
-                if (sideRecentShortcuts) sideRecentShortcuts.innerHTML = '<span class="side-chip">No recent</span>';
+                if (sideRecentShortcuts) sideRecentShortcuts.innerHTML = '<span class="side-chip">Belum ada riwayat</span>';
                 updateSidebarStats();
                 return;
             }
             recentList.innerHTML = recents.map(item => (
-                `<a class="recent-item" href="${item.href}">${item.title}</a>`
+                `<a class="recent-item" href="${escapeHTML(item.href)}">${escapeHTML(item.title)}</a>`
             )).join('');
             recentList.querySelectorAll('a').forEach(el => {
                 el.addEventListener('mouseenter', () => ring.classList.add('hover'));
@@ -1897,11 +1936,11 @@
         }
 
         function saveSidePrefs() {
-            localStorage.setItem(STORAGE_SIDEBAR_PREFS, JSON.stringify(sidePrefs));
+            safeStorageSet(STORAGE_SIDEBAR_PREFS, JSON.stringify(sidePrefs));
         }
 
         function saveSideLog() {
-            localStorage.setItem(STORAGE_SIDEBAR_LOG, JSON.stringify(sideLog.slice(0, 20)));
+            safeStorageSet(STORAGE_SIDEBAR_LOG, JSON.stringify(sideLog.slice(0, 20)));
         }
 
         function addSideLog(text) {
@@ -1937,7 +1976,7 @@
             if (!sideFavShortcuts) return;
             const favCards = allCards.filter(card => favorites.has(cardId(card))).slice(0, 4);
             if (!favCards.length) {
-                sideFavShortcuts.innerHTML = '<span class="side-chip">No favorites</span>';
+                sideFavShortcuts.innerHTML = '<span class="side-chip">Belum ada favorit</span>';
                 return;
             }
             sideFavShortcuts.innerHTML = favCards.map(card => {
@@ -1950,10 +1989,10 @@
             if (!sideRecentShortcuts) return;
             const recents = getRecentItems().slice(0, 4);
             if (!recents.length) {
-                sideRecentShortcuts.innerHTML = '<span class="side-chip">No recent</span>';
+                sideRecentShortcuts.innerHTML = '<span class="side-chip">Belum ada riwayat</span>';
                 return;
             }
-            sideRecentShortcuts.innerHTML = recents.map(item => `<a class="side-chip" href="${item.href}">${item.title}</a>`).join('');
+            sideRecentShortcuts.innerHTML = recents.map(item => `<a class="side-chip" href="${escapeHTML(item.href)}">${escapeHTML(item.title)}</a>`).join('');
         }
 
         function renderSideClock() {
@@ -1985,7 +2024,7 @@
             if (sidePin) sidePin.checked = !!sidePrefs.pinned;
             if (sideCompact) sideCompact.checked = !!sidePrefs.compact;
             if (sideFocus) sideFocus.checked = !!sidePrefs.focus;
-            if (sideNotes) sideNotes.value = localStorage.getItem(STORAGE_SIDEBAR_NOTES) || '';
+            if (sideNotes) sideNotes.value = safeStorageGet(STORAGE_SIDEBAR_NOTES);
             applyGroupCollapsed();
         }
 
@@ -2238,7 +2277,7 @@
             });
         }
         clearRecentBtn.addEventListener('click', () => {
-            localStorage.removeItem(STORAGE_RECENT);
+            safeStorageRemove(STORAGE_RECENT);
             renderRecent();
             addSideLog('Recent history cleared');
         });
@@ -2307,14 +2346,14 @@
 
         if (sideNotes) {
             sideNotes.addEventListener('input', () => {
-                localStorage.setItem(STORAGE_SIDEBAR_NOTES, sideNotes.value);
+                safeStorageSet(STORAGE_SIDEBAR_NOTES, sideNotes.value);
             });
         }
 
         if (sideClearNotes) {
             sideClearNotes.addEventListener('click', () => {
                 if (sideNotes) sideNotes.value = '';
-                localStorage.removeItem(STORAGE_SIDEBAR_NOTES);
+                safeStorageRemove(STORAGE_SIDEBAR_NOTES);
                 addSideLog('Sidebar notes cleared');
             });
         }
@@ -2634,6 +2673,7 @@
         if (!mobileOptimizedMode) setInterval(spawnSparkle, 800);
     </script>
 
+    <script src="site-runtime.js?v=2"></script>
     <script src="mobile-touch.js"></script>
     <script src="sounds.js"></script>
 
@@ -2641,7 +2681,7 @@
     <div id="music-player">
         <div class="mp-icon" id="mp-icon"></div>
         <div class="mp-controls">
-            <select id="bgm-select" class="mp-select">
+            <select id="bgm-select" class="mp-select" aria-label="Pilih musik latar">
                 <option value="">🎵 Music: Off</option>
                 <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">Track 1: Cyberpunk Vibe
                 </option>
@@ -2655,8 +2695,8 @@
                 </option>
             </select>
             <div class="mp-actions">
-                <button id="mp-play" class="mp-btn" title="Play/Pause">&#9658;</button>
-                <input type="range" id="mp-vol" class="mp-vol" min="0" max="1" step="0.05" value="0.3" title="Volume">
+                <button id="mp-play" class="mp-btn" type="button" title="Putar atau jeda musik" aria-label="Putar atau jeda musik">&#9658;</button>
+                <input type="range" id="mp-vol" class="mp-vol" min="0" max="1" step="0.05" value="0.3" title="Volume musik" aria-label="Volume musik">
             </div>
         </div>
         <audio id="bgm-audio" loop></audio>

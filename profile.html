@@ -4,9 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Profil pemain ZI GAME: level, XP, game favorit, riwayat, dan achievement.">
+    <meta name="theme-color" content="#090d1d">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="manifest.webmanifest">
     <title>Profile | ZI GAME</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="portal-page.css">
+    <link rel="stylesheet" href="zi-accessibility.css">
 </head>
 
 <body data-page="profile">
@@ -41,6 +46,8 @@
             <div class="card"><span class="stat-value" id="statRecent">0</span><span class="stat-label">Recent</span></div>
             <div class="card"><span class="stat-value" id="statAchievements">0</span><span class="stat-label">Achievement</span></div>
             <div class="card"><span class="stat-value" id="statPlayed">0</span><span class="stat-label">Main hari ini</span></div>
+            <div class="card"><span class="stat-value" id="statTotalScore">0</span><span class="stat-label">Skor total</span></div>
+            <div class="card"><span class="stat-value" id="statGamesPlayed">0</span><span class="stat-label">Total game</span></div>
         </section>
 
         <section class="section">
@@ -68,6 +75,7 @@
         </section>
     </main>
 
+    <script src="site-runtime.js"></script>
     <script src="portal-page.js"></script>
 </body>
 
