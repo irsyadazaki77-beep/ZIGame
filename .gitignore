@@ -8,3 +8,7 @@ node_modules/
 # Browser and editor state
 .vscode/
 .idea/
+
+# Playwright output
+test-results/
+playwright-report/

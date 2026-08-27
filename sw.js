@@ -1,10 +1,10 @@
-const CACHE_NAME = 'zi-game-v4';
+const CACHE_NAME = 'zi-game-v5';
 const APP_SHELL = [
     './', './index.html', './profile.html', './settings.html', './404.html', './offline.html',
-    './index-portal.css', './sidebar.css', './zi-final-polish.css', './portal-page.css',
+    './index-portal.css', './sidebar.css', './portal-page.css',
     './game-shared.css', './mobile-touch.js', './sounds.js', './sounds.js?v=3', './site-runtime.js', './site-runtime.js?v=2',
-    './manifest.webmanifest', './favicon.svg', './styles.css', './app.js',
-    './polybridge3.css', './hyperlightdrifter.css', './zi-accessibility.css', './zi-modern-ui.css',
+    './manifest.webmanifest', './favicon.svg', './styles.css', './app.js', './portal-page.js',
+    './zi-final-polish.js', './polybridge3.css', './hyperlightdrifter.css', './zi-modern-ui.css',
     './assets/game-thumbs/2048.jpg', './assets/game-thumbs/babaisyou.jpg',
     './assets/game-thumbs/breakout.jpg', './assets/game-thumbs/colormatch.jpg',
     './assets/game-thumbs/dinorun.jpg', './assets/game-thumbs/flappy.jpg',

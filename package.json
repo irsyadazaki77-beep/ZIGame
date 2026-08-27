@@ -6,6 +6,10 @@
   "scripts": {
     "check": "node scripts/validate.mjs",
     "check:js": "node scripts/validate.mjs --js-only",
-    "test:ui": "node scripts/ui-smoke.mjs"
+    "test:ui": "node scripts/ui-smoke.mjs",
+    "test:ui:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
   }
 }

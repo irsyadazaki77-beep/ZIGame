@@ -7,10 +7,10 @@ Portal game HTML5 statis berbahasa Indonesia dengan koleksi arcade, action, puzz
 Karena beberapa browser membatasi fitur offline dan module pada `file://`, jalankan server HTTP sederhana dari folder project:
 
 ```powershell
-npx serve .
+node scripts/serve.mjs
 ```
 
-Lalu buka alamat yang ditampilkan server. Tidak ada dependency runtime selain browser modern.
+Lalu buka `http://127.0.0.1:4173`. Runtime situs tetap tanpa dependency eksternal; dependency npm hanya dipakai untuk pemeriksaan dan test browser.
 
 ## Fitur
 
@@ -30,6 +30,7 @@ Lalu buka alamat yang ditampilkan server. Tidak ada dependency runtime selain br
 - `scripts/validate.mjs` — pemeriksaan kualitas lokal/CI.
 - `assets/game-thumbs/` — thumbnail screenshot dari layar awal setiap game.
 - `scripts/ui-smoke.mjs` — pemeriksaan kontrak UI, rute, thumbnail, dan PWA.
+- `playwright.config.mjs` dan `tests/ui.spec.mjs` — regression test browser desktop/mobile.
 
 ## Pemeriksaan kualitas
 
@@ -37,6 +38,13 @@ Lalu buka alamat yang ditampilkan server. Tidak ada dependency runtime selain br
 npm run check
 npm run check:js
 npm run test:ui
+npm run test:ui:browser
+```
+
+`npm run test:ui:browser` menjalankan Playwright pada viewport desktop 1440×900 dan mobile 390×844. Jika Chromium belum tersedia di mesin developer, jalankan sekali:
+
+```powershell
+npx playwright install chromium
 ```
 
 Jika server lokal sedang berjalan, pemeriksaan aset HTTP juga dapat dijalankan di PowerShell dengan:

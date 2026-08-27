@@ -25,8 +25,6 @@
         rel="stylesheet">
     <link rel="stylesheet" href="index-portal.css">
     <link rel="stylesheet" href="sidebar.css">
-    <link rel="stylesheet" href="zi-final-polish.css">
-    <link rel="stylesheet" href="zi-accessibility.css">
     <link rel="stylesheet" href="zi-modern-ui.css">
 </head>
 
@@ -131,7 +129,8 @@
         </div>
     </nav>
 
-    <button id="sideToggle" class="side-toggle" aria-label="Toggle sidebar">&#9776;</button>
+    <button id="sideToggle" class="side-toggle" aria-label="Buka sidebar" aria-expanded="false"
+        aria-controls="portalSidebar">&#9776;</button>
     <aside id="portalSidebar" class="portal-sidebar" aria-label="Sidebar navigasi">
         <div class="side-top">
             <span class="side-brand">ZI <span>GAME</span></span>
@@ -371,7 +370,7 @@
 
         <div class="side-foot">ZI GAME &mdash; v2.0</div>
     </aside>
-    <div id="sideOverlay" class="side-overlay"></div>
+    <div id="sideOverlay" class="side-overlay" aria-hidden="true"></div>
 
     <main class="wrap" id="main-content">
 
@@ -1542,11 +1541,13 @@
         let currentFilter = 'all';
         let showFavOnly = false;
         let commandOpen = false;
+        let commandReturnFocus = null;
         let listView = safeStorageGet(STORAGE_VIEWMODE) === 'list';
         let compactDensity = safeStorageGet(STORAGE_DENSITY) === 'compact';
         let reducedMotion = safeStorageGet(STORAGE_MOTION) === 'reduced';
         let sidebarCollapsed = safeStorageGet(STORAGE_SIDEBAR) === '1';
         let sidebarOpen = false;
+        let sidebarReturnFocus = null;
         let lastScrollY = window.scrollY;
 
         const sidePrefs = {
@@ -2192,6 +2193,7 @@
 
         function openCommandCenter() {
             if (!cmdOverlay || !cmdInput || !cmdList) return;
+            commandReturnFocus = document.activeElement;
             commandOpen = true;
             cmdOverlay.classList.add('open');
             cmdOverlay.setAttribute('aria-hidden', 'false');
@@ -2209,6 +2211,9 @@
             commandOpen = false;
             cmdOverlay.classList.remove('open');
             cmdOverlay.setAttribute('aria-hidden', 'true');
+            const returnFocus = commandReturnFocus;
+            commandReturnFocus = null;
+            if (returnFocus?.isConnected) window.requestAnimationFrame(() => returnFocus.focus());
         }
 
         const commandItems = [
@@ -2264,6 +2269,21 @@
         if (cmdOverlay) {
             cmdOverlay.addEventListener('click', e => {
                 if (e.target === cmdOverlay) closeCommandCenter();
+            });
+            cmdOverlay.addEventListener('keydown', e => {
+                if (e.key !== 'Tab' || cmdOverlay.getAttribute('aria-hidden') === 'true') return;
+                const items = Array.from(cmdOverlay.querySelectorAll('input, button, [href], select, textarea'))
+                    .filter(item => !item.disabled && item.offsetParent !== null);
+                if (!items.length) return;
+                const first = items[0];
+                const last = items[items.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
             });
         }
         if (cmdInput) {
@@ -2487,6 +2507,20 @@
             });
         }
 
+        function syncSidebarA11y() {
+            const mobile = window.innerWidth <= 768;
+            if (sideToggle) {
+                sideToggle.setAttribute('aria-expanded', sidebarOpen ? 'true' : 'false');
+                sideToggle.setAttribute('aria-controls', 'portalSidebar');
+            }
+            if (portalSidebar) {
+                const hidden = mobile && !sidebarOpen;
+                portalSidebar.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+                portalSidebar.inert = hidden;
+            }
+            if (sideOverlay) sideOverlay.setAttribute('aria-hidden', sidebarOpen ? 'false' : 'true');
+        }
+
         function closeSidebar() {
             sidebarOpen = false;
             portalSidebar.classList.remove('sidebar-open');
@@ -2496,9 +2530,16 @@
                 sideToggle.textContent = '\u2630';
                 sideToggle.setAttribute('aria-label', 'Buka sidebar');
             }
+            const returnFocus = sidebarReturnFocus;
+            sidebarReturnFocus = null;
+            syncSidebarA11y();
+            if (window.innerWidth <= 768 && returnFocus?.isConnected) {
+                window.requestAnimationFrame(() => returnFocus.focus());
+            }
         }
 
         function openSidebar() {
+            if (window.innerWidth <= 768) sidebarReturnFocus = document.activeElement;
             sidebarOpen = true;
             portalSidebar.classList.add('sidebar-open');
             sideOverlay.classList.add('show');
@@ -2507,6 +2548,8 @@
                 sideToggle.textContent = '\u2715';
                 sideToggle.setAttribute('aria-label', 'Tutup sidebar');
             }
+            syncSidebarA11y();
+            if (window.innerWidth <= 768 && sideCollapseBtn) sideCollapseBtn.focus();
             updateSidebarStats();
             renderSideClock();
         }
@@ -2607,6 +2650,7 @@
         setInterval(renderSideClock, 30000);
         updateSidebarStats();
         applySidebarMode();
+        syncSidebarA11y();
         setSidebarActiveByScroll();
         const totalGames = allCards.length;
         setTimeout(() => {
@@ -2628,6 +2672,7 @@
                 });
                 updateCards();
                 addSideLog('Filtered: ' + (cat === 'all' ? 'All games' : cat));
+                if (window.innerWidth <= 768) closeSidebar();
             });
         });
 

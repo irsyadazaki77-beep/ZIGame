@@ -53,16 +53,85 @@
         }
         back.setAttribute('aria-label', 'Kembali ke portal ZI GAME');
 
-        document.querySelectorAll('.overlay, .game-overlay').forEach(overlay => {
+        const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        const labelPatterns = [
+            [/mute|sound|volume/i, 'Suara'],
+            [/pause|resume/i, 'Pause atau lanjutkan'],
+            [/restart|retry|reset/i, 'Mulai ulang'],
+            [/start|play/i, 'Mulai game'],
+            [/back|home|menu/i, 'Kembali ke portal'],
+            [/close|cancel/i, 'Tutup'],
+            [/up|top/i, 'Atas'],
+            [/down|bottom/i, 'Bawah'],
+            [/left/i, 'Kiri'],
+            [/right/i, 'Kanan']
+        ];
+
+        document.querySelectorAll('button').forEach(button => {
+            if (button.getAttribute('aria-label')) return;
+            const text = button.textContent.trim();
+            if (text && !/^[▲▼◄►←→↑↓✕×+−]+$/.test(text)) return;
+            const hint = `${button.id} ${button.className} ${button.title}`;
+            const match = labelPatterns.find(([pattern]) => pattern.test(hint));
+            if (match) button.setAttribute('aria-label', match[1]);
+            else if (text === '▲' || text === '↑') button.setAttribute('aria-label', 'Atas');
+            else if (text === '▼' || text === '↓') button.setAttribute('aria-label', 'Bawah');
+            else if (text === '◄' || text === '←') button.setAttribute('aria-label', 'Kiri');
+            else if (text === '►' || text === '→') button.setAttribute('aria-label', 'Kanan');
+        });
+
+        document.querySelectorAll('.overlay, .game-overlay, .overlay-screen, [id$="-screen"]').forEach(overlay => {
             overlay.setAttribute('role', 'dialog');
             overlay.setAttribute('aria-modal', 'true');
+            const heading = overlay.querySelector('h1, h2, h3, .overlay-title, .big-title, .go-title, .result-title');
+            if (heading) {
+                if (!heading.id) heading.id = `zi-overlay-title-${Math.random().toString(36).slice(2, 8)}`;
+                overlay.setAttribute('aria-labelledby', heading.id);
+            }
+            let lastVisible = false;
+            let returnFocus = null;
             const syncVisibility = () => {
                 const style = window.getComputedStyle(overlay);
-                const visible = style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0;
+                const visible = style.display !== 'none'
+                    && style.visibility !== 'hidden'
+                    && Number(style.opacity) !== 0
+                    && style.pointerEvents !== 'none';
                 overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
+                if (visible && !lastVisible) {
+                    returnFocus = document.activeElement && document.activeElement !== document.body
+                        ? document.activeElement
+                        : null;
+                    const first = overlay.querySelector(focusableSelector);
+                    if (first && !overlay.contains(document.activeElement)) window.requestAnimationFrame(() => first.focus());
+                } else if (!visible && lastVisible) {
+                    const target = returnFocus && returnFocus.isConnected && !overlay.contains(returnFocus)
+                        ? returnFocus
+                        : document.querySelector('canvas, .game-area, .stage');
+                    if (target) {
+                        if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+                        window.requestAnimationFrame(() => target.focus());
+                    }
+                    returnFocus = null;
+                }
+                lastVisible = visible;
             };
             syncVisibility();
             new MutationObserver(syncVisibility).observe(overlay, { attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
+            overlay.addEventListener('transitionend', syncVisibility);
+            overlay.addEventListener('keydown', event => {
+                if (event.key !== 'Tab' || overlay.getAttribute('aria-hidden') === 'true') return;
+                const items = Array.from(overlay.querySelectorAll(focusableSelector)).filter(item => item.offsetParent !== null);
+                if (!items.length) return;
+                const first = items[0];
+                const last = items[items.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            });
         });
     }
 

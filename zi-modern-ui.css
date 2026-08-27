@@ -36,6 +36,23 @@
    Shared foundations
    ------------------------------------------------------------------------- */
 
+.skip-link {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 10000;
+    transform: translateY(-150%);
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: #06101d;
+    background: var(--ui-cyan);
+    font-weight: 800;
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
 body[data-page="portal"],
 body[data-page="profile"],
 body[data-page="settings"],
@@ -198,9 +215,19 @@ body[data-page="portal"] .zi-runtime-notice {
         margin-inline: 14px;
     }
 
-    body[data-page="portal"] .zi-runtime-notice.zi-flow-notice {
+body[data-page="portal"] .zi-runtime-notice.zi-flow-notice {
         margin-top: 48px;
     }
+}
+
+/* An aria-hidden command panel must also be removed from the visual and
+   keyboard flow when closed; opacity alone still leaves its input focusable. */
+body[data-page="portal"] .cmd-overlay:not(.open) {
+    visibility: hidden;
+}
+
+body[data-page="portal"] .cmd-overlay.open {
+    visibility: visible;
 }
 
 /* -------------------------------------------------------------------------
@@ -764,6 +791,25 @@ body[data-page="portal"] .card-thumb-label {
     text-shadow: 0 2px 12px rgba(0, 0, 0, .75);
 }
 
+body[data-page="portal"] .card-animating-out {
+    pointer-events: none;
+    animation: zi-card-fade-out .28s var(--ui-ease) forwards !important;
+}
+
+body[data-page="portal"] .card-animating-in {
+    animation: zi-card-fade-in .32s var(--ui-ease) forwards !important;
+}
+
+@keyframes zi-card-fade-out {
+    from { opacity: 1; transform: scale(1) translateY(0); }
+    to { opacity: 0; transform: scale(.88) translateY(12px); }
+}
+
+@keyframes zi-card-fade-in {
+    from { opacity: 0; transform: scale(.88) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 body[data-page="portal"] .card-top {
     align-items: flex-start;
     gap: 12px;
@@ -1013,6 +1059,108 @@ body[data-page="portal"] .recent-clear {
 body[data-page="portal"] .recent-clear:hover {
     border-color: rgba(244, 114, 182, .35);
     color: var(--ui-pink);
+}
+
+body[data-page="portal"] .card-glow-bar {
+    background-size: 300% 100%;
+    animation: zi-flow-glow 6s linear infinite;
+}
+
+@keyframes zi-flow-glow {
+    from { background-position: 0% 50%; }
+    to { background-position: 300% 50%; }
+}
+
+body[data-page="portal"] .achievement-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+}
+
+body[data-page="portal"] .achievement-tile {
+    display: grid;
+    gap: 5px;
+    min-height: 74px;
+    padding: 11px;
+    border: 1px solid var(--ui-line);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .035);
+    color: var(--ui-text-soft);
+    font-size: 11px;
+    transition: transform .2s var(--ui-ease), background-color .2s var(--ui-ease), border-color .2s var(--ui-ease);
+}
+
+body[data-page="portal"] .achievement-tile strong {
+    color: var(--ui-text);
+    font-size: 12px;
+}
+
+body[data-page="portal"] .achievement-tile span {
+    color: var(--ui-text-faint);
+    line-height: 1.4;
+}
+
+body[data-page="portal"] .achievement-tile:hover,
+body[data-page="portal"] .achievement-tile.is-unlocked {
+    border-color: rgba(103, 232, 249, .34);
+    background: rgba(103, 232, 249, .08);
+    transform: translateY(-1px);
+}
+
+body[data-page="portal"] .onboard-panel,
+body[data-page="portal"] .confirm-panel,
+body[data-page="portal"] .level-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 1800;
+    width: min(calc(100vw - 32px), 420px);
+    padding: 22px;
+    border: 1px solid var(--ui-line-strong);
+    border-radius: var(--ui-radius-md);
+    background: rgba(13, 19, 37, .97);
+    box-shadow: var(--ui-shadow);
+    color: var(--ui-text);
+    transform: translate(-50%, -50%);
+}
+
+body[data-page="portal"] .onboard-panel p,
+body[data-page="portal"] .confirm-panel p,
+body[data-page="portal"] .level-modal p {
+    color: var(--ui-text-soft);
+    line-height: 1.6;
+}
+
+body[data-page="portal"] .onboard-actions,
+body[data-page="portal"] .confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+body[data-page="portal"] .zi-mini-btn {
+    min-height: 40px;
+    padding: 0 13px;
+    border: 1px solid var(--ui-line);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .06);
+    color: var(--ui-text);
+    font-weight: 800;
+}
+
+body[data-page="portal"] .zi-mini-btn.primary {
+    border-color: rgba(103, 232, 249, .42);
+    background: linear-gradient(135deg, var(--ui-cyan), var(--ui-violet));
+    color: #07101b;
+}
+
+body[data-page="portal"] .footer-stat {
+    display: inline-flex;
+    margin-left: 10px;
+    color: var(--ui-text-soft);
+    font: 700 10px/1.2 "JetBrains Mono", monospace;
 }
 
 body[data-page="portal"] .footer {
@@ -1644,6 +1792,68 @@ body.zi-modern-game .game-page-bg .o2 {
 
     body[data-page="portal"] .game-card.featured {
         grid-column: span 2 !important;
+    }
+}
+
+@media (max-width: 820px) {
+    /* Thumper's deliberately oversized title needs a contained mobile mode. */
+    body.zi-modern-game .menu-logo,
+    body.zi-modern-game .go-title {
+        max-width: calc(100vw - 28px);
+        overflow-wrap: anywhere;
+        text-align: center;
+        letter-spacing: clamp(2px, 1.4vw, 8px);
+    }
+
+    body.zi-modern-game .menu-logo {
+        font-size: clamp(52px, 18vw, 92px);
+    }
+
+    body.zi-modern-game .go-title {
+        font-size: clamp(48px, 16vw, 92px);
+    }
+
+    body.zi-modern-game .menu-tagline {
+        max-width: calc(100vw - 28px);
+        margin-inline: auto;
+        line-height: 1.6;
+        letter-spacing: 2px;
+        text-align: center;
+    }
+
+    body.zi-modern-game .overlay-screen {
+        width: 100%;
+        max-width: 100vw;
+        padding: 20px 14px;
+        overflow: hidden;
+    }
+
+    body.zi-modern-game #start-screen .big-title,
+    body.zi-modern-game #end-screen .result-title {
+        max-width: 100%;
+        font-size: clamp(48px, 18vw, 88px);
+        letter-spacing: clamp(4px, 2.5vw, 16px);
+        overflow-wrap: anywhere;
+        text-align: center;
+    }
+
+    body.zi-modern-game #start-screen .sub {
+        max-width: calc(100vw - 28px);
+        letter-spacing: 2px;
+        line-height: 1.5;
+        text-align: center;
+    }
+
+    body.zi-modern-game .controls-grid {
+        grid-template-columns: 1fr;
+        width: min(100%, 340px);
+        gap: 8px;
+        margin-bottom: 28px;
+    }
+
+    body.zi-modern-game .result-table {
+        width: min(100%, 340px);
+        min-width: 0;
     }
 }
 

@@ -49,7 +49,9 @@ for (const route of gamePages) {
 }
 
 assert(read('offline.html').includes('Coba lagi'), 'offline: retry action is missing');
-assert(serviceWorker.includes("const CACHE_NAME = 'zi-game-v4'"), 'service worker cache version was not bumped');
+assert(serviceWorker.includes("const CACHE_NAME = 'zi-game-v5'"), 'service worker cache version was not bumped');
+assert(serviceWorker.includes("'./portal-page.js'"), 'service worker: portal page runtime is missing from offline shell');
+assert(serviceWorker.includes("'./zi-final-polish.js'"), 'service worker: portal enhancement runtime is missing from offline shell');
 assert(serviceWorker.includes("caches.match('./offline.html')"), 'service worker has no offline navigation fallback');
 assert(runtime.includes('beforeinstallprompt'), 'runtime: install prompt is missing');
 assert(runtime.includes('Versi baru ZI GAME siap dipakai.'), 'runtime: update notice is missing');
