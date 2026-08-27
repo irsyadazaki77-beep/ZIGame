@@ -9,7 +9,7 @@ const htmlFiles = files.filter(file => file.isFile() && file.name.endsWith('.htm
 const jsFiles = files.filter(file => file.isFile() && file.name.endsWith('.js')).map(file => file.name);
 const errors = [];
 const warnings = [];
-const gameFiles = htmlFiles.filter(file => !['index.html', 'profile.html', 'settings.html', '404.html'].includes(file) && !file.includes('backup'));
+const gameFiles = htmlFiles.filter(file => !['index.html', 'profile.html', 'settings.html', '404.html', 'offline.html'].includes(file) && !file.includes('backup'));
 
 function report(condition, message) {
     if (!condition) errors.push(message);

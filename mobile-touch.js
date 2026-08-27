@@ -37,7 +37,39 @@
         document.head.appendChild(runtime);
     }
 
-    if (!shouldOptimize) return;
+    function enhanceGameShell() {
+        if (!isGamePage || document.documentElement.dataset.ziGameShell === 'ready') return;
+        document.documentElement.dataset.ziGameShell = 'ready';
+
+        let back = document.querySelector('a[href="index.html"], a[href="./index.html"]');
+        if (!back) {
+            back = document.createElement('a');
+            back.href = 'index.html';
+            back.className = 'zi-shared-back zi-injected-back';
+            back.textContent = '← Portal';
+            document.body.appendChild(back);
+        } else {
+            back.classList.add('zi-shared-back');
+        }
+        back.setAttribute('aria-label', 'Kembali ke portal ZI GAME');
+
+        document.querySelectorAll('.overlay, .game-overlay').forEach(overlay => {
+            overlay.setAttribute('role', 'dialog');
+            overlay.setAttribute('aria-modal', 'true');
+            const syncVisibility = () => {
+                const style = window.getComputedStyle(overlay);
+                const visible = style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0;
+                overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
+            };
+            syncVisibility();
+            new MutationObserver(syncVisibility).observe(overlay, { attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
+        });
+    }
+
+    if (!shouldOptimize) {
+        ready(enhanceGameShell);
+        return;
+    }
 
     const keyData = {
         ArrowUp: { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 },
@@ -489,6 +521,7 @@ body.zi-page-hidden * {
 
     ready(function () {
         markPage();
+        enhanceGameShell();
         buildTouchControls();
         bindGestures();
         preventDoubleTapZoom();

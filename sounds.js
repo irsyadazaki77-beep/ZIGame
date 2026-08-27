@@ -570,6 +570,13 @@ const SoundEngine = (() => {
         musicNodes = [];
     }
 
+    function setMusicVolume(value) {
+        ensureCtx();
+        const next = Math.max(0, Math.min(1, Number(value) || 0));
+        if (musicGain) musicGain.gain.value = next;
+        return next;
+    }
+
     function toggleMute() {
         muted = !muted;
         if (muted) {
@@ -578,7 +585,7 @@ const SoundEngine = (() => {
         } else {
             masterGain && (masterGain.gain.value = 1.0);
         }
-        localStorage.setItem('arcadeNexusMuted', muted ? '1' : '0');
+        try { window.localStorage.setItem('arcadeNexusMuted', muted ? '1' : '0'); } catch (_) { }
         return muted;
     }
 
@@ -587,9 +594,7 @@ const SoundEngine = (() => {
     }
 
     // Load mute state
-    if (localStorage.getItem('arcadeNexusMuted') === '1') {
-        muted = true;
-    }
+    try { muted = window.localStorage.getItem('arcadeNexusMuted') === '1'; } catch (_) { }
 
     // ==========================================
     //  AUTO-INIT: Add mute button to page
@@ -707,8 +712,9 @@ const SoundEngine = (() => {
         }
     });
 
-    return { init, startMusic, stopMusic, toggleMute, isMuted, SFX, detectGame };
+    return { init, startMusic, stopMusic, setMusicVolume, toggleMute, isMuted, SFX, detectGame };
 })();
 
 // Global shortcut
+window.SoundEngine = SoundEngine;
 window.SFX = SoundEngine.SFX;

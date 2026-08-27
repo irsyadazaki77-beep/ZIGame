@@ -5,6 +5,7 @@
   "description": "ZI GAME — portal game HTML5 statis.",
   "scripts": {
     "check": "node scripts/validate.mjs",
-    "check:js": "node scripts/validate.mjs --js-only"
+    "check:js": "node scripts/validate.mjs --js-only",
+    "test:ui": "node scripts/ui-smoke.mjs"
   }
 }

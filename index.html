@@ -2651,6 +2651,10 @@
         setInterval(updateSessionInfo, 1000);
         updateSessionInfo();
 
+        if (window.location.hash === '#random') {
+            window.setTimeout(playRandomVisibleGame, 120);
+        }
+
         /* ======== FLOATING COSMIC SPARKLES ======== */
         function spawnSparkle() {
             const el = document.createElement('div');
@@ -2676,7 +2680,7 @@
 
     <script src="site-runtime.js?v=2"></script>
     <script src="mobile-touch.js"></script>
-    <script src="sounds.js"></script>
+    <script src="sounds.js?v=3"></script>
 
     <!-- Music Player HTML (harus sebelum script logic-nya!) -->
     <div id="music-player">
@@ -2684,15 +2688,15 @@
         <div class="mp-controls">
             <select id="bgm-select" class="mp-select" aria-label="Pilih musik latar">
                 <option value="">🎵 Music: Off</option>
-                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">Track 1: Cyberpunk Vibe
+                <option value="portal-cyberpunk">Track 1: Cyberpunk Vibe
                 </option>
-                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3">Track 2: Arcade Wave
+                <option value="portal-arcade">Track 2: Arcade Wave
                 </option>
-                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3">Track 3: Chill Space
+                <option value="portal-space">Track 3: Chill Space
                 </option>
-                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3">Track 4: Action Beat
+                <option value="portal-action">Track 4: Action Beat
                 </option>
-                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3">Track 5: Neon Drive
+                <option value="portal-neon">Track 5: Neon Drive
                 </option>
             </select>
             <div class="mp-actions">
@@ -2711,7 +2715,15 @@
             const mpPlay = document.getElementById('mp-play');
             const mpVol = document.getElementById('mp-vol');
             const mpIcon = document.getElementById('mp-icon');
+            const proceduralTracks = {
+                'portal-cyberpunk': 'superhot',
+                'portal-arcade': 'pong',
+                'portal-space': 'memory',
+                'portal-action': 'dinorun',
+                'portal-neon': 'snake'
+            };
             let isPlaying = false;
+            let usingProceduralMusic = false;
 
             function setPlayingUI(playing) {
                 isPlaying = playing;
@@ -2727,16 +2739,23 @@
                     bgmAudio.volume = parseFloat(mpVol.value);
                 }
 
-                if (!bgmAudio.src) return;
-
                 if (isPlaying) {
+                    if (usingProceduralMusic && window.SoundEngine) window.SoundEngine.stopMusic();
                     bgmAudio.pause();
                     setPlayingUI(false);
+                    usingProceduralMusic = false;
                 } else {
-                    bgmAudio.volume = parseFloat(mpVol.value);
-                    bgmAudio.play().then(() => {
+                    const trackId = proceduralTracks[bgmSelect.value];
+                    if (trackId && window.SoundEngine && !window.SoundEngine.isMuted()) {
+                        window.SoundEngine.setMusicVolume(mpVol.value);
+                        window.SoundEngine.startMusic(trackId);
+                        usingProceduralMusic = true;
                         setPlayingUI(true);
-                    }).catch(err => {
+                        return;
+                    }
+                    if (!bgmAudio.src) return;
+                    bgmAudio.volume = parseFloat(mpVol.value);
+                    bgmAudio.play().then(() => setPlayingUI(true)).catch(err => {
                         console.warn('BGM play error:', err);
                         setPlayingUI(false);
                     });
@@ -2745,9 +2764,19 @@
 
             bgmSelect.addEventListener('change', function () {
                 const track = this.value;
+                if (usingProceduralMusic && window.SoundEngine) window.SoundEngine.stopMusic();
                 bgmAudio.pause();
                 setPlayingUI(false);
+                usingProceduralMusic = false;
                 if (track) {
+                    const trackId = proceduralTracks[track];
+                    if (trackId && window.SoundEngine && !window.SoundEngine.isMuted()) {
+                        window.SoundEngine.setMusicVolume(mpVol.value);
+                        window.SoundEngine.startMusic(trackId);
+                        usingProceduralMusic = true;
+                        setPlayingUI(true);
+                        return;
+                    }
                     bgmAudio.src = track;
                     bgmAudio.volume = parseFloat(mpVol.value);
                     bgmAudio.play().then(() => setPlayingUI(true)).catch(() => { });
@@ -2759,7 +2788,8 @@
             mpPlay.addEventListener('click', togglePlay);
 
             mpVol.addEventListener('input', function () {
-                bgmAudio.volume = parseFloat(this.value);
+                if (usingProceduralMusic && window.SoundEngine) window.SoundEngine.setMusicVolume(this.value);
+                else bgmAudio.volume = parseFloat(this.value);
             });
 
             bgmAudio.addEventListener('ended', function () {

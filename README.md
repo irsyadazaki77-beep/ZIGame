@@ -28,6 +28,24 @@ Lalu buka alamat yang ditampilkan server. Tidak ada dependency runtime selain br
 - `game-shared.css`, `mobile-touch.js`, `sounds.js`, `site-runtime.js` — runtime bersama.
 - `sw.js` dan `manifest.webmanifest` — dukungan PWA/offline.
 - `scripts/validate.mjs` — pemeriksaan kualitas lokal/CI.
+- `assets/game-thumbs/` — thumbnail screenshot dari layar awal setiap game.
+- `scripts/ui-smoke.mjs` — pemeriksaan kontrak UI, rute, thumbnail, dan PWA.
+
+## Pemeriksaan kualitas
+
+```powershell
+npm run check
+npm run check:js
+npm run test:ui
+```
+
+Jika server lokal sedang berjalan, pemeriksaan aset HTTP juga dapat dijalankan di PowerShell dengan:
+
+```powershell
+$env:ZI_GAME_BASE_URL = 'http://127.0.0.1:4173'
+npm run test:ui
+Remove-Item Env:ZI_GAME_BASE_URL
+```
 
 ## Deploy ke GitHub Pages
 

@@ -1,10 +1,26 @@
-const CACHE_NAME = 'zi-game-v3';
+const CACHE_NAME = 'zi-game-v4';
 const APP_SHELL = [
-    './', './index.html', './profile.html', './settings.html', './404.html',
+    './', './index.html', './profile.html', './settings.html', './404.html', './offline.html',
     './index-portal.css', './sidebar.css', './zi-final-polish.css', './portal-page.css',
-    './game-shared.css', './mobile-touch.js', './sounds.js', './site-runtime.js',
+    './game-shared.css', './mobile-touch.js', './sounds.js', './sounds.js?v=3', './site-runtime.js', './site-runtime.js?v=2',
     './manifest.webmanifest', './favicon.svg', './styles.css', './app.js',
     './polybridge3.css', './hyperlightdrifter.css', './zi-accessibility.css', './zi-modern-ui.css',
+    './assets/game-thumbs/2048.jpg', './assets/game-thumbs/babaisyou.jpg',
+    './assets/game-thumbs/breakout.jpg', './assets/game-thumbs/colormatch.jpg',
+    './assets/game-thumbs/dinorun.jpg', './assets/game-thumbs/flappy.jpg',
+    './assets/game-thumbs/geometry.jpg', './assets/game-thumbs/gris.jpg',
+    './assets/game-thumbs/hangman.jpg', './assets/game-thumbs/hyperlightdrifter.jpg',
+    './assets/game-thumbs/katanazero.jpg', './assets/game-thumbs/ludo.jpg',
+    './assets/game-thumbs/mathquiz.jpg', './assets/game-thumbs/memory.jpg',
+    './assets/game-thumbs/minesweeper.jpg', './assets/game-thumbs/minimetro.jpg',
+    './assets/game-thumbs/pacmaze.jpg', './assets/game-thumbs/polybridge3.jpg',
+    './assets/game-thumbs/pong.jpg', './assets/game-thumbs/rps.jpg',
+    './assets/game-thumbs/sayonarawildhearts.jpg', './assets/game-thumbs/simon.jpg',
+    './assets/game-thumbs/snake.jpg', './assets/game-thumbs/spaceshooter.jpg',
+    './assets/game-thumbs/superhot.jpg', './assets/game-thumbs/tetris.jpg',
+    './assets/game-thumbs/thumper.jpg', './assets/game-thumbs/tictactoe.jpg',
+    './assets/game-thumbs/vvvvvv.jpg', './assets/game-thumbs/whackamole.jpg',
+    './assets/game-thumbs/wordle.jpg',
     './2048.html', './babaisyou.html', './breakout.html', './colormatch.html',
     './dinorun.html', './flappy.html', './geometry.html', './gris.html',
     './hangman.html', './hyperlightdrifter.html', './katanazero.html', './ludo.html',
@@ -27,6 +43,10 @@ self.addEventListener('activate', event => {
     );
 });
 
+self.addEventListener('message', event => {
+    if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
     event.respondWith(
@@ -38,7 +58,7 @@ self.addEventListener('fetch', event => {
             })
             .catch(() => caches.match(event.request).then(cached => {
                 if (cached) return cached;
-                if (event.request.mode === 'navigate') return caches.match('./404.html');
+                if (event.request.mode === 'navigate') return caches.match('./offline.html');
                 return new Response('', { status: 503, statusText: 'Offline' });
             }))
     );

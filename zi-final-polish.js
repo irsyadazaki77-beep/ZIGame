@@ -95,6 +95,13 @@
         return $('.play-btn', card)?.getAttribute('href') || '#';
     }
 
+    function cardThumbnailSrc(card) {
+        const href = cardHref(card).split('#')[0].split('?')[0];
+        const route = href.split('/').pop() || '';
+        if (!route.endsWith('.html')) return '';
+        return `assets/game-thumbs/${route.slice(0, -5)}.jpg`;
+    }
+
     function cardCategory(card) {
         return card.dataset.category || 'game';
     }
@@ -167,6 +174,8 @@
         const hint = document.createElement('div');
         hint.id = 'searchResultHint';
         hint.className = 'search-result-hint';
+        hint.setAttribute('role', 'status');
+        hint.setAttribute('aria-live', 'polite');
         hint.textContent = 'Semua genre';
         panel.insertAdjacentElement('afterend', hint);
     }
@@ -178,7 +187,17 @@
                 const thumb = document.createElement('div');
                 thumb.className = 'card-thumb';
                 thumb.setAttribute('aria-hidden', 'true');
-                thumb.innerHTML = `<span class="card-thumb-label">${cardCategory(card)} / ${String(index + 1).padStart(2, '0')}</span>`;
+                const thumbImage = document.createElement('img');
+                thumbImage.src = cardThumbnailSrc(card);
+                thumbImage.alt = '';
+                thumbImage.loading = 'lazy';
+                thumbImage.decoding = 'async';
+                thumbImage.addEventListener('error', () => thumb.classList.add('is-fallback'), { once: true });
+                thumb.appendChild(thumbImage);
+                const thumbLabel = document.createElement('span');
+                thumbLabel.className = 'card-thumb-label';
+                thumbLabel.textContent = `${cardCategory(card)} / ${String(index + 1).padStart(2, '0')}`;
+                thumb.appendChild(thumbLabel);
                 const body = $('.card-body', card);
                 const featuredLeft = $('.featured-left', card);
                 if (featuredLeft) {

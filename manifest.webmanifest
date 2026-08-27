@@ -1,6 +1,7 @@
 {
   "name": "ZI GAME",
   "short_name": "ZI GAME",
+  "id": "./index.html",
   "description": "Koleksi game HTML5 gratis dalam satu portal.",
   "start_url": "./index.html",
   "scope": "./",
@@ -8,6 +9,21 @@
   "background_color": "#070914",
   "theme_color": "#090d1d",
   "lang": "id",
+  "categories": ["games", "entertainment"],
+  "shortcuts": [
+    {
+      "name": "Game acak",
+      "short_name": "Acak",
+      "url": "./index.html#random",
+      "icons": [{ "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Profil pemain",
+      "short_name": "Profil",
+      "url": "./profile.html",
+      "icons": [{ "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ],
   "icons": [
     {
       "src": "./favicon.svg",

@@ -123,9 +123,135 @@
 
     function registerServiceWorker() {
         if (!('serviceWorker' in window.navigator) || window.location.protocol === 'file:') return;
-        window.navigator.serviceWorker.register(new URL('sw.js', window.location.href)).catch(() => {
+        window.navigator.serviceWorker.register(new URL('sw.js', window.location.href)).then(registration => {
+            const showUpdate = () => {
+                if (!window.navigator.serviceWorker.controller || document.querySelector('.zi-runtime-notice')) return;
+                showRuntimeNotice('Versi baru ZI GAME siap dipakai.', 'Muat ulang', () => {
+                    registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+                    window.location.reload();
+                });
+            };
+
+            if (registration.waiting) showUpdate();
+            registration.addEventListener('updatefound', () => {
+                const worker = registration.installing;
+                if (!worker) return;
+                worker.addEventListener('statechange', () => {
+                    if (worker.state === 'installed') showUpdate();
+                });
+            });
+        }).catch(() => {
             // Offline support is progressive enhancement; gameplay must continue if registration fails.
         });
+    }
+
+    function showRuntimeNotice(message, actionText, action) {
+        if (document.querySelector('.zi-runtime-notice')) return;
+        const notice = document.createElement('aside');
+        notice.className = 'zi-runtime-notice';
+        notice.setAttribute('role', 'status');
+        notice.setAttribute('aria-live', 'polite');
+        const text = document.createElement('span');
+        text.textContent = message;
+        notice.appendChild(text);
+        if (actionText && typeof action === 'function') {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = actionText;
+            button.addEventListener('click', action, { once: true });
+            notice.appendChild(button);
+        }
+        placeRuntimeNotice(notice);
+    }
+
+    function placeRuntimeNotice(notice) {
+        const portal = document.body?.dataset.page === 'portal';
+        const anchor = portal
+            ? document.querySelector('#main-content') || document.querySelector('#homeSection')
+            : null;
+        if (anchor) {
+            notice.classList.add('zi-flow-notice');
+            anchor.insertBefore(notice, anchor.firstChild);
+            return;
+        }
+        document.body.appendChild(notice);
+    }
+
+    function setupInstallPrompt() {
+        const isPortal = /(?:^|\/)index\.html$/i.test(window.location.pathname)
+            || /\/$/.test(window.location.pathname);
+        if (!isPortal || window.matchMedia?.('(display-mode: standalone)').matches) return;
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', event => {
+            event.preventDefault();
+            deferredPrompt = event;
+            showRuntimeNotice('Pasang ZI GAME agar bisa dimainkan lebih cepat.', 'Install', async () => {
+                if (!deferredPrompt) return;
+                const promptEvent = deferredPrompt;
+                deferredPrompt = null;
+                await promptEvent.prompt();
+                await promptEvent.userChoice;
+                document.querySelector('.zi-runtime-notice')?.remove();
+            });
+        });
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            document.querySelector('.zi-runtime-notice')?.remove();
+        });
+    }
+
+    function setupNavigationFeedback() {
+        const clear = () => {
+            document.documentElement.classList.remove('zi-navigating');
+            document.body?.removeAttribute('aria-busy');
+        };
+
+        document.addEventListener('click', event => {
+            const link = event.target?.closest?.('a[href]');
+            if (!link || event.defaultPrevented || event.button !== 0
+                || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
+                || link.target === '_blank' || link.hasAttribute('download')) return;
+
+            try {
+                const url = new URL(link.href, window.location.href);
+                if (url.origin !== window.location.origin
+                    || (url.pathname === window.location.pathname && url.search === window.location.search)) return;
+                document.documentElement.classList.add('zi-navigating');
+                document.body?.setAttribute('aria-busy', 'true');
+            } catch (_) { }
+        });
+
+        window.addEventListener('pageshow', clear, { once: false });
+        window.addEventListener('load', clear, { once: false });
+    }
+
+    function setupConnectionStatus() {
+        const update = () => {
+            const existing = document.querySelector('.zi-connection-status');
+            if (window.navigator.onLine !== false) {
+                existing?.remove();
+                return;
+            }
+            if (existing) return;
+
+            const notice = document.createElement('aside');
+            notice.className = 'zi-runtime-notice zi-connection-status';
+            notice.setAttribute('role', 'status');
+            notice.setAttribute('aria-live', 'polite');
+            const text = document.createElement('span');
+            text.textContent = 'Anda sedang offline. Game tersimpan tetap dapat dimainkan.';
+            notice.appendChild(text);
+            const retry = document.createElement('button');
+            retry.type = 'button';
+            retry.textContent = 'Coba lagi';
+            retry.addEventListener('click', () => window.location.reload(), { once: true });
+            notice.appendChild(retry);
+            placeRuntimeNotice(notice);
+        };
+
+        update();
+        window.addEventListener('online', update);
+        window.addEventListener('offline', update);
     }
 
     function migrateStorage() {
@@ -151,5 +277,8 @@
     applyMotionPreference();
     addProgressiveMetadata();
     registerServiceWorker();
+    setupInstallPrompt();
+    setupNavigationFeedback();
+    setupConnectionStatus();
     recordGameVisit();
 })();

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090d1d">
+  <meta name="description" content="ZI GAME sedang offline.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <title>Offline — ZI GAME</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #070a16; color: #f4f7ff; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; overflow: hidden; background: radial-gradient(circle at 20% 10%, rgba(103,232,249,.14), transparent 30%), radial-gradient(circle at 85% 80%, rgba(155,140,255,.15), transparent 34%), #070a16; }
+    main { width: min(100%, 520px); padding: clamp(28px, 7vw, 54px); border: 1px solid rgba(169,186,255,.18); border-radius: 28px; background: rgba(13,19,37,.88); box-shadow: 0 24px 80px rgba(0,0,0,.35); text-align: center; }
+    .mark { margin: 0 0 12px; color: #67e8f9; font: 800 11px/1.2 ui-monospace, monospace; letter-spacing: 2px; text-transform: uppercase; }
+    h1 { margin: 0 0 14px; font-size: clamp(42px, 11vw, 72px); line-height: .9; letter-spacing: -.06em; }
+    p { margin: 0 auto 26px; max-width: 370px; color: rgba(226,233,255,.72); line-height: 1.65; }
+    .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    a, button { min-height: 46px; padding: 0 17px; border: 1px solid rgba(169,186,255,.18); border-radius: 12px; color: #f4f7ff; background: rgba(255,255,255,.06); font: 700 13px/1 inherit; cursor: pointer; text-decoration: none; }
+    a.primary, button:hover, a:hover { border-color: rgba(103,232,249,.48); background: rgba(103,232,249,.14); }
+    a.primary { color: #07101b; border-color: rgba(255,255,255,.42); background: linear-gradient(135deg, #67e8f9, #60a5fa); }
+    :focus-visible { outline: 3px solid rgba(103,232,249,.82); outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="mark">ZI GAME / OFFLINE MODE</p>
+    <h1>Koneksi sedang jeda.</h1>
+    <p>Game yang sudah tersimpan masih bisa dimainkan. Hubungkan kembali internet untuk memuat halaman atau aset baru.</p>
+    <div class="actions">
+      <button type="button" onclick="location.reload()">Coba lagi</button>
+      <a class="primary" href="index.html">Buka portal</a>
+    </div>
+  </main>
+</body>
+</html>
