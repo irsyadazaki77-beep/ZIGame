@@ -78,7 +78,10 @@
         const help = document.createElement('div');
         help.className = 'zi-game-tools';
         help.innerHTML = `
-            <button id="ziGameHelpToggle" class="zi-game-help-toggle" type="button" aria-expanded="false" aria-controls="ziGameHelp">Panduan</button>
+            <div class="zi-game-tool-row">
+                <button id="ziGamePauseToggle" class="zi-game-pause-toggle" type="button" hidden aria-pressed="false">Jeda</button>
+                <button id="ziGameHelpToggle" class="zi-game-help-toggle" type="button" aria-expanded="false" aria-controls="ziGameHelp">Panduan</button>
+            </div>
             <div id="ziGameHelp" class="zi-game-help" role="dialog" aria-modal="true" aria-labelledby="ziGameHelpTitle" aria-hidden="true" hidden>
                 <div class="zi-game-help-card">
                     <p class="zi-game-help-kicker">ZI GAME / PLAY GUIDE</p>
@@ -93,6 +96,7 @@
         `;
         document.body.appendChild(help);
         const helpToggle = help.querySelector('#ziGameHelpToggle');
+        const pauseToggle = help.querySelector('#ziGamePauseToggle');
         const helpPanel = help.querySelector('#ziGameHelp');
         const helpClose = help.querySelector('.zi-game-help-close');
         const helpTitle = help.querySelector('#ziGameHelpTitle');
@@ -122,6 +126,13 @@
             window.setTimeout(() => {
                 if (status.textContent === message) status.textContent = '';
             }, 2600);
+        };
+        let sharedPaused = false;
+        const syncPauseControl = paused => {
+            sharedPaused = !!paused;
+            pauseToggle.textContent = sharedPaused ? 'Lanjutkan' : 'Jeda';
+            pauseToggle.setAttribute('aria-pressed', sharedPaused ? 'true' : 'false');
+            pauseToggle.setAttribute('aria-label', sharedPaused ? 'Lanjutkan game' : 'Jeda game');
         };
         const closeHelp = () => {
             helpPanel.hidden = true;
@@ -154,9 +165,37 @@
             else if (action === 'restart' && restartButton) restartButton.click();
             else if (action === 'restart' && restartFunction) window[restartFunction]();
         };
-        if (pauseButton || pauseFunction) addHelpAction('Jeda / lanjutkan', () => invokeAction('pause'));
+        let pauseEventReceived = false;
+        if (pauseButton || pauseFunction) {
+            pauseToggle.hidden = false;
+            syncPauseControl(false);
+            const toggleSharedPause = () => {
+                const previous = sharedPaused;
+                pauseEventReceived = false;
+                invokeAction('pause');
+                // Newer engines publish their exact state synchronously. Older
+                // engines do not, so only flip the control when no event arrived.
+                if (sharedPaused === previous) {
+                    syncPauseControl(!previous);
+                    announce(sharedPaused ? 'Game dijeda.' : 'Game dilanjutkan.');
+                } else if (!pauseEventReceived) {
+                    announce(sharedPaused ? 'Game dijeda.' : 'Game dilanjutkan.');
+                }
+            };
+            pauseToggle.addEventListener('click', () => {
+                toggleSharedPause();
+            });
+            addHelpAction('Jeda / lanjutkan', () => {
+                toggleSharedPause();
+            });
+        }
         if (restartButton || restartFunction) addHelpAction('Mulai ulang', () => invokeAction('restart'));
         else addHelpAction('Mulai ulang', () => window.location.reload());
+        window.addEventListener('zi:gamepause', event => {
+            pauseEventReceived = true;
+            syncPauseControl(!!event.detail?.paused);
+            announce(event.detail?.paused ? 'Game dijeda.' : 'Game dilanjutkan.');
+        });
         helpToggle.addEventListener('click', () => {
             if (helpPanel.hidden) openHelp();
             else closeHelp();

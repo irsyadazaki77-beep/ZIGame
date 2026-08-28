@@ -1893,7 +1893,15 @@ body.zi-modern-game .game-page-bg .o2 {
     z-index: 10001;
 }
 
+.zi-game-tool-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
 .zi-game-help-toggle,
+.zi-game-pause-toggle,
 .zi-game-help-close,
 .zi-game-help-action {
     min-height: 44px;
@@ -1910,7 +1918,14 @@ body.zi-modern-game .game-page-bg .o2 {
     padding: 0 13px;
 }
 
+.zi-game-pause-toggle {
+    padding: 0 13px;
+    border-color: rgba(255, 214, 102, .42);
+    background: rgba(54, 39, 15, .88);
+}
+
 .zi-game-help-toggle:hover,
+.zi-game-pause-toggle:hover,
 .zi-game-help-close:hover,
 .zi-game-help-action:hover {
     border-color: rgba(103, 232, 249, .7);

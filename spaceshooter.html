@@ -823,7 +823,7 @@
 
         // ===== GAME STATE =====
         let ship = { x: W / 2, y: Math.max(40, H - 70) };
-        let bullets = [], enemies = [], particles = [], explosions = [], score = 0, lives = 3, level = 1, bestScore = 0, frame = 0, running = false, keys = {};
+        let bullets = [], enemies = [], particles = [], explosions = [], score = 0, lives = 3, level = 1, bestScore = 0, frame = 0, running = false, paused = false, keys = {};
         let shieldActive = false, shieldTimer = 0;
         let bombCd = 0, shieldCd = 0, laserCd = 0;
         let laserActive = false, laserTimer = 0;
@@ -1436,7 +1436,7 @@
 
         // ===== BOMB ABILITY =====
         function useBomb() {
-            if (bombCd > 0) return;
+            if (!running || paused || bombCd > 0) return;
             bombCd = 300;
             enemies.forEach(e => {
                 if (!e.dead) {
@@ -1450,13 +1450,13 @@
 
         // ===== SHIELD ABILITY =====
         function useShield() {
-            if (shieldCd > 0) return;
+            if (!running || paused || shieldCd > 0) return;
             shieldActive = true; shieldTimer = 180; shieldCd = 400;
         }
 
         // ===== LASER ABILITY =====
         function useLaser() {
-            if (laserCd > 0) return;
+            if (!running || paused || laserCd > 0) return;
             laserActive = true; laserTimer = 90; laserCd = 350;
         }
 
@@ -1491,7 +1491,7 @@
         function startGame() {
             ship = { x: W / 2, y: H * 0.78 };
             bullets = []; enemies = []; particles = []; explosions = []; eBullets = []; powerups = []; floatingTexts = [];
-            score = 0; lives = 3; level = 1; frame = 0; running = true;
+            score = 0; lives = 3; level = 1; frame = 0; running = true; paused = false;
             bombCd = 0; shieldCd = 0; laserCd = 0;
             shieldActive = false; shieldTimer = 0;
             laserActive = false; laserTimer = 0;
@@ -1514,6 +1514,14 @@
             loop();
         }
 
+        function togglePause() {
+            if (!running) return;
+            paused = !paused;
+            keys = {};
+            lastTs = performance.now();
+            window.dispatchEvent(new CustomEvent('zi:gamepause', { detail: { paused } }));
+        }
+
         function updateLivesDisplay() {
             document.getElementById('lives').textContent = '❤️'.repeat(Math.max(0, lives));
         }
@@ -1522,6 +1530,7 @@
         function loop(ts = 0) {
             if (!running) return;
             animId = requestAnimationFrame(loop);
+            if (paused) { draw(); return; }
             const dt = ts - lastTs;
             if (dt < STEP - 2) return;
             lastTs = ts;
@@ -1938,6 +1947,7 @@
         // ===== END GAME =====
         function endGame() {
             running = false;
+            paused = false;
             const isNew = score > bestScore;
             if (isNew) { bestScore = score; document.getElementById('best').textContent = bestScore; }
             // Update overlay

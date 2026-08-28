@@ -140,7 +140,7 @@
         const overlay = document.getElementById('overlay');
         const W = cvs.width, H = cvs.height, GROUND = H - 50;
 
-        let dino, obstacles, score, bestScore = 0, frame, running, speed, gameStarted = false;
+        let dino, obstacles, score, bestScore = 0, frame, running, paused = false, speed, gameStarted = false;
         let particles = [], dustParticles = [], speedLines = [];
         let shakeX = 0, shakeY = 0, shakeIntensity = 0;
         let deathParticles = [];
@@ -261,7 +261,7 @@
                 runFrame: 0, runTimer: 0,
                 eyeBlink: 0, blinkTimer: 0
             };
-            obstacles = []; score = 0; frame = 0; running = true; speed = 5;
+            obstacles = []; score = 0; frame = 0; running = true; paused = false; speed = 5;
             particles = []; dustParticles = []; speedLines = []; deathParticles = [];
             shakeX = 0; shakeY = 0; shakeIntensity = 0;
             milestone = 0; milestoneFlash = 0;
@@ -271,13 +271,19 @@
             loop();
         }
 
+        function togglePause() {
+            if (!running) return;
+            paused = !paused;
+            window.dispatchEvent(new CustomEvent('zi:gamepause', { detail: { paused } }));
+        }
+
         function jumpOrStart() {
             if (running) jump();
             else startGame();
         }
 
         function jump() {
-            if (!dino.jumping && running) {
+            if (!dino.jumping && running && !paused) {
                 dino.vy = -12.5;
                 dino.jumping = true;
                 // Jump dust
@@ -295,11 +301,16 @@
         }
 
         function duck(on) {
-            if (running) dino.ducking = on;
+            if (running && !paused) dino.ducking = on;
         }
 
         function loop() {
             if (!running) return;
+            if (paused) {
+                draw();
+                requestAnimationFrame(loop);
+                return;
+            }
             update();
             draw();
             requestAnimationFrame(loop);
@@ -946,6 +957,7 @@
 
         function endGame() {
             running = false;
+            paused = false;
             shakeIntensity = 12;
 
             // Death explosion particles

@@ -1063,6 +1063,7 @@
 
         // â”€â”€â”€ GAME STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         let state = 'idle'; // idle|play|over
+        let paused = false;
         let camX, player, mode; // mode: 'cube'|'ship'
         let parts, sparks, shatters, stars;
         let speed, frame, score, animId, idleAnimId;
@@ -1146,6 +1147,7 @@
             parts = []; sparks = []; shatters = []; floatTexts = [];
 
             state = 'play';
+            paused = false;
             attempts = +document.getElementById('attempts').textContent;
             document.getElementById('overlay').classList.add('hide');
             if (animId) cancelAnimationFrame(animId);
@@ -1153,6 +1155,14 @@
             updateHUD();
             lastTime = 0;
             animId = requestAnimationFrame(loop);
+        }
+
+        function togglePause() {
+            if (state !== 'play') return;
+            paused = !paused;
+            holding = false;
+            lastTime = performance.now();
+            window.dispatchEvent(new CustomEvent('zi:gamepause', { detail: { paused } }));
         }
 
         // â”€â”€â”€ RESPAWN AT CHECKPOINT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1192,6 +1202,7 @@
             });
             parts = []; sparks = []; shatters = []; floatTexts = [];
             state = 'play';
+            paused = false;
             updateHUD();
             triggerFlash('red');
         }
@@ -1200,6 +1211,7 @@
         function loop(now) {
             animId = requestAnimationFrame(loop);
             if (state !== 'play' && state !== 'over') return;
+            if (state === 'play' && paused) { render(); return; }
             if (!lastTime) { lastTime = now; return; }
             const elapsed = now - lastTime;
             lastTime = now;
@@ -1212,7 +1224,7 @@
         function update(dt) {
             const cfg = LVLS[lvl];
 
-            if (state === 'play') {
+            if (state === 'play' && !paused) {
                 frame++;
                 if (speed < cfg.maxSpd) speed += .002 * dt;
                 score = Math.min(100, Math.floor(camX / LEVEL_LEN * 100));
@@ -1312,7 +1324,7 @@
             if (player.orbCooldown > 0) player.orbCooldown -= dt;
 
             // Trail & sparks
-            if (state === 'play') {
+            if (state === 'play' && !paused) {
                 let pCol = cfg.c1;
                 const currentSkin = SKINS.find(sk => sk.id === selectedSkin) || SKINS[0];
                 if (currentSkin.c1 === 'rainbow') {
@@ -1611,7 +1623,7 @@
 
         // â”€â”€â”€ DASH ABILITY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         function doDash() {
-            if (state !== 'play') return;
+            if (state !== 'play' || paused) return;
             if (dashCooldown > 0 || dashActive > 0) return;
             dashActive = 20; // invincible for 20 frames
             dashCooldown = 180; // cooldown 3 seconds at 60fps
@@ -1624,7 +1636,7 @@
 
         // â”€â”€â”€ JUMP / THRUST (TRIPLE JUMP!) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         function doPress() {
-            if (state === 'play') {
+            if (state === 'play' && !paused) {
                 if (mode === 'ship') { holding = true; return; }
                 const cfg = LVLS[lvl];
                 // Coyote-time jump

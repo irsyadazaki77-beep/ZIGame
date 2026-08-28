@@ -253,12 +253,11 @@ test('game start overlay is accessible and releases focus after start', async ({
 
     await page.locator('#ovBtn').click();
     await expect(overlay).toHaveAttribute('aria-hidden', 'true');
-    const focusReleased = await page.evaluate(() => {
+    await expect.poll(() => page.evaluate(() => {
         const active = document.activeElement;
         return !document.querySelector('#overlay')?.contains(active)
             && active?.getAttribute('tabindex') === '-1';
-    });
-    expect(focusReleased).toBe(true);
+    })).toBe(true);
 });
 
 test('custom game start flows do not throw runtime errors', async ({ page }) => {
@@ -283,6 +282,36 @@ test('custom game start flows do not throw runtime errors', async ({ page }) => 
             await page.waitForTimeout(160);
         }
         expect(errors, `${route} threw during its start flow`).toEqual([]);
+        page.off('pageerror', onError);
+    }
+});
+
+test('real-time games expose a working shared pause control', async ({ page }) => {
+    test.setTimeout(60_000);
+    const routes = ['breakout', 'dinorun', 'geometry', 'pacmaze', 'pong', 'snake', 'spaceshooter', 'tetris', 'thumper', 'whackamole'];
+
+    for (const route of routes) {
+        const errors = [];
+        const onError = error => errors.push(error.message);
+        page.on('pageerror', onError);
+        await page.goto(`/${route}.html`);
+        await page.evaluate(() => window.startGame?.());
+        await page.waitForTimeout(220);
+        const pause = page.locator('#ziGamePauseToggle');
+        await expect(pause, `${route} should expose pause`).toBeVisible();
+        await expect(pause).toHaveAttribute('aria-pressed', 'false');
+        await pause.click();
+        await expect(pause).toHaveAttribute('aria-pressed', 'true');
+        if (route === 'whackamole') {
+            const time = await page.locator('#timeEl').textContent();
+            await page.waitForTimeout(1_200);
+            await expect(page.locator('#timeEl')).toHaveText(time);
+        } else {
+            await page.waitForTimeout(180);
+        }
+        await pause.click();
+        await expect(pause).toHaveAttribute('aria-pressed', 'false');
+        expect(errors, `${route} threw during pause/resume`).toEqual([]);
         page.off('pageerror', onError);
     }
 });

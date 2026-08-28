@@ -744,13 +744,14 @@
         let food = { x: Math.max(0, Math.min(COLS - 1, 15)), y: 10 };
         let specialFood = null, dx = 1, dy = 0, ndx = 1, ndy = 0;
         let score = 0, bestScore = 0;
-        let running = false, gameLoop;
+        let running = false, paused = false, gameLoop;
         let lastTime = 0;
         let level = 1, eatCount = 0;
 
         function loop(timestamp) {
             if (!running) return;
             gameLoop = requestAnimationFrame(loop);
+            if (paused) return;
             if (timestamp - lastTime >= getSpeed()) {
                 lastTime = timestamp;
                 update();
@@ -1188,7 +1189,7 @@
             dx = 1; dy = 0; ndx = 1; ndy = 0;
             score = 0; eatCount = 0; level = 1; comboCount = 0;
             particles = []; trailSegments = []; specialFood = null;
-            running = true;
+            running = true; paused = false;
             document.getElementById('score').textContent = 0;
             document.getElementById('levelLabel').textContent = 1;
             document.getElementById('speedLabel').textContent = '1×';
@@ -1199,8 +1200,15 @@
             gameLoop = requestAnimationFrame(loop);
         }
 
+        function togglePause() {
+            if (!running) return;
+            paused = !paused;
+            lastTime = performance.now();
+            window.dispatchEvent(new CustomEvent('zi:gamepause', { detail: { paused } }));
+        }
+
         function endGame() {
-            running = false; cancelAnimationFrame(gameLoop);
+            running = false; paused = false; cancelAnimationFrame(gameLoop);
             if (window.SFX) SFX.gameOver();
             // Big explosion at head
             spawnParticles(snake[0].x * G + G / 2, snake[0].y * G + G / 2, '#ff3c83', 30);
@@ -1219,7 +1227,7 @@
         /* ======================================================
            INPUT
         ====================================================== */
-        function setDir(x, y) { if (running && !(dx === -x && dy === -y)) { ndx = x; ndy = y; } }
+        function setDir(x, y) { if (running && !paused && !(dx === -x && dy === -y)) { ndx = x; ndy = y; } }
 
         document.addEventListener('keydown', e => {
             if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { e.preventDefault(); setDir(0, -1); }

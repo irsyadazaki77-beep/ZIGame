@@ -606,6 +606,7 @@
 
         // ---- state ----
         let playing = false;
+        let paused = false;
         let score = 0;
         let combo = 0;
         let hp = 3;
@@ -1224,6 +1225,7 @@
         function loop(t) {
             if (!playing) return;
             requestAnimationFrame(loop);
+            if (paused) return;
 
             const dt = Math.min((t - lastT) / 1000, .05);
             lastT = t;
@@ -1265,15 +1267,15 @@
         //  INPUT
         // ============================================================
         function doLeft() {
-            if (!playing || !plr.alive) return;
+            if (!playing || paused || !plr.alive) return;
             if (plr.lane > -1) { plr.lane--; sfxMove(); }
         }
         function doRight() {
-            if (!playing || !plr.alive) return;
+            if (!playing || paused || !plr.alive) return;
             if (plr.lane < 1) { plr.lane++; sfxMove(); }
         }
         function doAction() {
-            if (!playing || !plr.alive) return;
+            if (!playing || paused || !plr.alive) return;
             plr.attackFlare = 1.0;
             let hit = false;
             obstacles.forEach(ob => { if (ob.smash(plr.lane)) hit = true; });
@@ -1310,13 +1312,20 @@
             document.querySelectorAll('.hp-shard').forEach(el => el.classList.remove('dead'));
             updateHUD();
 
-            playing = true; plr.alive = true;
+            playing = true; paused = false; plr.alive = true;
             lastT = performance.now();
             requestAnimationFrame(loop);
         }
 
+        function togglePause() {
+            if (!playing || !plr.alive) return;
+            paused = !paused;
+            lastT = performance.now();
+            window.dispatchEvent(new CustomEvent('zi:gamepause', { detail: { paused } }));
+        }
+
         function endGame() {
-            plr.alive = false; playing = false;
+            plr.alive = false; playing = false; paused = false;
             setTimeout(() => {
                 document.getElementById('final-score').textContent = score.toLocaleString();
                 document.getElementById('screen-gameover').style.display = 'flex';

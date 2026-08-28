@@ -503,7 +503,7 @@
         let board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
         let piece = randomPiece(), px = 3, py = 0, nextPiece = randomPiece(), holdPieceData = null, holdUsed = false;
         let score = 0, lines = 0, level = 1, combo = 0, bestScore = 0;
-        let running = false, frame = 0, dropInterval = 800, lastDrop = 0, lockDelay = 0, lockTimer = 0, lockMoves = 0;
+        let running = false, paused = false, frame = 0, dropInterval = 800, lastDrop = 0, lockDelay = 0, lockTimer = 0, lockMoves = 0;
         let animId, lastTs = 0;
 
         // ===== LINE CLEAR ANIMATION =====
@@ -644,7 +644,7 @@
 
         // ===== PLAYER ACTIONS =====
         function moveP(dir) {
-            if (!running || clearTimer > 0) return;
+            if (!running || paused || clearTimer > 0) return;
             if (!collides(px + dir, py, piece.cells)) {
                 px += dir;
                 if (lockTimer > 0) { lockMoves++; if (lockMoves <= 15) lockTimer = 0; }
@@ -652,7 +652,7 @@
             }
         }
         function doRotate() {
-            if (!running || clearTimer > 0) return;
+            if (!running || paused || clearTimer > 0) return;
             const r = rotate(piece.cells);
             // Wall kick offsets
             const kicks = [0, -1, 1, -2, 2];
@@ -665,12 +665,12 @@
             }
         }
         function softDrop() {
-            if (!running || clearTimer > 0) return;
+            if (!running || paused || clearTimer > 0) return;
             if (!collides(px, py + 1, piece.cells)) { py++; score += 1; lastDrop = performance.now(); draw(); }
             else lockStep();
         }
         function hardDrop() {
-            if (!running || clearTimer > 0) return;
+            if (!running || paused || clearTimer > 0) return;
             let dropped = 0;
             while (!collides(px, py + 1, piece.cells)) { py++; dropped++; }
             score += dropped * 2;
@@ -693,7 +693,7 @@
         function startGame() {
             board = newBoard();
             score = 0; lines = 0; level = 1; combo = 0; frame = 0;
-            running = true; dropInterval = 700; lastDrop = 0;
+            running = true; paused = false; dropInterval = 700; lastDrop = 0;
             lockTimer = 0; lockMoves = 0;
             holdPieceData = null; holdUsed = false;
             clearingRows = []; clearTimer = 0;
@@ -711,10 +711,19 @@
             loop();
         }
 
+        function togglePause() {
+            if (!running) return;
+            paused = !paused;
+            lastTs = performance.now();
+            lastDrop = lastTs;
+            window.dispatchEvent(new CustomEvent('zi:gamepause', { detail: { paused } }));
+        }
+
         const STEP = 1000 / 60;
         function loop(ts = 0) {
             if (!running) return;
             animId = requestAnimationFrame(loop);
+            if (paused) { draw(); return; }
             const dt = ts - lastTs;
             if (dt < STEP - 1) return;
             lastTs = ts;
@@ -934,6 +943,7 @@
         // ===== END GAME =====
         function endGame() {
             running = false;
+            paused = false;
             const isNew = score > bestScore;
             if (isNew) { bestScore = score; document.getElementById('best').textContent = bestScore; }
             document.getElementById('oIcon').textContent = isNew ? '🏆' : '💀';

@@ -510,7 +510,7 @@
         ];
 
         // ===== GAME STATE =====
-        let pac, ghosts, score, lives, dots, ndx, ndy, frame, running, powerTimer, animId;
+        let pac, ghosts, score, lives, dots, ndx, ndy, frame, running, paused = false, powerTimer, animId;
         
         const THEMES = [
             { pac: '#ffe600', wallO: 'rgba(0,100,255,0.5)', wallB: '#0055ff', wallI: '#00ffe7', bg: '#020210', o1: 'rgba(0,140,255,0.15)', o2: 'rgba(255,45,120,0.12)', dot2: 'rgba(255,255,255,0.8)', dot3: '#ff9a3c', g1: '#1a1aff', g2: '#ff3c83', music: 'pacmaze' },
@@ -557,7 +557,7 @@
             pac = { x: 9, y: 16, prevX: 9, prevY: 16, dx: 0, dy: 0 };
             ndx = 0; ndy = 0;
             ghosts = GHOST_CONFIGS.map(g => ({ ...g, x: g.sx, y: g.sy, prevX: g.sx, prevY: g.sy, dx: g.sx===9?1:0, dy: 0, state: 0 }));
-            score = 0; lives = 3; frame = 0; running = true; powerTimer = 0;
+            score = 0; lives = 3; frame = 0; running = true; paused = false; powerTimer = 0;
             dots = BASE_MAP.map(r => [...r]);
             particles = []; scorePopups = []; dtAccumulator = 0; lastTs = performance.now();
             updateHUD();
@@ -567,13 +567,21 @@
             animId = requestAnimationFrame(loop);
         }
 
+        function togglePause() {
+            if (!running) return;
+            paused = !paused;
+            lastTs = performance.now();
+            dtAccumulator = 0;
+            window.dispatchEvent(new CustomEvent('zi:gamepause', { detail: { paused } }));
+        }
+
         function updateHUD() {
             document.getElementById('score').textContent = score;
             const hearts = ['❤️', '❤️', '❤️'];
             document.getElementById('lives').textContent = hearts.slice(0, lives).join('') || '💀';
         }
 
-        function setDir(dx, dy) { ndx = dx; ndy = dy; }
+        function setDir(dx, dy) { if (!paused) { ndx = dx; ndy = dy; } }
 
         document.addEventListener('keydown', e => {
             const map = {
@@ -602,6 +610,7 @@
         function loop(ts) {
             if (!running) return;
             animId = requestAnimationFrame(loop);
+            if (paused) { draw(0); return; }
             const dt = Math.min(ts - lastTs, 100);
             lastTs = ts;
             const targetMs = FRAME_INTERVAL * 20;
@@ -767,7 +776,7 @@
         }
 
         function endGame(won) {
-            running = false; if (window.SFX) won ? window.SFX.win() : window.SFX.gameOver();
+            running = false; paused = false; if (window.SFX) won ? window.SFX.win() : window.SFX.gameOver();
             document.getElementById('oIcon').textContent = won ? '🎉' : '💀';
             document.getElementById('oTitle').textContent = won ? 'LEVEL CLEAR!' : 'GAME OVER';
             document.getElementById('oScore').innerHTML = 'Skor Akhir: <span>' + score + '</span>';

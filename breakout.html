@@ -230,7 +230,7 @@
     ];
 
     // State
-    let ball, paddle, bricks, particles, score, best, lives, level, running, animId;
+    let ball, paddle, bricks, particles, score, best, lives, level, running, paused = false, animId;
     let touchX = null;
     best = parseInt(localStorage.getItem('nb_best') || '0');
     document.getElementById('bestEl').textContent = best;
@@ -269,11 +269,18 @@
     function startGame() {
         overlay.classList.remove('show');
         score = 0; lives = 3; level = 1;
+        paused = false;
         updateUI();
         initLevel();
         if (animId) cancelAnimationFrame(animId);
         running = true;
         animId = requestAnimationFrame(loop);
+    }
+
+    function togglePause() {
+        if (!running) return;
+        paused = !paused;
+        window.dispatchEvent(new CustomEvent('zi:gamepause', { detail: { paused } }));
     }
 
     function updateUI() {
@@ -285,11 +292,13 @@
 
     // Input
     cvs.addEventListener('mousemove', e => {
+        if (paused) return;
         const rect = cvs.getBoundingClientRect();
         paddle.x = (e.clientX - rect.left) * (W / rect.width) - paddle.w / 2;
         clampPaddle();
     });
     cvs.addEventListener('touchmove', e => {
+        if (paused) return;
         e.preventDefault();
         const rect = cvs.getBoundingClientRect();
         paddle.x = (e.touches[0].clientX - rect.left) * (W / rect.width) - paddle.w / 2;
@@ -309,6 +318,11 @@
     // Main loop
     function loop() {
         if (!running) return;
+        if (paused) {
+            draw();
+            animId = requestAnimationFrame(loop);
+            return;
+        }
         update();
         draw();
         animId = requestAnimationFrame(loop);
@@ -484,6 +498,7 @@
 
     function endGame(won) {
         running = false;
+        paused = false;
         document.getElementById('oIcon').textContent = won ? '🏆' : '💀';
         document.getElementById('oTitle').textContent = won ? 'JUARA!' : 'GAME OVER';
         document.getElementById('oSub').textContent = won

@@ -248,7 +248,7 @@
     const NUM_HOLES = 9;
     const GAME_TIME = 30;
 
-    let holes, moles, score, best, combo, timeLeft, timer, peepTimeout, running, lastHole;
+    let holes, moles, score, best, combo, timeLeft, timer, peepTimeout, running, paused = false, lastHole;
     let lastTime = 0;
     best = parseInt(localStorage.getItem('wam_best') || '0');
     document.getElementById('bestEl').textContent = best;
@@ -271,7 +271,7 @@
 
     function startGame() {
         document.getElementById('overlay').classList.remove('show');
-        score = 0; combo = 0; timeLeft = GAME_TIME; running = true;
+        score = 0; combo = 0; timeLeft = GAME_TIME; running = true; paused = false;
         updateUI();
         clearTimeout(peepTimeout);
         if (timer) cancelAnimationFrame(timer);
@@ -281,6 +281,11 @@
         lastTime = performance.now();
         function tick(timestamp) {
             if (!running) return;
+            if (paused) {
+                lastTime = timestamp;
+                timer = requestAnimationFrame(tick);
+                return;
+            }
             const dt = (timestamp - lastTime) / 1000;
             if (dt >= 1) {
                 timeLeft--; lastTime += 1000;
@@ -293,6 +298,19 @@
         }
         timer = requestAnimationFrame(tick);
         peep();
+    }
+
+    function togglePause() {
+        if (!running) return;
+        paused = !paused;
+        if (paused) {
+            clearTimeout(peepTimeout);
+            moles.forEach(m => { m.mole.classList.remove('up'); m.up = false; });
+        } else {
+            lastTime = performance.now();
+            peep();
+        }
+        window.dispatchEvent(new CustomEvent('zi:gamepause', { detail: { paused } }));
     }
 
     function getDelay() {
@@ -325,7 +343,7 @@
 
     function whack(mole, idx) {
         const m = moles[idx];
-        if (!m.up || !running) return;
+        if (!m.up || !running || paused) return;
         m.up = false;
         mole.classList.remove('up');
         mole.classList.remove('whacked');
@@ -352,7 +370,7 @@
     }
 
     function endGame() {
-        running = false;
+        running = false; paused = false;
         clearTimeout(peepTimeout);
         if (timer) cancelAnimationFrame(timer);
         moles.forEach(m => { m.mole.classList.remove('up'); m.up = false; });

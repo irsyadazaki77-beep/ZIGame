@@ -474,14 +474,14 @@
         let player = { x: W / 2 - PW() / 2, y: H - PH() - 12, w: PW(), h: PH() };
         let ai = { x: W / 2 - PW() / 2, y: 12, w: PW(), h: PH() };
         let ball = { x: W / 2, y: H / 2, vx: 0, vy: 0, speed: 0 };
-        let pScore = 0, aScore = 0, running = false, trail = [], flashTimer = 0, particles = [];
+        let pScore = 0, aScore = 0, running = false, paused = false, trail = [], flashTimer = 0, particles = [];
         let animId;
 
         function startGame() {
             const pw = PW(), ph = PH();
             player = { x: W / 2 - pw / 2, y: H - ph - 12, w: pw, h: ph };
             ai = { x: W / 2 - pw / 2, y: 12, w: pw, h: ph };
-            pScore = 0; aScore = 0;
+            pScore = 0; aScore = 0; paused = false;
             trail = []; particles = []; flashTimer = 0; running = true;
             document.getElementById('pScore').textContent = 0;
             document.getElementById('aScore').textContent = 0;
@@ -489,6 +489,13 @@
             resetBall(1); // ball goes toward player first
             if (animId) cancelAnimationFrame(animId);
             loop();
+        }
+
+        function togglePause() {
+            if (!running) return;
+            paused = !paused;
+            lastTs = performance.now();
+            window.dispatchEvent(new CustomEvent('zi:gamepause', { detail: { paused } }));
         }
 
         function resetBall(dir = 0) {
@@ -576,6 +583,7 @@
         function loop(ts = 0) {
             if (!running) return;
             animId = requestAnimationFrame(loop);
+            if (paused) return;
             const dt = ts - lastTs;
             if (dt < STEP - 2) return; // cap at 60fps
             lastTs = ts;
@@ -793,7 +801,7 @@
 
         // ===== END GAME =====
         function endGame(won) {
-            running = false;
+            running = false; paused = false;
             document.getElementById('oIcon').textContent = won ? '🏆' : '💀';
             document.getElementById('oTitle').textContent = won ? 'KAMU MENANG!' : 'GAME OVER';
             document.getElementById('oScore').innerHTML = `Skor Akhir: <span>${pScore}</span> — ${aScore}`;
@@ -803,7 +811,7 @@
 
         // ===== INPUT =====
         function handleMouseMove(e) {
-            if (!running) return;
+            if (!running || paused) return;
             const rect = cvs.getBoundingClientRect();
             const scaleX = W / rect.width;
             const mx = (e.clientX - rect.left) * scaleX;
