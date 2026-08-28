@@ -592,7 +592,15 @@
 
         function initAudio() {
             if (AC) return;
-            AC = new (window.AudioContext || window.webkitAudioContext)();
+            if (window.SoundEngine && typeof window.SoundEngine.getContext === 'function') {
+                AC = window.SoundEngine.getContext();
+            } else {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (Ctx) {
+                    try { AC = new Ctx(); } catch (_) { AC = null; }
+                }
+            }
+            if (!AC) return;
             masterGain = AC.createGain();
             masterGain.gain.value = muted ? 0 : 1;
             masterGain.connect(AC.destination);

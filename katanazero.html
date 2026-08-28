@@ -567,16 +567,36 @@
 
         // --- SISTEM AUDIO ---
         let audioCtx, bgmInterval;
-        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        function initAudio() {
+            if (audioCtx) return audioCtx;
+            if (window.SoundEngine && typeof window.SoundEngine.getContext === 'function') {
+                audioCtx = window.SoundEngine.getContext();
+            } else {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (Ctx) {
+                    try { audioCtx = new Ctx(); } catch (_) { audioCtx = null; }
+                }
+            }
+            return audioCtx;
+        }
+        function audioOutput(channel = 'sfx') {
+            if (window.SoundEngine) {
+                const getter = channel === 'music' ? window.SoundEngine.getMusicOutput : window.SoundEngine.getSfxOutput;
+                if (typeof getter === 'function') return getter();
+            }
+            return audioCtx?.destination || null;
+        }
         function playSound(type) {
-            if (!audioCtx) return;
+            initAudio();
+            const output = audioOutput('sfx');
+            if (!audioCtx || !output) return;
             const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
-            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            osc.connect(gainNode); gainNode.connect(output);
             if (type === 'slash') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
             else if (type === 'hit') { osc.type = 'square'; osc.frequency.setValueAtTime(100, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }
             else if (type === 'bounce') { osc.type = 'sine'; osc.frequency.setValueAtTime(200, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.3); gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); }
         }
-        function startBGM() { bgmInterval = setInterval(() => { if (!gameActive || !audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; let freq = (Date.now() % 800 < 400) ? 55 : 65; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(0.03, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }, 200); }
+        function startBGM() { initAudio(); bgmInterval = setInterval(() => { const output = audioOutput('music'); if (!gameActive || !audioCtx || !output) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'triangle'; let freq = (Date.now() % 800 < 400) ? 55 : 65; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(0.03, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2); osc.connect(gain); gain.connect(output); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }, 200); }
 
         // --- DATABASE MAP ---
         const mapData = {

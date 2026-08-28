@@ -235,20 +235,43 @@
     let best = parseInt(localStorage.getItem('simon_best') || '0');
     document.getElementById('bestEl').textContent = best;
 
-    // Web Audio for tones
-    const AC = new (window.AudioContext || window.webkitAudioContext)();
+    // Web Audio for tones. Reuse the shared context so mute and SFX volume
+    // apply to Simon as well as the other games.
+    let AC = null;
+    function getSimonAudio() {
+        if (window.SoundEngine && typeof window.SoundEngine.getContext === 'function') {
+            AC = window.SoundEngine.getContext();
+            return AC;
+        }
+        if (!AC) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (Ctx) {
+                try { AC = new Ctx(); } catch (_) { AC = null; }
+            }
+        }
+        return AC;
+    }
+    function getSimonSfxOutput() {
+        if (window.SoundEngine && typeof window.SoundEngine.getSfxOutput === 'function') {
+            return window.SoundEngine.getSfxOutput();
+        }
+        return AC?.destination || null;
+    }
     const FREQS = [329.6, 261.6, 392, 523.3]; // E4, C4, G4, C5
 
     function playTone(idx, dur = 0.28) {
         try {
+            const audio = getSimonAudio();
+            const output = getSimonSfxOutput();
+            if (!audio || !output) return;
             const o = AC.createOscillator(), g = AC.createGain();
             o.type = 'sine';
             o.frequency.value = FREQS[idx];
             g.gain.setValueAtTime(0, AC.currentTime);
             g.gain.linearRampToValueAtTime(.35, AC.currentTime + .03);
             g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + dur * .95);
-            o.connect(g); g.connect(AC.destination);
-            o.start(); o.stop(AC.currentTime + dur);
+            o.connect(g); g.connect(output);
+            o.start(); o.stop(audio.currentTime + dur);
         } catch(e) {}
     }
 
@@ -266,7 +289,8 @@
 
     function startGame() {
         document.getElementById('overlay').classList.remove('show');
-        if (AC.state === 'suspended') AC.resume();
+        const audio = getSimonAudio();
+        if (audio?.state === 'suspended') audio.resume();
         seq = []; level = 0;
         nextLevel();
     }

@@ -156,6 +156,7 @@
         };
         if (pauseButton || pauseFunction) addHelpAction('Jeda / lanjutkan', () => invokeAction('pause'));
         if (restartButton || restartFunction) addHelpAction('Mulai ulang', () => invokeAction('restart'));
+        else addHelpAction('Mulai ulang', () => window.location.reload());
         helpToggle.addEventListener('click', () => {
             if (helpPanel.hidden) openHelp();
             else closeHelp();
@@ -210,13 +211,21 @@
             else if (text === '►' || text === '→') button.setAttribute('aria-label', 'Kanan');
         });
 
-        document.querySelectorAll('.overlay, .game-overlay, .overlay-screen, [id$="-screen"]').forEach(overlay => {
+        document.querySelectorAll(
+            '.overlay, .game-overlay, .overlay-screen, .screen, [id$="-screen"], [id$="Screen"], [id$="Overlay"], [id^="screen-"]:not(#screen-flash)'
+        ).forEach(overlay => {
             overlay.setAttribute('role', 'dialog');
             overlay.setAttribute('aria-modal', 'true');
-            const heading = overlay.querySelector('h1, h2, h3, .overlay-title, .big-title, .go-title, .result-title');
+            const heading = overlay.querySelector(
+                'h1, h2, h3, [role="heading"], .overlay-title, .ov-title, .big-title, .go-title, .result-title, .title-main, .menu-logo, .game-title'
+            );
             if (heading) {
                 if (!heading.id) heading.id = `zi-overlay-title-${Math.random().toString(36).slice(2, 8)}`;
                 overlay.setAttribute('aria-labelledby', heading.id);
+                overlay.removeAttribute('aria-label');
+            } else {
+                const fallbackLabel = overlay.textContent?.replace(/\s+/g, ' ').trim().slice(0, 100);
+                overlay.setAttribute('aria-label', fallbackLabel || `${gameTitle} — layar game`);
             }
             let lastVisible = false;
             let returnFocus = null;
@@ -224,8 +233,9 @@
                 const style = window.getComputedStyle(overlay);
                 const visible = style.display !== 'none'
                     && style.visibility !== 'hidden'
-                    && Number(style.opacity) !== 0
-                    && style.pointerEvents !== 'none';
+                    && style.pointerEvents !== 'none'
+                    && !overlay.hidden
+                    && !overlay.classList.contains('hidden');
                 overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
                 if (visible && !lastVisible) {
                     returnFocus = document.activeElement && document.activeElement !== document.body
@@ -248,6 +258,12 @@
             syncVisibility();
             new MutationObserver(syncVisibility).observe(overlay, { attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
             overlay.addEventListener('transitionend', syncVisibility);
+            // Entrance animations can report opacity: 0 during the first
+            // frame even though the screen is already the active game modal.
+            // Re-sync after the animation so screen readers do not get stuck
+            // with aria-hidden="true".
+            overlay.addEventListener('animationend', syncVisibility);
+            window.setTimeout(syncVisibility, 180);
             overlay.addEventListener('keydown', event => {
                 if (event.key !== 'Tab' || overlay.getAttribute('aria-hidden') === 'true') return;
                 const items = Array.from(overlay.querySelectorAll(focusableSelector)).filter(visibleElement);

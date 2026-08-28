@@ -39,7 +39,7 @@ test('portal supports search, category, favorite, view, and theme controls', asy
     await expect(page.locator('#visibleCount')).not.toHaveText('32');
     await expect(page.locator('.game-card:not(.hidden)').first()).toBeVisible();
 
-    const favoriteCard = page.locator('.game-card:not(.featured)').first();
+    const favoriteCard = page.locator('.game-card:not(.featured):not(.hidden)').first();
     await favoriteCard.locator('.fav-btn').click();
     await page.locator('#favOnlyBtn').click();
     await expect(page.locator('#visibleCount')).toHaveText(/\b1\b/);
@@ -66,6 +66,29 @@ test('portal command center and empty state remain keyboard reachable', async ({
     await page.locator('#searchInput').fill('tidak ada game seperti ini');
     await expect(page.locator('#noResult')).toBeVisible();
     await expect(page.locator('#noResultResetBtn')).toBeVisible();
+});
+
+test('mobile sidebar keeps keyboard focus inside the drawer', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'Drawer focus behavior is mobile-only.');
+    await page.goto('/index.html');
+    await page.locator('#sideToggle').click();
+    await expect(page.locator('#portalSidebar')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#sideCollapseBtn')).toBeFocused();
+
+    await page.keyboard.press('Shift+Tab');
+    const lastDrawerControl = await page.evaluate(() => {
+        const sidebar = document.getElementById('portalSidebar');
+        const items = Array.from(sidebar.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'))
+            .filter(item => item.getClientRects().length > 0);
+        return items.at(-1)?.id || items.at(-1)?.textContent?.trim();
+    });
+    expect(await page.evaluate(() => document.activeElement?.id || document.activeElement?.textContent?.trim())).toBe(lastDrawerControl);
+
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#sideCollapseBtn')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#portalSidebar')).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.locator('#sideToggle')).toBeFocused();
 });
 
 test('portal loading, offline feedback, and game audio controls are resilient', async ({ page }) => {
@@ -119,10 +142,27 @@ test('shared audio mute stays synchronized with custom game controls', async ({ 
             // exercise the control handler without depending on that visual layer.
             await customMute.evaluate(button => button.click());
             await expect.poll(() => page.evaluate(() => localStorage.getItem('arcadeNexusMuted'))).toBe('0');
+            await expect(page.locator('#muteToggle')).toHaveAttribute('aria-pressed', 'false');
         } else {
             await page.locator('#muteToggle').click();
         }
     }
+});
+
+test('portal and game shell reflow at an effective 200 percent zoom width', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'The desktop project supplies the reference viewport.');
+    // 200% zoom on a 1440 CSS-pixel desktop produces an effective ~720px
+    // layout viewport. Exercise that reflow width directly and verify the
+    // primary discovery and play surfaces remain usable.
+    await page.setViewportSize({ width: 720, height: 900 });
+    await page.goto('/index.html');
+    await expect(page.locator('#searchInput')).toBeVisible();
+    await expect(page.locator('.game-card').first()).toBeVisible();
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth > 1)).toBe(false);
+
+    await page.goto('/snake.html');
+    await expect(page.locator('#ziGameHelpToggle')).toBeVisible();
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth > 1)).toBe(false);
 });
 
 test('settings persist theme, density, and motion preferences', async ({ page }) => {
@@ -214,6 +254,39 @@ test('all game pages boot with shared shell and no page errors', async ({ page }
         await expect(page.locator('#ziGameHelpToggle')).toBeVisible();
         await expect(page.locator('#ziAudioToggle')).toBeVisible();
         await expect(page.locator('#muteToggle')).toHaveAttribute('aria-label', /suara/i);
+        await page.locator('#ziGameHelpToggle').click();
+        await expect(page.locator('.zi-game-help-action').filter({ hasText: 'Mulai ulang' })).toBeVisible();
+        await page.keyboard.press('Escape');
+        const visibleScreens = await page.locator('.overlay, .game-overlay, .overlay-screen, .screen, [id$="-screen"], [id$="Screen"], [id$="Overlay"], [id^="screen-"]:not(#screen-flash)').evaluateAll(elements => elements
+            .filter(element => {
+                const style = getComputedStyle(element);
+                return style.display !== 'none' && style.visibility !== 'hidden'
+                    && style.pointerEvents !== 'none' && !element.hidden
+                    && !element.classList.contains('hidden');
+            })
+            .map(element => ({
+                id: element.id,
+                role: element.getAttribute('role'),
+                hidden: element.getAttribute('aria-hidden'),
+                labelledBy: element.getAttribute('aria-labelledby'),
+                label: element.getAttribute('aria-label')
+            })));
+        expect(visibleScreens.filter(screen => screen.role !== 'dialog' || screen.hidden !== 'false' || (!screen.labelledBy && !screen.label)), `${route} has an inaccessible visible game screen`).toEqual([]);
+        const unnamedControls = await page.locator('button, [role="button"], input, select, textarea').evaluateAll(elements => elements
+            .filter(element => {
+                const style = getComputedStyle(element);
+                return style.display !== 'none' && style.visibility !== 'hidden'
+                    && element.getClientRects().length > 0;
+            })
+            .filter(element => {
+                const labelledBy = element.getAttribute('aria-labelledby');
+                const referenced = labelledBy ? labelledBy.split(/\s+/).map(id => document.getElementById(id)?.textContent || '').join(' ') : '';
+                const associatedLabel = element.id ? document.querySelector(`label[for="${CSS.escape(element.id)}"]`)?.textContent || '' : '';
+                return !(element.getAttribute('aria-label') || referenced || element.getAttribute('title')
+                    || element.textContent?.replace(/\s+/g, ' ').trim() || associatedLabel);
+            })
+            .map(element => ({ tag: element.tagName, id: element.id, className: String(element.className) })));
+        expect(unnamedControls, `${route} has visible controls without an accessible name`).toEqual([]);
         const visibleText = await page.locator('body').innerText();
         expect(visibleText, `${route} contains corrupted visible text`).not.toMatch(/(?:â|ðŸ|Ã|`r`n)/);
         if (testInfo.project.name === 'mobile') {

@@ -650,7 +650,15 @@
         }
         function initAudio() {
             if (!actx) {
-                actx = new (window.AudioContext || window.webkitAudioContext)();
+                if (window.SoundEngine && typeof window.SoundEngine.getContext === 'function') {
+                    actx = window.SoundEngine.getContext();
+                } else {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (Ctx) {
+                        try { actx = new Ctx(); } catch (_) { actx = null; }
+                    }
+                }
+                if (!actx) return;
                 musicGain = actx.createGain();
                 sfxGain = actx.createGain();
                 musicGain.connect(actx.destination);

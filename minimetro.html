@@ -1198,10 +1198,18 @@
             let audioCtx = null;
             function beep(freq, dur, type = 'sine', volume = 0.03) {
                 if (!audioCtx) {
-                    const Ctx = window.AudioContext || window.webkitAudioContext;
-                    if (!Ctx) return;
-                    audioCtx = new Ctx();
+                    if (window.SoundEngine && typeof window.SoundEngine.getContext === 'function') {
+                        audioCtx = window.SoundEngine.getContext();
+                    } else {
+                        const Ctx = window.AudioContext || window.webkitAudioContext;
+                        if (!Ctx) return;
+                        try { audioCtx = new Ctx(); } catch (_) { return; }
+                    }
                 }
+                const output = window.SoundEngine && typeof window.SoundEngine.getSfxOutput === 'function'
+                    ? window.SoundEngine.getSfxOutput()
+                    : audioCtx.destination;
+                if (!audioCtx || !output) return;
                 if (audioCtx.state === 'suspended') audioCtx.resume();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
@@ -1210,7 +1218,7 @@
                 gain.gain.setValueAtTime(volume, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(output);
                 osc.start();
                 osc.stop(audioCtx.currentTime + dur);
             }

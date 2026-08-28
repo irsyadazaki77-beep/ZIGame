@@ -41,6 +41,16 @@ assert(!portal.includes('soundhelix.com'), 'portal: external music URL should no
 assert(read('sounds.js').includes('setMusicVolume'), 'audio: procedural music volume control is missing');
 assert(read('sounds.js').includes('setSfxVolume'), 'audio: separate SFX volume control is missing');
 assert(read('sounds.js').includes('ziAudioPanel'), 'audio: shared game audio panel is missing');
+for (const route of ['hyperlightdrifter', 'katanazero', 'minimetro', 'simon']) {
+    const audioSource = read(`${route}.html`);
+    assert(audioSource.includes('getSfxOutput'), `${route}: custom SFX is not routed through shared volume/mute output`);
+    assert(!/connect\(\s*(?:audioCtx|AC)\.destination\s*\)/.test(audioSource), `${route}: custom SFX bypasses shared audio routing`);
+}
+for (const route of ['sayonarawildhearts', 'thumper']) {
+    const audioSource = read(`${route}.html`);
+    assert(audioSource.includes('zi:volumechange'), `${route}: custom audio does not sync shared volume changes`);
+    assert(audioSource.includes('zi:mutechange'), `${route}: custom audio does not sync shared mute changes`);
+}
 assert(read('mobile-touch.js').includes('ziGameHelp'), 'game UX: shared play guide is missing');
 
 assert(routes.length === gamePages.length, `portal: expected ${gamePages.length} unique game routes, found ${routes.length}`);

@@ -273,26 +273,57 @@
         resize(); window.addEventListener('resize', resize);
 
         // =========== SOUND ENGINE ===========
-        const AC = new (window.AudioContext || window.webkitAudioContext)();
-        function _rAC() { if (AC.state !== 'running') AC.resume(); }
+        let AC = null;
+        function getGameAudioContext() {
+            if (window.SoundEngine && typeof window.SoundEngine.getContext === 'function') {
+                AC = window.SoundEngine.getContext();
+                return AC;
+            }
+            if (!AC) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    try { AC = new AudioContextClass(); } catch (e) { return null; }
+                }
+            }
+            return AC;
+        }
+        function getGameAudioOutput(channel = 'sfx') {
+            if (window.SoundEngine) {
+                const getter = channel === 'music' ? window.SoundEngine.getMusicOutput : window.SoundEngine.getSfxOutput;
+                if (typeof getter === 'function') return getter();
+            }
+            return AC?.destination || null;
+        }
+        function _rAC() {
+            const audio = getGameAudioContext();
+            if (audio && audio.state !== 'running') audio.resume();
+        }
         document.addEventListener('click', _rAC, { once: true });
         document.addEventListener('keydown', _rAC, { once: true });
-        function _osc(freq, type, dur, vol, slide) {
+        function _osc(freq, type, dur, vol, slide, channel = 'sfx') {
             try {
-                const g = AC.createGain(); g.gain.setValueAtTime(vol||0.3, AC.currentTime); g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime+(dur||0.3));
-                const o = AC.createOscillator(); o.type = type||'sine'; o.frequency.setValueAtTime(freq||440, AC.currentTime);
-                if (slide) o.frequency.exponentialRampToValueAtTime(slide, AC.currentTime+(dur||0.3));
-                o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+(dur||0.3));
+                const audio = getGameAudioContext();
+                const output = getGameAudioOutput(channel);
+                if (!audio || !output) return;
+                const g = audio.createGain(); g.gain.setValueAtTime(vol||0.3, audio.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime+(dur||0.3));
+                const o = audio.createOscillator(); o.type = type||'sine'; o.frequency.setValueAtTime(freq||440, audio.currentTime);
+                if (slide) o.frequency.exponentialRampToValueAtTime(slide, audio.currentTime+(dur||0.3));
+                o.connect(g); g.connect(output); o.start(); o.stop(audio.currentTime+(dur||0.3));
             } catch(e){}
         }
-        function _noise(dur, vol, cut) {
+        function _noise(dur, vol, cut, channel = 'sfx') {
             try {
-                const buf = AC.createBuffer(1, Math.floor(AC.sampleRate*dur), AC.sampleRate); const d = buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
-                const s = AC.createBufferSource(); s.buffer=buf; const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=cut||2000;
-                const g=AC.createGain(); g.gain.setValueAtTime(vol||0.2,AC.currentTime); g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+dur);
-                s.connect(f); f.connect(g); g.connect(AC.destination); s.start();
+                const audio = getGameAudioContext();
+                const output = getGameAudioOutput(channel);
+                if (!audio || !output) return;
+                const buf = audio.createBuffer(1, Math.floor(audio.sampleRate*dur), audio.sampleRate); const d = buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+                const s = audio.createBufferSource(); s.buffer=buf; const f=audio.createBiquadFilter(); f.type='lowpass'; f.frequency.value=cut||2000;
+                const g=audio.createGain(); g.gain.setValueAtTime(vol||0.2,audio.currentTime); g.gain.exponentialRampToValueAtTime(0.001,audio.currentTime+dur);
+                s.connect(f); f.connect(g); g.connect(output); s.start();
             } catch(e){}
         }
+        const _musicOsc = (freq, type, dur, vol, slide) => _osc(freq, type, dur, vol, slide, 'music');
+        const _musicNoise = (dur, vol, cut) => _noise(dur, vol, cut, 'music');
         const SFX = {
             sword: ()=>{ _osc(1400,'sawtooth',0.04,0.18); _noise(0.05,0.12,3500); setTimeout(()=>_osc(700,'sawtooth',0.05,0.1),25); },
             gun: ()=>{ _noise(0.14,0.4,2000); _osc(140,'sawtooth',0.14,0.35,30); },
@@ -316,11 +347,11 @@
                 if(!_ambOn) return;
                 try {
                     if (!G.paused && !G.levelUp) {
-                        if (_beatCount % 2 === 0) { const b = BASS_FREQS[(_beatCount/2) % 16]; _osc(b, 'sawtooth', 0.15, 0.25); _osc(b/2, 'square', 0.15, 0.35); }
-                        if (_beatCount % 4 === 0) { _osc(150, 'sine', 0.15, 0.6, 40); }
-                        if ((_beatCount + 4) % 8 === 0) { _noise(0.08, 0.3, 3000); _osc(200, 'square', 0.1, 0.2, 100); }
-                        _noise(0.015, 0.08, 8000);
-                        if (Math.random() < 0.7) { _osc(ARP_NOTES[Math.floor(Math.random()*ARP_NOTES.length)], 'square', 0.08, 0.06); }
+                        if (_beatCount % 2 === 0) { const b = BASS_FREQS[(_beatCount/2) % 16]; _musicOsc(b, 'sawtooth', 0.15, 0.25); _musicOsc(b/2, 'square', 0.15, 0.35); }
+                        if (_beatCount % 4 === 0) { _musicOsc(150, 'sine', 0.15, 0.6, 40); }
+                        if ((_beatCount + 4) % 8 === 0) { _musicNoise(0.08, 0.3, 3000); _musicOsc(200, 'square', 0.1, 0.2, 100); }
+                        _musicNoise(0.015, 0.08, 8000);
+                        if (Math.random() < 0.7) { _musicOsc(ARP_NOTES[Math.floor(Math.random()*ARP_NOTES.length)], 'square', 0.08, 0.06); }
                         _beatCount++;
                     }
                 } catch(e){}

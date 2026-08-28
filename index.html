@@ -2621,9 +2621,35 @@
             });
         });
 
-        // Close sidebar with Escape key
+        // Keep the mobile drawer keyboard-contained while it is open. The
+        // desktop sidebar remains a persistent navigation region, but on a
+        // narrow viewport this is a modal interaction and focus must not leak
+        // behind the scrim.
         document.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && sidebarOpen) closeSidebar();
+            if (!sidebarOpen || window.innerWidth > 768) return;
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeSidebar();
+                return;
+            }
+            if (e.key !== 'Tab' || !portalSidebar) return;
+            const items = Array.from(portalSidebar.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            )).filter(item => {
+                const style = window.getComputedStyle(item);
+                return !item.hidden && style.display !== 'none' && style.visibility !== 'hidden'
+                    && item.getClientRects().length > 0;
+            });
+            if (!items.length) return;
+            const first = items[0];
+            const last = items[items.length - 1];
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
         });
 
         window.addEventListener('scroll', setSidebarActiveByScroll);
@@ -2811,8 +2837,6 @@
                 // Jika belum pilih lagu, otomatis pilih Track 1
                 if (!bgmSelect.value) {
                     bgmSelect.selectedIndex = 1;
-                    bgmAudio.src = bgmSelect.value;
-                    bgmAudio.volume = parseFloat(mpVol.value);
                 }
 
                 if (isPlaying) {

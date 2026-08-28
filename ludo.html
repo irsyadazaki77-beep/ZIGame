@@ -323,7 +323,9 @@
       letter-spacing: 1px;
       cursor: pointer;
       transition: all .2s;
-      text-align: center
+      text-align: center;
+      appearance: none;
+      line-height: 1.2
     }
 
     .type-btn.active {
@@ -1099,10 +1101,10 @@
         <div class="slot-dot" style="background:${c};color:${c}"></div>
         <div class="slot-label" style="color:${c}">Pemain ${i + 1}</div>
       </div>
-      <input class="name-input" id="sname${i}" value="${NAMES_DEF[i]}" maxlength="14">
+      <input class="name-input" id="sname${i}" value="${NAMES_DEF[i]}" maxlength="14" aria-label="Nama pemain ${i + 1}">
       <div class="type-toggle" style="--dot-c:${c}">
-        <div class="type-btn${i > 0 ? ' active' : ''}" id="ai${i}" style="color:${c}" onclick="setType(${i},'ai')">🤖 AI</div>
-        <div class="type-btn${i === 0 ? ' active' : ''}" id="hu${i}" style="color:${c}" onclick="setType(${i},'human')">🧑 MANUSIA</div>
+        <button type="button" class="type-btn${i > 0 ? ' active' : ''}" id="ai${i}" style="color:${c}" aria-pressed="${i > 0 ? 'true' : 'false'}" onclick="setType(${i},'ai')">🤖 AI</button>
+        <button type="button" class="type-btn${i === 0 ? ' active' : ''}" id="hu${i}" style="color:${c}" aria-pressed="${i === 0 ? 'true' : 'false'}" onclick="setType(${i},'human')">🧑 MANUSIA</button>
       </div>`;
         wrap.appendChild(d);
       });
@@ -1114,6 +1116,8 @@
       playerCfg[i].type = t;
       document.getElementById('ai' + i).classList.toggle('active', t === 'ai');
       document.getElementById('hu' + i).classList.toggle('active', t === 'human');
+      document.getElementById('ai' + i).setAttribute('aria-pressed', t === 'ai' ? 'true' : 'false');
+      document.getElementById('hu' + i).setAttribute('aria-pressed', t === 'human' ? 'true' : 'false');
     }
     function startSetup() {
       playerCfg = [0, 1, 2, 3].map(i => ({

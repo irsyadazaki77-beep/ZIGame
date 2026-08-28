@@ -624,6 +624,30 @@ const SoundEngine = (() => {
         return sfxVolume;
     }
 
+    // Custom game engines can reuse the same context and channel routing
+    // without reaching directly into the browser destination. This keeps
+    // mute, music volume, and SFX volume consistent across every game page.
+    function getContext() {
+        ensureCtx();
+        return ctx;
+    }
+
+    function getMusicOutput() {
+        ensureCtx();
+        return musicGain || masterGain || ctx?.destination || null;
+    }
+
+    function getSfxOutput() {
+        ensureCtx();
+        return sfxGain || masterGain || ctx?.destination || null;
+    }
+
+    function shouldAutoStartMusic(gameId) {
+        return !!gameId
+            && !['hyperlightdrifter', 'katanazero', 'sayonarawildhearts', 'thumper'].includes(gameId)
+            && !window.ZI_DISABLE_AUTO_MUSIC;
+    }
+
     function toggleMute() {
         muted = !muted;
         if (muted) {
@@ -664,24 +688,29 @@ const SoundEngine = (() => {
             display:flex; align-items:center; justify-content:center;
             box-shadow:0 4px 15px rgba(0,0,0,0.3);
         `;
+        const syncButton = nowMuted => {
+            btn.innerHTML = nowMuted ? '🔇' : '🔊';
+            btn.setAttribute('aria-label', nowMuted ? 'Nyalakan semua suara' : 'Matikan semua suara');
+            btn.setAttribute('aria-pressed', nowMuted ? 'true' : 'false');
+            const bgmAudioHTML = document.getElementById('bgm-audio');
+            if (bgmAudioHTML) bgmAudioHTML.muted = nowMuted;
+        };
         btn.addEventListener('mouseenter', () => { btn.style.background = 'rgba(255,255,255,0.15)'; btn.style.transform = 'scale(1.1)'; });
         btn.addEventListener('mouseleave', () => { btn.style.background = 'rgba(255,255,255,0.08)'; btn.style.transform = 'scale(1)'; });
         btn.addEventListener('click', () => {
             const nowMuted = toggleMute();
-            btn.innerHTML = nowMuted ? '🔇' : '🔊';
-            btn.setAttribute('aria-label', nowMuted ? 'Nyalakan semua suara' : 'Matikan semua suara');
-            btn.setAttribute('aria-pressed', nowMuted ? 'true' : 'false');
-            
-            // Sync dengan audio player baru di index.html
-            const bgmAudioHTML = document.getElementById('bgm-audio');
-            if (bgmAudioHTML) bgmAudioHTML.muted = nowMuted;
-            
+            syncButton(nowMuted);
+
             // Restart music if unmuting
             if (!nowMuted) {
                 const gameId = detectGame();
-                if (gameId) startMusic(gameId);
+                if (shouldAutoStartMusic(gameId)) startMusic(gameId);
             }
         });
+        window.addEventListener('zi:mutechange', event => {
+            syncButton(!!event.detail?.muted);
+        });
+        syncButton(muted);
         document.body.appendChild(btn);
     }
 
@@ -798,7 +827,10 @@ const SoundEngine = (() => {
         if (bgmAudioHTML) bgmAudioHTML.muted = muted;
         
         const gameId = detectGame();
-        if (gameId) {
+        // These pages already own their soundtrack. Starting the shared loop
+        // as well would make two melodies play over one another, while the
+        // shared context/output helpers are still available for their SFX.
+        if (shouldAutoStartMusic(gameId)) {
             // Start music on first user interaction (browser autoplay policy)
             const startOnce = () => {
                 if (!muted) startMusic(gameId);
@@ -812,7 +844,22 @@ const SoundEngine = (() => {
         }
     });
 
-    return { init, startMusic, stopMusic, setMusicVolume, setSfxVolume, getMusicVolume, getSfxVolume, toggleMute, isMuted, SFX, detectGame };
+    return {
+        init,
+        getContext,
+        getMusicOutput,
+        getSfxOutput,
+        startMusic,
+        stopMusic,
+        setMusicVolume,
+        setSfxVolume,
+        getMusicVolume,
+        getSfxVolume,
+        toggleMute,
+        isMuted,
+        SFX,
+        detectGame
+    };
 })();
 
 // Global shortcut
