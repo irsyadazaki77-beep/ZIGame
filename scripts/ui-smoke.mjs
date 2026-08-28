@@ -41,7 +41,7 @@ assert(!portal.includes('soundhelix.com'), 'portal: external music URL should no
 assert(read('sounds.js').includes('setMusicVolume'), 'audio: procedural music volume control is missing');
 assert(read('sounds.js').includes('setSfxVolume'), 'audio: separate SFX volume control is missing');
 assert(read('sounds.js').includes('ziAudioPanel'), 'audio: shared game audio panel is missing');
-for (const route of ['hyperlightdrifter', 'katanazero', 'minimetro', 'simon']) {
+for (const route of ['hyperlightdrifter', 'katanazero', 'minimetro', 'simon', 'vvvvvv']) {
     const audioSource = read(`${route}.html`);
     assert(audioSource.includes('getSfxOutput'), `${route}: custom SFX is not routed through shared volume/mute output`);
     assert(!/connect\(\s*(?:audioCtx|AC)\.destination\s*\)/.test(audioSource), `${route}: custom SFX bypasses shared audio routing`);

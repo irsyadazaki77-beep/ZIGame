@@ -461,9 +461,21 @@
         function beep(freq, dur, vol) {
             if (state.muted) return;
             if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (window.SoundEngine && typeof window.SoundEngine.getContext === "function") {
+                    audioCtx = window.SoundEngine.getContext();
+                } else {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (Ctx) {
+                        try { audioCtx = new Ctx(); } catch (_) { audioCtx = null; }
+                    }
+                }
+                if (!audioCtx) return;
                 sfxGain = audioCtx.createGain();
-                sfxGain.connect(audioCtx.destination);
+                const output = window.SoundEngine && typeof window.SoundEngine.getSfxOutput === "function"
+                    ? window.SoundEngine.getSfxOutput()
+                    : audioCtx.destination;
+                if (!output) return;
+                sfxGain.connect(output);
                 syncAudio();
             }
             const now = audioCtx.currentTime;
