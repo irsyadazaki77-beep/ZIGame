@@ -23,6 +23,12 @@ const SoundEngine = (() => {
         try { window.localStorage.setItem(key, String(value)); } catch (_) { }
     }
 
+    function dispatchVolumeChange(channel, value) {
+        window.dispatchEvent(new CustomEvent('zi:volumechange', {
+            detail: { channel, value }
+        }));
+    }
+
     let ctx = null;
     let masterGain = null;
     let musicGain = null;
@@ -596,6 +602,7 @@ const SoundEngine = (() => {
         musicVolume = next;
         if (musicGain) musicGain.gain.value = next;
         persistVolume(MUSIC_VOLUME_KEY, next);
+        dispatchVolumeChange('music', next);
         return next;
     }
 
@@ -605,6 +612,7 @@ const SoundEngine = (() => {
         sfxVolume = next;
         if (sfxGain) sfxGain.gain.value = next;
         persistVolume(SFX_VOLUME_KEY, next);
+        dispatchVolumeChange('sfx', next);
         return next;
     }
 

@@ -1,10 +1,10 @@
-const CACHE_NAME = 'zi-game-v5';
+const CACHE_NAME = 'zi-game-v7';
 const APP_SHELL = [
     './', './index.html', './profile.html', './settings.html', './404.html', './offline.html',
     './index-portal.css', './sidebar.css', './portal-page.css',
     './game-shared.css', './mobile-touch.js', './sounds.js', './sounds.js?v=3', './site-runtime.js', './site-runtime.js?v=2',
     './manifest.webmanifest', './favicon.svg', './styles.css', './app.js', './portal-page.js',
-    './zi-final-polish.js', './polybridge3.css', './hyperlightdrifter.css', './zi-modern-ui.css',
+    './zi-final-polish.js', './polybridge3.css', './hyperlightdrifter.css', './zi-modern-ui.css', './zi-modern-ui.css?v=1',
     './assets/game-thumbs/2048.jpg', './assets/game-thumbs/babaisyou.jpg',
     './assets/game-thumbs/breakout.jpg', './assets/game-thumbs/colormatch.jpg',
     './assets/game-thumbs/dinorun.jpg', './assets/game-thumbs/flappy.jpg',
@@ -56,7 +56,7 @@ self.addEventListener('fetch', event => {
                 caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
                 return response;
             })
-            .catch(() => caches.match(event.request).then(cached => {
+            .catch(() => caches.match(event.request, { ignoreSearch: true }).then(cached => {
                 if (cached) return cached;
                 if (event.request.mode === 'navigate') return caches.match('./offline.html');
                 return new Response('', { status: 503, statusText: 'Offline' });

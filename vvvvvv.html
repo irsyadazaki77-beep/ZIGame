@@ -406,8 +406,20 @@
         window.addEventListener("zi:mutechange", event => {
             state.muted = !!event.detail?.muted;
             updateHud();
+            syncAudio();
         });
         state.shakeEnabled = settings.shakeEnabled;
+
+        function toggleGameMute() {
+            if (window.SoundEngine && typeof window.SoundEngine.toggleMute === "function") {
+                state.muted = window.SoundEngine.toggleMute();
+            } else {
+                state.muted = !state.muted;
+                localStorage.setItem("arcadeNexusMuted", state.muted ? "1" : "0");
+            }
+            updateHud();
+            showBanner(state.muted ? "SFX dimatikan." : "SFX dinyalakan.", 0.8);
+        }
 
         function loadBestTime() {
             const raw = localStorage.getItem(BEST_KEY);
@@ -434,9 +446,26 @@
         }
 
         let audioCtx = null;
+        let sfxGain = null;
+        function getSfxVolume() {
+            if (window.SoundEngine && typeof window.SoundEngine.getSfxVolume === "function") {
+                return window.SoundEngine.getSfxVolume();
+            }
+            const value = Number(localStorage.getItem("ziGame:sfxVolume"));
+            return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0.5;
+        }
+        function syncAudio() {
+            if (sfxGain) sfxGain.gain.value = state.muted ? 0 : getSfxVolume();
+        }
+        window.addEventListener("zi:volumechange", syncAudio);
         function beep(freq, dur, vol) {
             if (state.muted) return;
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                sfxGain = audioCtx.createGain();
+                sfxGain.connect(audioCtx.destination);
+                syncAudio();
+            }
             const now = audioCtx.currentTime;
             const o = audioCtx.createOscillator();
             const g = audioCtx.createGain();
@@ -446,7 +475,7 @@
             g.gain.exponentialRampToValueAtTime(vol, now + 0.01);
             g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
             o.connect(g);
-            g.connect(audioCtx.destination);
+            g.connect(sfxGain);
             o.start(now);
             o.stop(now + dur + 0.02);
         }
@@ -603,6 +632,8 @@
             fpsText.textContent = String(Math.round(state.fps));
             pauseBtn.textContent = state.paused ? "Lanjut (P)" : "Pause (P)";
             muteBtn.textContent = state.muted ? "SFX OFF" : "SFX ON";
+            muteBtn.setAttribute("aria-label", state.muted ? "Nyalakan efek suara" : "Matikan efek suara");
+            muteBtn.setAttribute("aria-pressed", state.muted ? "true" : "false");
             assistBtn.classList.toggle("active", state.assist);
             assistBtn.textContent = state.assist ? "Assist ON (H)" : "Assist (H)";
             hardcoreBtn.classList.toggle("active", state.hardcore);
@@ -1250,8 +1281,7 @@
             if (k === "p") togglePause();
             if (k === "r") restartRun();
             if (k === "m") {
-                state.muted = !state.muted;
-                updateHud();
+                toggleGameMute();
             }
             if (k === "h") {
                 state.assist = !state.assist;
@@ -1303,9 +1333,7 @@
         pauseBtn.addEventListener("click", togglePause);
         restartBtn.addEventListener("click", restartRun);
         muteBtn.addEventListener("click", () => {
-            state.muted = !state.muted;
-            updateHud();
-            showBanner(state.muted ? "SFX dimatikan." : "SFX dinyalakan.", 0.8);
+            toggleGameMute();
         });
         assistBtn.addEventListener("click", () => {
             state.assist = !state.assist;

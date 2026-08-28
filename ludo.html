@@ -873,7 +873,7 @@
   <!-- FEATURE 1: Mute Button -->
   <div class="top-bar">
     <div class="top-logo">⚡ NEON LUDO</div>
-    <button class="mute-btn" id="muteBtn" onclick="toggleMute()" title="Mute/Unmute">🔊</button>
+    <button class="mute-btn" id="muteBtn" onclick="toggleMute()" title="Mute/Unmute" aria-label="Matikan semua suara" aria-pressed="false">🔊</button>
   </div>
 
   <!-- SETUP -->
@@ -982,16 +982,27 @@
     // ═══════════════════ MUTE (FEATURE 1) ═══════════════════
     let isMuted = localStorage.getItem('arcadeNexusMuted') === '1';
     function toggleMute() {
-      isMuted = !isMuted;
-      localStorage.setItem('arcadeNexusMuted', isMuted ? '1' : '0');
-      document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
-      document.getElementById('muteBtn').classList.toggle('muted', isMuted);
+      if (window.SoundEngine && typeof window.SoundEngine.toggleMute === 'function') {
+        isMuted = window.SoundEngine.toggleMute();
+      } else {
+        isMuted = !isMuted;
+        localStorage.setItem('arcadeNexusMuted', isMuted ? '1' : '0');
+      }
+      updateMuteButton();
+    }
+    function updateMuteButton() {
+      const button = document.getElementById('muteBtn');
+      if (!button) return;
+      button.textContent = isMuted ? '🔇' : '🔊';
+      button.classList.toggle('muted', isMuted);
+      button.setAttribute('aria-label', isMuted ? 'Nyalakan semua suara' : 'Matikan semua suara');
+      button.setAttribute('aria-pressed', isMuted ? 'true' : 'false');
     }
     window.addEventListener('zi:mutechange', event => {
       isMuted = !!event.detail?.muted;
-      document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
-      document.getElementById('muteBtn').classList.toggle('muted', isMuted);
+      updateMuteButton();
     });
+    updateMuteButton();
 
     // ═══════════════════ TURN LOG (FEATURE 3) ═══════════════════
     let logEntries = [];

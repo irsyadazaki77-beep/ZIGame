@@ -2570,6 +2570,16 @@ body.zi-modern-game .zi-audio-panel {
     margin-top: 0;
 }
 
+@media (max-width: 820px) {
+    body.zi-modern-game #muteToggle {
+        top: max(68px, calc(env(safe-area-inset-top) + 68px)) !important;
+        right: auto !important;
+        bottom: auto !important;
+        left: max(14px, env(safe-area-inset-left)) !important;
+        z-index: 10002 !important;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     body[data-page="portal"] *,
     body[data-page="portal"] *::before,

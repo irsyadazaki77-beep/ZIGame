@@ -52,9 +52,16 @@ for (const route of gamePages) {
     const source = read(route);
     assert(source.includes('mobile-touch.js'), `${route}: missing shared mobile runtime`);
 }
+for (const route of ['minimetro.html', 'sayonarawildhearts.html', 'thumper.html']) {
+    const source = read(route);
+    assert(!source.includes('`r`n'), `${route}: literal newline escape leaked into markup`);
+    assert(!source.includes('ðŸ'), `${route}: mojibake emoji leaked into UI source`);
+}
 
 assert(read('offline.html').includes('Coba lagi'), 'offline: retry action is missing');
-assert(serviceWorker.includes("const CACHE_NAME = 'zi-game-v5'"), 'service worker cache version was not bumped');
+assert(serviceWorker.includes("const CACHE_NAME = 'zi-game-v7'"), 'service worker cache version was not bumped');
+assert(serviceWorker.includes("ignoreSearch: true"), 'service worker: query-string assets need offline fallback');
+assert(serviceWorker.includes("./zi-modern-ui.css?v=1"), 'service worker: versioned modern UI stylesheet is missing');
 assert(serviceWorker.includes("'./portal-page.js'"), 'service worker: portal page runtime is missing from offline shell');
 assert(serviceWorker.includes("'./zi-final-polish.js'"), 'service worker: portal enhancement runtime is missing from offline shell');
 assert(serviceWorker.includes("caches.match('./offline.html')"), 'service worker has no offline navigation fallback');

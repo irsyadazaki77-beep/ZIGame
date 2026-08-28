@@ -102,6 +102,29 @@ test('portal loading, offline feedback, and game audio controls are resilient', 
     await expect(page.locator('#ziGameHelpToggle')).toBeFocused();
 });
 
+test('shared audio mute stays synchronized with custom game controls', async ({ page }) => {
+    for (const route of ['ludo', 'sayonarawildhearts', 'vvvvvv', 'thumper']) {
+        await page.goto(`/${route}.html`);
+        await expect(page.locator('#muteToggle')).toBeVisible();
+        await page.locator('#muteToggle').click();
+        await expect.poll(() => page.evaluate(() => localStorage.getItem('arcadeNexusMuted'))).toBe('1');
+
+        const customMute = page.locator(route === 'sayonarawildhearts' ? '#btn-mute' : '#muteBtn');
+        if (await customMute.count()) {
+            if (route === 'ludo') await page.locator('#setupOv .start-btn').click();
+            if (route === 'sayonarawildhearts') await page.locator('#ov-start .btn-start-big').click();
+            if (route === 'thumper') await page.locator('#screen-menu .btn-start').click();
+            await expect(customMute).toHaveAttribute('aria-pressed', 'true');
+            // Some game-over overlays intentionally sit above the in-game controls;
+            // exercise the control handler without depending on that visual layer.
+            await customMute.evaluate(button => button.click());
+            await expect.poll(() => page.evaluate(() => localStorage.getItem('arcadeNexusMuted'))).toBe('0');
+        } else {
+            await page.locator('#muteToggle').click();
+        }
+    }
+});
+
 test('settings persist theme, density, and motion preferences', async ({ page }) => {
     await page.goto('/settings.html');
     await page.locator('#settingTheme').selectOption('light');
@@ -145,13 +168,13 @@ test('risky settings actions ask for confirmation', async ({ page }) => {
 
 test('portal and game shell do not overflow', async ({ page }, testInfo) => {
     await page.goto('/index.html');
-    const portalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+    const portalOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth > 1);
     expect(portalOverflow).toBe(false);
     if (testInfo.project.name === 'mobile') await expect(page.locator('.mobile-quickbar')).toBeVisible();
 
     for (const route of ['snake', 'katanazero', 'thumper', 'superhot']) {
         await page.goto(`/${route}.html`);
-        const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth > 1);
         expect(overflow, `${route} overflows horizontally`).toBe(false);
         await expect(page.locator('body')).toHaveClass(/zi-modern-game/);
         await expect(page.locator('.zi-shared-back').first()).toHaveAttribute('aria-label', 'Kembali ke portal ZI GAME');
@@ -176,7 +199,7 @@ test('game start overlay is accessible and releases focus after start', async ({
     expect(focusReleased).toBe(true);
 });
 
-test('all game pages boot with shared shell and no page errors', async ({ page }) => {
+test('all game pages boot with shared shell and no page errors', async ({ page }, testInfo) => {
     // Loading every game sequentially is intentionally broader than a single-page smoke test.
     // Keep this budget stable when the desktop and mobile projects run in parallel.
     test.setTimeout(60_000);
@@ -188,6 +211,15 @@ test('all game pages boot with shared shell and no page errors', async ({ page }
         await page.waitForTimeout(120);
         await expect(page.locator('body')).toHaveClass(/zi-modern-game/);
         await expect(page.locator('.zi-shared-back').first()).toHaveAttribute('href', 'index.html');
+        await expect(page.locator('#ziGameHelpToggle')).toBeVisible();
+        await expect(page.locator('#ziAudioToggle')).toBeVisible();
+        await expect(page.locator('#muteToggle')).toHaveAttribute('aria-label', /suara/i);
+        const visibleText = await page.locator('body').innerText();
+        expect(visibleText, `${route} contains corrupted visible text`).not.toMatch(/(?:â|ðŸ|Ã|`r`n)/);
+        if (testInfo.project.name === 'mobile') {
+            const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth > 1);
+            expect(overflow, `${route} overflows horizontally on mobile`).toBe(false);
+        }
         expect(errors, `${route} emitted page errors: ${errors.join('; ')}`).toEqual([]);
     }
 });

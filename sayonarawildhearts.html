@@ -480,14 +480,14 @@
     <div class="bg-grid"></div>
 
     <nav>
-        <a href="index.html" class="back-btn">â† Kembali</a>
+        <a href="index.html" class="back-btn">← Kembali</a>
         <div class="nav-logo">ZI GAME</div>
     </nav>
 
     <!-- START SCREEN -->
     <div class="overlay" id="ov-start">
         <div class="big-title">Sayonara<br>Wild Hearts</div>
-        <div class="sub-txt">â™¦ Mini Rhythm Game â™¦</div>
+        <div class="sub-txt">◆ Mini Rhythm Game ◆</div>
         <div class="key-row">
             <div class="kp kp0">A</div>
             <div class="kp kp1">S</div>
@@ -501,7 +501,7 @@
            <button class="diff-btn" id="diff2" onclick="setDiff(2)">HARD</button>
         </div>
         <div class="info-hint">Atasi nada Hold dan raih skor sempurna!</div>
-        <button class="btn-start-big" onclick="startGame()">â–¶ MULAI BERMAIN</button>
+        <button class="btn-start-big" onclick="startGame()">▶ MULAI BERMAIN</button>
     </div>
 
     <!-- RESULT SCREEN -->
@@ -509,11 +509,11 @@
         <div class="grade-txt" id="res-grade">S RANK</div>
         <div style="font-family:'Bebas Neue',cursive;font-size:clamp(24px,5vw,48px);color:var(--text);" id="res-score">0
             pts</div>
-        <div class="sub-txt" id="res-sub">AKURASI â€” â€¢ MAX COMBO â€”</div>
+        <div class="sub-txt" id="res-sub">AKURASI — · MAX COMBO —</div>
         <div class="result-btns">
-            <button class="btn-play" onclick="restartGame()">â†º Main Lagi</button>
+            <button class="btn-play" onclick="restartGame()">↻ Main Lagi</button>
             <a href="index.html" class="btn-reset"
-                style="text-decoration:none;display:inline-flex;align-items:center;padding:11px 22px;border-radius:50px;border:1px solid rgba(206,147,216,.3);color:var(--text);font-size:13px;">â†
+                style="text-decoration:none;display:inline-flex;align-items:center;padding:11px 22px;border-radius:50px;border:1px solid rgba(206,147,216,.3);color:var(--text);font-size:13px;">←
                 Keluar</a>
         </div>
     </div>
@@ -522,7 +522,7 @@
     <div id="game-wrap">
         <div class="game-title-bar">
             <div class="game-title">Wild Hearts Rhythm</div>
-            <div class="game-hint">A Â· S Â· D Â· F / klik lane</div>
+            <div class="game-hint">A · S · D · F / klik lane</div>
         </div>
 
         <div id="scorebar">
@@ -532,11 +532,11 @@
             </div>
             <div class="score-item">
                 <div class="score-label">COMBO</div>
-                <div class="score-val" id="sv-combo">0Ã—</div>
+                <div class="score-val" id="sv-combo">0×</div>
             </div>
             <div class="score-item">
                 <div class="score-label">AKURASI</div>
-                <div class="score-val" id="sv-acc">â€”</div>
+                <div class="score-val" id="sv-acc">—</div>
             </div>
             <div class="score-item">
                 <div class="score-label">LIFE</div>
@@ -566,21 +566,41 @@
         </div>
 
         <div id="controls">
-            <button class="btn-reset" onclick="restartGame()">â†º Restart</button>
-            <button class="btn-mute" id="btn-mute" onclick="toggleMute()">ðŸ”Š</button>
+            <button class="btn-reset" onclick="restartGame()">↻ Restart</button>
+            <button class="btn-mute" id="btn-mute" onclick="toggleMute()" aria-label="Matikan semua suara" aria-pressed="false">🔊</button>
         </div>
     </div>
 
     <script>
         // â”€â”€ AUDIO ENGINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        let AC, masterGain, muted = localStorage.getItem('arcadeNexusMuted') === '1', loopHandle = null, musicNodes = [];
+        let AC, masterGain, musicGain, sfxGain;
+        let muted = localStorage.getItem('arcadeNexusMuted') === '1', loopHandle = null, musicNodes = [];
+        function getChannelVolume(channel) {
+            const getter = channel === 'music' ? 'getMusicVolume' : 'getSfxVolume';
+            const key = channel === 'music' ? 'ziGame:musicVolume' : 'ziGame:sfxVolume';
+            const fallback = channel === 'music' ? 0.3 : 0.5;
+            if (window.SoundEngine && typeof window.SoundEngine[getter] === 'function') {
+                return window.SoundEngine[getter]();
+            }
+            const value = Number(localStorage.getItem(key));
+            return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : fallback;
+        }
+        function syncVolume() {
+            if (musicGain) musicGain.gain.value = getChannelVolume('music');
+            if (sfxGain) sfxGain.gain.value = getChannelVolume('sfx');
+        }
 
         function initAudio() {
             if (AC) return;
             AC = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = AC.createGain();
-            masterGain.gain.value = 0.65;
+            masterGain.gain.value = muted ? 0 : 1;
             masterGain.connect(AC.destination);
+            musicGain = AC.createGain();
+            sfxGain = AC.createGain();
+            musicGain.connect(masterGain);
+            sfxGain.connect(masterGain);
+            syncVolume();
         }
 
         function pn(freq, t, dur, type = 'sine', vol = 0.14) {
@@ -590,7 +610,7 @@
             g.gain.setValueAtTime(0, t);
             g.gain.linearRampToValueAtTime(vol, t + 0.01);
             g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.95);
-            o.connect(g); g.connect(masterGain);
+            o.connect(g); g.connect(musicGain);
             o.start(t); o.stop(t + dur + 0.05);
             musicNodes.push(o);
         }
@@ -603,7 +623,7 @@
                 o.frequency.exponentialRampToValueAtTime(40, t + 0.15);
                 g.gain.setValueAtTime(0.9, t);
                 g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
-                o.connect(g); g.connect(masterGain);
+                o.connect(g); g.connect(musicGain);
                 o.start(t); o.stop(t + 0.35);
             } else if (type === 'snare') {
                 const buf = AC.createBuffer(1, AC.sampleRate * 0.12, AC.sampleRate);
@@ -611,7 +631,7 @@
                 for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.5);
                 const src = AC.createBufferSource(), g = AC.createGain();
                 src.buffer = buf; g.gain.value = 0.38;
-                src.connect(g); g.connect(masterGain); src.start(t);
+                src.connect(g); g.connect(musicGain); src.start(t);
             } else if (type === 'hat') {
                 const buf = AC.createBuffer(1, AC.sampleRate * 0.04, AC.sampleRate);
                 const d = buf.getChannelData(0);
@@ -619,7 +639,7 @@
                 const src = AC.createBufferSource(), hpf = AC.createBiquadFilter(), g = AC.createGain();
                 hpf.type = 'highpass'; hpf.frequency.value = 7000;
                 g.gain.value = 0.15;
-                src.buffer = buf; src.connect(hpf); hpf.connect(g); g.connect(masterGain); src.start(t);
+                src.buffer = buf; src.connect(hpf); hpf.connect(g); g.connect(musicGain); src.start(t);
             }
         }
 
@@ -682,17 +702,31 @@
         }
 
         function toggleMute() {
-            muted = !muted;
-            localStorage.setItem('arcadeNexusMuted', muted ? '1' : '0');
-            if (masterGain) masterGain.gain.value = muted ? 0 : 0.65;
-            document.getElementById('btn-mute').textContent = muted ? 'ðŸ”‡' : 'ðŸ”Š';
+            if (window.SoundEngine && typeof window.SoundEngine.toggleMute === 'function') {
+                muted = window.SoundEngine.toggleMute();
+            } else {
+                muted = !muted;
+                localStorage.setItem('arcadeNexusMuted', muted ? '1' : '0');
+            }
+            if (masterGain) masterGain.gain.value = muted ? 0 : 1;
+            updateMuteButton();
+        }
+
+        function updateMuteButton() {
+            const button = document.getElementById('btn-mute');
+            if (!button) return;
+            button.textContent = muted ? '🔇' : '🔊';
+            button.setAttribute('aria-label', muted ? 'Nyalakan semua suara' : 'Matikan semua suara');
+            button.setAttribute('aria-pressed', muted ? 'true' : 'false');
         }
 
         window.addEventListener('zi:mutechange', event => {
             muted = !!event.detail?.muted;
-            if (masterGain) masterGain.gain.value = muted ? 0 : 0.65;
-            document.getElementById('btn-mute').textContent = muted ? 'ðŸ”‡' : 'ðŸ”Š';
+            if (masterGain) masterGain.gain.value = muted ? 0 : 1;
+            updateMuteButton();
         });
+        updateMuteButton();
+        window.addEventListener('zi:volumechange', syncVolume);
 
         const HIT_FREQS_SFX = [523.3, 659.3, 783.9, 880];
         function playSFX(lane, perfect) {
@@ -701,7 +735,7 @@
             o.type = 'sine'; o.frequency.value = HIT_FREQS_SFX[lane];
             g.gain.setValueAtTime(perfect ? 0.28 : 0.16, AC.currentTime);
             g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + (perfect ? 0.2 : 0.1));
-            o.connect(g); g.connect(masterGain);
+            o.connect(g); g.connect(sfxGain);
             o.start(); o.stop(AC.currentTime + 0.25);
         }
 
@@ -769,7 +803,7 @@
             document.getElementById('fever-overlay').classList.remove('fever-active');
             running = true;
             updateUI();
-            document.getElementById('sv-status').textContent = 'â™ª LIVE';
+            document.getElementById('sv-status').textContent = '♪ LIVE';
             startMusic();
             startTime = performance.now(); lastTime = startTime;
             animId = requestAnimationFrame(loop);
@@ -848,7 +882,7 @@
 
         function updateUI() {
             document.getElementById('sv-score').textContent = score.toLocaleString();
-            document.getElementById('sv-combo').textContent = combo + 'Ã—';
+            document.getElementById('sv-combo').textContent = combo + '×';
             document.getElementById('sv-health').style.width = health + '%';
             document.getElementById('sv-health').style.background = health < 30 ? 'var(--pink)' : (fever ? 'var(--gold)' : 'var(--teal)');
             if (totalNotes > 0) document.getElementById('sv-acc').textContent = Math.round(totalHits / totalNotes * 100) + '%';
@@ -865,7 +899,7 @@
                     n.missed = true; totalNotes++; combo = 0; 
                     fever = false; feverMultiplier = 1; document.getElementById('fever-overlay').classList.remove('fever-active');
                     health -= 12; checkHealth();
-                    push_fb(n.lane, 'âœ—', 'rgba(240,98,146,.7)', n.time);
+                    push_fb(n.lane, '×', 'rgba(240,98,146,.7)', n.time);
                     updateUI();
                 }
             });
@@ -886,7 +920,7 @@
             const grade = !win ? 'CRASHED' : (acc >= 95 ? 'S RANK' : acc >= 80 ? 'A RANK' : acc >= 60 ? 'B RANK' : acc >= 40 ? 'C RANK' : 'RETRY!');
             document.getElementById('res-grade').textContent = grade;
             document.getElementById('res-score').textContent = score.toLocaleString() + ' pts';
-            document.getElementById('res-sub').textContent = `AKURASI ${acc}% â€¢ MAX COMBO ${maxCombo}Ã—`;
+            document.getElementById('res-sub').textContent = `AKURASI ${acc}% · MAX COMBO ${maxCombo}×`;
             document.getElementById('ov-result').classList.remove('hidden');
         }
 
@@ -1008,7 +1042,8 @@
         window.toggleMute = toggleMute;
         window.setDiff = setDiff;
     </script>
-    <script src="sounds.js"></script>`r`n
+    <script src="sounds.js"></script>
+
     <script src="mobile-touch.js"></script>
 </body>
 

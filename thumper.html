@@ -418,6 +418,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 0;
+            padding: 0;
+            color: inherit;
+            background: transparent;
+            font: inherit;
+            cursor: pointer;
+            touch-action: manipulation;
             font-size: 40px;
             opacity: 0.15;
             transition: opacity .15s;
@@ -526,8 +533,8 @@
     <div id="screen-menu">
         <div class="menu-grid"></div>
         <div class="menu-logo">THUMPER</div>
-        <div class="menu-tagline">RHYTHM VIOLENCE &nbsp;Â·&nbsp; <span>3 LANE OVERDRIVE</span></div>
-        <button class="btn-start" onclick="startGame()">â–¶ MULAI GAME</button>
+        <div class="menu-tagline">RHYTHM VIOLENCE &nbsp;·&nbsp; <span>3 LANE OVERDRIVE</span></div>
+        <button class="btn-start" onclick="startGame()">▶ MULAI GAME</button>
     </div>
 
     <!-- GAME OVER -->
@@ -535,7 +542,7 @@
         <div class="go-title">GAME OVER</div>
         <div class="go-score-label">SKOR AKHIR</div>
         <div class="go-score-val" id="final-score">0</div>
-        <button class="btn-retry" onclick="startGame()">â†º COBA LAGI</button>
+        <button class="btn-retry" onclick="startGame()">↻ COBA LAGI</button>
     </div>
 
     <!-- HUD -->
@@ -555,16 +562,16 @@
             <div class="hp-shard" id="hp2"></div>
         </div>
         <div class="hud-controls">
-            <b>â† â†’</b> Geser Jalur<br>
+            <b>← →</b> Geser Jalur<br>
             <b>SPASI / Z</b> Hancurkan
         </div>
     </div>
 
     <!-- TOUCH -->
     <div id="touch-controls">
-        <div class="touch-btn" id="tb-left">â—€</div>
-        <div class="touch-btn" id="tb-action">ðŸ’¥</div>
-        <div class="touch-btn" id="tb-right">â–¶</div>
+        <button class="touch-btn" id="tb-left" type="button" aria-label="Geser jalur ke kiri">◀</button>
+        <button class="touch-btn" id="tb-action" type="button" aria-label="Hancurkan rintangan">💥</button>
+        <button class="touch-btn" id="tb-right" type="button" aria-label="Geser jalur ke kanan">▶</button>
     </div>
 
     <script>
@@ -627,19 +634,45 @@
         };
 
         // ---- audio ----
-        let actx;
+        let actx, musicGain, sfxGain;
+        let gameMuted = localStorage.getItem('arcadeNexusMuted') === '1';
+        function storedVolume(key, fallback) {
+            const getter = key === 'ziGame:musicVolume' ? 'getMusicVolume' : 'getSfxVolume';
+            if (window.SoundEngine && typeof window.SoundEngine[getter] === 'function') {
+                return window.SoundEngine[getter]();
+            }
+            const value = Number(localStorage.getItem(key));
+            return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : fallback;
+        }
+        function syncAudio() {
+            if (musicGain) musicGain.gain.value = gameMuted ? 0 : storedVolume('ziGame:musicVolume', 0.3);
+            if (sfxGain) sfxGain.gain.value = gameMuted ? 0 : storedVolume('ziGame:sfxVolume', 0.5);
+        }
         function initAudio() {
-            if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+            if (!actx) {
+                actx = new (window.AudioContext || window.webkitAudioContext)();
+                musicGain = actx.createGain();
+                sfxGain = actx.createGain();
+                musicGain.connect(actx.destination);
+                sfxGain.connect(actx.destination);
+                syncAudio();
+            }
             if (actx.state === 'suspended') actx.resume();
         }
+        window.addEventListener('zi:mutechange', event => {
+            gameMuted = !!event.detail?.muted;
+            syncAudio();
+        });
+        window.addEventListener('zi:volumechange', syncAudio);
         let beatTime = 0, beatIdx = 0;
         const BEAT_SEQ = [1, 0, 0, 0, 0.6, 0, 0, 0, 1, 0, 0.4, 0, 0.6, 0, 0.4, 0]; // kick / snare pattern
 
-        function tone(freq, type, vol, dur, freqEnd, t) {
-            if (!actx || actx.state !== 'running') return;
+        function tone(freq, type, vol, dur, freqEnd, t, channel = 'sfx') {
+            if (!actx || actx.state !== 'running' || gameMuted) return;
             t = t || actx.currentTime;
             const o = actx.createOscillator(), g = actx.createGain();
-            o.connect(g); g.connect(actx.destination);
+            o.connect(g);
+            g.connect(channel === 'music' ? musicGain : sfxGain);
             o.type = type || 'sine';
             o.frequency.setValueAtTime(freq, t);
             if (freqEnd) o.frequency.exponentialRampToValueAtTime(freqEnd || freq, t + dur);
@@ -666,8 +699,8 @@
         function scheduleBeat(t) {
             const v = BEAT_SEQ[beatIdx % BEAT_SEQ.length];
             if (v > 0) {
-                tone(55, 'sine', v * .9, .4, 20, t);       // kick
-                if (beatIdx % 4 === 2) tone(200, 'square', .35, .15, 180, t); // snare
+                tone(55, 'sine', v * .9, .4, 20, t, 'music');       // kick
+                if (beatIdx % 4 === 2) tone(200, 'square', .35, .15, 180, t, 'music'); // snare
             }
             beatIdx++;
         }
@@ -1245,9 +1278,9 @@
             else if (e.code === 'Space' || e.code === 'KeyZ' || e.code === 'KeyX') { e.preventDefault(); doAction(); }
         });
 
-        document.getElementById('tb-left').addEventListener('touchstart', e => { e.preventDefault(); doLeft(); });
-        document.getElementById('tb-right').addEventListener('touchstart', e => { e.preventDefault(); doRight(); });
-        document.getElementById('tb-action').addEventListener('touchstart', e => { e.preventDefault(); doAction(); });
+        document.getElementById('tb-left').addEventListener('click', e => { e.preventDefault(); doLeft(); });
+        document.getElementById('tb-right').addEventListener('click', e => { e.preventDefault(); doRight(); });
+        document.getElementById('tb-action').addEventListener('click', e => { e.preventDefault(); doAction(); });
 
         // ============================================================
         //  START / END
@@ -1283,7 +1316,8 @@
             }, 800);
         }
     </script>
-    <script src="sounds.js"></script>`r`n
+    <script src="sounds.js"></script>
+
     <script src="mobile-touch.js"></script>
 </body>
 
