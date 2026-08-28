@@ -253,6 +253,12 @@ test('game start overlay is accessible and releases focus after start', async ({
 
     await page.locator('#ovBtn').click();
     await expect(overlay).toHaveAttribute('aria-hidden', 'true');
+    await page.waitForTimeout(300);
+    await expect(overlay).not.toHaveClass(/active/);
+    await expect.poll(() => page.evaluate(() => {
+        const canvas = document.querySelector('#snakeCanvas');
+        return canvas ? [canvas.width % 25, canvas.height % 25] : null;
+    })).toEqual([0, 0]);
     await expect.poll(() => page.evaluate(() => {
         const active = document.activeElement;
         return !document.querySelector('#overlay')?.contains(active)

@@ -721,7 +721,8 @@
 
         function resizeSnake() {
             if (window.innerWidth <= 600) {
-                cvs.width = 320; cvs.height = 320;
+                const mobileSide = Math.max(G * 8, Math.floor(Math.min(320, window.innerWidth - 40) / G) * G);
+                cvs.width = mobileSide; cvs.height = mobileSide;
             } else {
                 const maxSide = Math.min(
                     Math.floor(window.innerWidth * 0.80),
@@ -1185,7 +1186,9 @@
         ====================================================== */
         function startGame() {
             if (gameLoop) cancelAnimationFrame(gameLoop);
-            snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+            const startX = Math.floor(COLS / 2);
+            const startY = Math.floor(ROWS / 2);
+            snake = [{ x: startX, y: startY }, { x: startX - 1, y: startY }, { x: startX - 2, y: startY }];
             dx = 1; dy = 0; ndx = 1; ndy = 0;
             score = 0; eatCount = 0; level = 1; comboCount = 0;
             particles = []; trailSegments = []; specialFood = null;
