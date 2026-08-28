@@ -125,6 +125,28 @@ test('portal loading, offline feedback, and game audio controls are resilient', 
     await expect(page.locator('#ziGameHelpToggle')).toBeFocused();
 });
 
+test('PWA registers its cache and serves the offline fallback', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'The service-worker runtime check runs once on desktop.');
+    await page.goto('/index.html', { waitUntil: 'networkidle' });
+    await expect.poll(() => page.evaluate(async () => {
+        const registration = await navigator.serviceWorker?.getRegistration();
+        return !!registration?.active;
+    })).toBe(true);
+    // A newly registered worker controls the next navigation, not the page
+    // that triggered registration. Reload before exercising offline routing.
+    await page.reload({ waitUntil: 'networkidle' });
+    await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker?.controller)).toBe(true);
+    await expect.poll(() => page.evaluate(() => caches.keys())).toContain('zi-game-v7');
+
+    try {
+        await page.context().setOffline(true);
+        await page.goto('/not-cached-ui-test.html', { waitUntil: 'domcontentloaded' });
+        await expect(page.locator('h1')).toHaveText('Koneksi sedang jeda.');
+    } finally {
+        await page.context().setOffline(false);
+    }
+});
+
 test('shared audio mute stays synchronized with custom game controls', async ({ page }) => {
     for (const route of ['ludo', 'sayonarawildhearts', 'vvvvvv', 'thumper']) {
         await page.goto(`/${route}.html`);
@@ -237,6 +259,32 @@ test('game start overlay is accessible and releases focus after start', async ({
             && active?.getAttribute('tabindex') === '-1';
     });
     expect(focusReleased).toBe(true);
+});
+
+test('custom game start flows do not throw runtime errors', async ({ page }) => {
+    test.setTimeout(60_000);
+    const cases = [
+        ['hyperlightdrifter', ['#startBtn', '#charGrid .char-card', '#confirmCharBtn']],
+        ['katanazero', ['#startScreen .map-card', '#tutorialStartBtn']],
+        ['minimetro', ['#startBtn']],
+        ['simon', ['#overlay .ov-btn']],
+        ['thumper', ['#screen-menu .btn-start']],
+        ['sayonarawildhearts', ['#ov-start .btn-start-big']]
+    ];
+
+    for (const [route, selectors] of cases) {
+        const errors = [];
+        const onError = error => errors.push(error.message);
+        page.on('pageerror', onError);
+        await page.goto(`/${route}.html`);
+        for (const selector of selectors) {
+            await expect(page.locator(selector).first()).toBeVisible();
+            await page.locator(selector).first().click();
+            await page.waitForTimeout(160);
+        }
+        expect(errors, `${route} threw during its start flow`).toEqual([]);
+        page.off('pageerror', onError);
+    }
 });
 
 test('all game pages boot with shared shell and no page errors', async ({ page }, testInfo) => {

@@ -7,6 +7,10 @@ export default defineConfig({
     timeout: 30_000,
     expect: { timeout: 5_000 },
     fullyParallel: true,
+    // Keep local browser runs deterministic while still exercising desktop
+    // and mobile projects concurrently. Ten workers made page-level scripts
+    // compete for CPU during the all-routes regression pass.
+    workers: 4,
     reporter: 'line',
     use: {
         baseURL,
